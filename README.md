@@ -8,7 +8,7 @@ The following instructions will guide installation and implementation on a local
 ### Prerequisites 
 
 #### Software
-A stable installation of R is required. The preferred software is [RStudio ](https://www.rstudio.com/products/rstudio/). map.xtreme.pcic requires the following external R packages.
+A stable installation of R is required. The preferred software is [RStudio ](https://www.rstudio.com/products/rstudio/). *map.xtreme.pcic* requires the following external R packages.
 
 `abind` for data array combinations, `akima` for bilinear interpolcation, and `kohonen` for SOM analysis. The *map.xtreme.pcic* will check for these dependencies upon running.
  
