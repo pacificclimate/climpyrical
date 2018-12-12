@@ -2,7 +2,7 @@
 ## map-xtreme - An Extreme Isopleth Mapping Tool
 A mapping tool for displaying North American design value isopleths.
 
-![north-america.png](https://images.zenhubusercontent.com/5bc02597fcc72f27390ed1f9/a07326c9-8e16-4faa-9056-89ebcfdb7c2a =150x150)
+![](https://images.zenhubusercontent.com/5bc02597fcc72f27390ed1f9/a07326c9-8e16-4faa-9056-89ebcfdb7c2a =150x)
 
 ## Getting started
 The following instructions will guide installation and implementation on a local machine, including a stable Docker environment in which to use the software. It is recommended to use this Dockerized implementation, unless the user has confidence in their local environment. These instructions will only cover implementation using Docker images on Ubuntu OS.
