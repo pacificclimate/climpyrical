@@ -2,7 +2,7 @@
 ## map-xtreme - An Extreme Isopleth Mapping Tool
 A mapping tool for displaying North American design value isopleths.
 
-<a href="url"><img src="https://images.zenhubusercontent.com/5bc02597fcc72f27390ed1f9/a07326c9-8e16-4faa-9056-89ebcfdb7c2a" align="left" width="250" ></a>
+<a href="url"><img src="https://images.zenhubusercontent.com/5bc02597fcc72f27390ed1f9/a07326c9-8e16-4faa-9056-89ebcfdb7c2a" align="left" width="270" ></a>
 
 
 ## Getting started
