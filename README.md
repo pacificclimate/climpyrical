@@ -8,7 +8,7 @@ The following instructions will guide installation and implementation on a local
 ### Prerequisites 
 The only required software is `Docker`. Carefully choose the correct installation for the OS that you have from the [Docker Community Edition (CE) website.](https://docs.docker.com/install/#supported-platforms). Desktop clients are available for both Mac and Windows.
 
-### Launching
+### Deployment
 To get started, clone this repository to your local machine.
 ```
 git clone https://github.com/pacificclimate/map-xtreme.git
@@ -30,6 +30,19 @@ docker run -e PASSWORD="<CHOOSE A PASSWORD>" -p 8787:8787 --rm -it <DOCKER IMAGE
 
 This runs the built docker image in a container. The `-e` flag allows us to set a user defined password as an environment variable (more on that later). The `-p` flag lets Docker make the exposed port accessible on the host. These ports will be available to any client that can reach the host. The `--rm` flag is to automatically clean up the container and remove the file system when the container exits. The `-it` flag makes the container interactive.
 
+If all steps were successful, then the previous command will make an RStudio GUI and interactive session available at 
+```
+http://localhost:8787
+```
 
-#### Software
-Docker
+You will be prompted to enter a username and password. The default username is `rstudio` and the password is the same that you set while running the docker image, i.e. `<CHOOSE A PASSWORD>`. 
+
+## About the Environment
+to do:
+...
+...
+...
+
+## Authors
+* **Chao Li** - *map.xtreme.pcic R software* - [Pacific Climate Impacts Consortium](https://www.pacificclimate.org/)
+* **Nic Annau** - *Dockerized implementation of R environment* - [Pacific Climate Impacts Consortium](https://www.pacificclimate.org/)
