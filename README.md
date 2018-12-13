@@ -21,7 +21,7 @@ Change directories to cloned repo, i.e. `cd map-xtreme`
 
 Within this directory contains the Dockerfile necessary for R environment. If Docker has been installed correctly, build with
 ```
-docker build --rm -r <DOCKER IMAGE NAME> .
+docker build --rm -t <DOCKER IMAGE NAME> .
 ```
 Where `--rm` tells Docker to remove intermediate containers after a successful build, and `-t` will automatically tag the image that was created. `<DOCKER IMAGE NAME>` can be any logical name for the iamge. We specify that the Dockerfile is in the current directory with `.`
 
@@ -44,7 +44,9 @@ You will be prompted to enter a username and password. The default username is `
 This Docker environment is a multilayered stack from [rocker](https://hub.docker.com/r/rocker/rstudio/)'s r-ver. This stack contains RStudio 3.5.1 as well as the R geospatial libraries required by map-xtreme.
 
 ### Visualization and Data
-In addition to CanRCM data (which should be placed in `map-xtreme/data`, polygons of coast and shoreline need to be placed in `map-xtreme/support`
+In addition to CanRCM data (which should be placed in `map-xtreme/data`, polygons of coast and shoreline need to be placed in `map-xtreme/support`. These polygos can be downloaded [here](https://www.naturalearthdata.com/downloads/50m-physical-vectors/) with a selected resolution and spatial detail. 
+
+In both `data` and `support` by default, there is a bash script to download the files used to create the necessary `land` and `coastline` files used by `demo.R`.
 
 ## Authors
 * **Chao Li** - *map.xtreme.pcic R software* - [Pacific Climate Impacts Consortium](https://www.pacificclimate.org/)
