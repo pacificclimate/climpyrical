@@ -41,10 +41,10 @@ http://localhost:8787
 You will be prompted to enter a username and password. The default username is `rstudio` and the password is the same that you set while running the docker image, i.e. `<CHOOSE A PASSWORD>`. 
 
 ## About the Environment
-to do:
-...
-...
-...
+This Docker environment is a multilayered stack from [rocker](https://hub.docker.com/r/rocker/rstudio/)'s r-ver. This stack contains RStudio 3.5.1 as well as the R geospatial libraries required by map-xtreme.
+
+### Visualization and Data
+In addition to CanRCM data (which should be placed in `map-xtreme/data`, polygons of coast and shoreline need to be placed in `map-xtreme/support`
 
 ## Authors
 * **Chao Li** - *map.xtreme.pcic R software* - [Pacific Climate Impacts Consortium](https://www.pacificclimate.org/)
