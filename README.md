@@ -53,9 +53,7 @@ You will be prompted to enter a username and password. The default username is `
 This Docker environment is a multilayered stack from [rocker](https://hub.docker.com/r/rocker/rstudio/)'s r-ver. This stack contains RStudio 3.5.1 as well as the R geospatial libraries required by map-xtreme.
 
 ### Visualization and Data
-In addition to CanRCM data (which should be placed in `map-xtreme/data`, polygons of coast and shoreline need to be placed in `map-xtreme/support`. These polygos can be downloaded [here](https://www.naturalearthdata.com/downloads/50m-physical-vectors/) with a selected resolution and spatial detail. 
-
-In both `data` and `support` by default, there is a bash script to download the files used to create the necessary `land` and `coastline` files used by `demo.R`.
+In addition to CanRCM data (which should be placed in `map-xtreme/data`).
 
 ## Authors
 * **Chao Li** - *map.xtreme.pcic R software* - [Pacific Climate Impacts Consortium](https://www.pacificclimate.org/)
