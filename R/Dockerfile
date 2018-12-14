@@ -22,6 +22,9 @@ RUN apt-get update -qq \
 # Copy in required geospatial data (user dependent)
 COPY data/ /home/rstudio/data/
 
+# Copy in R code
+COPY *.R /home/rstudio/
+
 # Set home directory and make user root
 USER root
 WORKDIR /home/rstudio
@@ -40,8 +43,3 @@ RUN unzip -q support/ne_${size}_coastline.zip -d support/ne_${size}_coastline \
 
 RUN unzip -q support/ne_${size}_land.zip -d support/ne_${size}_land \
     && rm support/ne_${size}_land.zip
-
-# Clone git repo with R code. Pulls latest commits each build
-RUN git init . \
-    && git remote add -t \* -f origin https://github.com/pacificclimate/map-xtreme.git \
-    && git checkout master
