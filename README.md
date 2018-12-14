@@ -11,13 +11,13 @@ The following instructions will guide installation and implementation on a local
 ### Prerequisites 
 The only required software is `Docker`. Carefully choose the correct installation for the OS that you have from the [Docker Community Edition (CE) website](https://docs.docker.com/install/#supported-platforms). Desktop clients are available for both Mac and Windows.
 
-### Deployment
+### Deployment for R
 To get started, clone this repository to your local machine.
 ```
 git clone https://github.com/pacificclimate/map-xtreme.git
 ```
 
-Change directories to cloned repo, i.e. `cd map-xtreme`
+Change directories to cloned repo, i.e. `cd map-xtreme/R`
 
 The size of physical geospatial data required for plotting, by default is set to 1:50. However, if one requires larger or smaller scales, this can be changed by setting the environment variable in `.env` to either 10m, 50m or 110m as provided by [Natural Earth Data](https://www.naturalearthdata.com/downloads/). To do this, change `.env` to have one of the selected scales. 
 ```
