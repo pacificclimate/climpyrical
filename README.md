@@ -9,7 +9,7 @@ A mapping tool for displaying North American design value isopleths.
 The following instructions will guide installation and implementation on a local machine, including a stable Docker environment in which to use the software. It is recommended to use this Dockerized implementation, unless the user has confidence in their local environment. These instructions will only cover implementation using Docker images on Ubuntu OS.
 
 ### Prerequisites 
-The only required software is `Docker`. Carefully choose the correct installation for the OS that you have from the [Docker Community Edition (CE) website](https://docs.docker.com/install/#supported-platforms). Desktop clients are available for both Mac and Windows.
+The only required software is `Docker`. Carefully choose the correct installation for the OS that you have from the [Docker Community Edition (CE) website](https://docs.docker.com/install/#supported-platforms). 
 
 ### Deployment for R
 To get started, clone this repository to your local machine.
