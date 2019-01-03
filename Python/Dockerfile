@@ -1,11 +1,9 @@
 FROM jupyter/scipy-notebook
-FROM jupyter/r-notebook
 
 LABEL maintainer="Nic Annau <nannau@uvic.ca>"
 
 USER root
 WORKDIR /home/jovyan
-#RUN chown -hR root:root /home/*
 
 # Install packages onto debian base level machine
 RUN apt-get update -qq \
@@ -22,7 +20,7 @@ RUN apt-get update -qq \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy in required geospatial data (user dependent)
-COPY data/ data/ 
+COPY ./data/ data/ 
 
 # Set environment variable for spatial detail.
 ARG size=50m
@@ -33,13 +31,13 @@ ADD https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/${s
 ADD https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/${size}/physical/ne_${size}_land.zip support/
 
 # Install dependencies from requirements file
-USER root
 ADD requirements.txt /home/jovyan/
-RUN conda install --yes --file requirements.txt
-#RUN pip install --verbose -r requirements.txt
-RUN rm /home/jovyan/requirements.txt
 
-RUN conda install -c conda-forge cartopy
+USER root
+
+# Install python requirements
+RUN pip install --verbose -r requirements.txt
+RUN rm /home/jovyan/requirements.txt
 
 # Unzip geospatial data and delete downloaded zip file
 RUN unzip -q support/ne_${size}_coastline.zip -d support/ne_${size}_coastline \
@@ -48,9 +46,5 @@ RUN unzip -q support/ne_${size}_coastline.zip -d support/ne_${size}_coastline \
 RUN unzip -q support/ne_${size}_land.zip -d support/ne_${size}_land \
     && rm support/ne_${size}_land.zip
 
-# Clone git repo with code. Pulls latest commits each build
-RUN git init . \
-    && git remote add -t \* -f origin https://github.com/pacificclimate/map-xtreme.git \
-    && git checkout master
 
 RUN chmod -R 777 /home/*
