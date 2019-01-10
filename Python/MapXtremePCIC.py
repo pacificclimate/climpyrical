@@ -104,3 +104,81 @@ class MapXtremePCIC:
 
         self.load_data = read_data(data_path)
         
+        
+    def ensemble_mean(data_cube):
+        """
+        Returns ensemble mean of data region
+
+        Parameters
+        ----------
+        xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
+
+        Returns
+        -------
+        out : n x p array of ensemble mean of design values
+        """
+
+        # number of simulation runs
+        n = data_cube['run'].values.shape[0]
+
+        # number of grids
+        p = data_cube['lat'].shape[0]*data_cube['lat'].shape[1]
+
+        # n x n identity matrix
+        I_n = np.eye(n)
+
+        # all ones n x n matrix
+        one_n = np.ones((n, n))
+
+        # n x p reshaped data
+        X = np.reshape(data_cube['pr'].values, (data_cube['run'].shape[0], p))
+
+        # change nan values to zero for proper mean
+        X = np.nan_to_num(X, 0.0)
+
+        # n x p ensemble mean
+        X_prime = np.dot((I_n - (1.0/n)*one_n), X)
+
+        return X_prime
+    
+    
+    def weight_matrix(data_cube):
+        """
+        Returns weighted array using fractional grid cell areas
+
+        Parameters
+        ----------
+        xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
+
+        Returns
+        -------
+        out : n x p weighted spatial array
+        """
+        # calculate differences between array entires to get grid sizes
+        lat = np.diff(data_cube['lat'].values, axis=0)[:, :-1]
+        lon = np.diff(data_cube['lon'].values, axis=1)[:-1, :]
+
+        # define size of p
+        p = (lat.shape[0])*(lon.shape[1])
+
+        # multiply each grid size by each other and sum 
+        grid_areas = np.multiply(lon, lat)
+        total_area = np.sum(grid_areas)
+
+        # divide by total area of grids
+        fractional_areas = (1.0/total_area)*grid_areas
+
+        # reshape from p1 x p2 to 1 x p
+        f = np.reshape(fractional_areas, p)
+
+        # diagonalize reshapes fractional areas vector
+        diag_f = np.diag(f)
+
+        # get the ensemble means but ignore the grids at the edges of the fields
+        # since the area cannot be determined 
+        X_prime = MapXtremePCIC.ensemble_mean(data_cube)[:, 0:p]
+
+        # apply fractional areas to get weighted array
+        X_w = np.dot(X_prime, diag_f)
+
+        return X_w
