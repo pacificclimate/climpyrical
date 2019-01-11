@@ -2,7 +2,6 @@ import glob
 
 import numpy as np
 import xarray as xr
-import seaborn as sns
 import netCDF4 as nc
 
 class MapXtremePCIC:
@@ -54,7 +53,7 @@ class MapXtremePCIC:
         if (type(res) != type(1)):
             raise ValueError('Mapping resolution requires {}, got {}'.format(type(1), type(res)))
 
-        def read_data(PATH = './data/pr_24hr_50yrs/'):
+        def read_data(PATH = data_path):
             """
             Arguments
               Path to data directory with netcdf files
@@ -105,7 +104,7 @@ class MapXtremePCIC:
         self.load_data = read_data(data_path)
         
         
-    def ensemble_mean(data_cube):
+    def ensemble_mean(self, data_cube):
         """
         Returns ensemble mean of data region
 
@@ -142,7 +141,7 @@ class MapXtremePCIC:
         return X_prime
     
     
-    def weight_matrix(data_cube):
+    def weight_matrix(self, data_cube):
         """
         Returns weighted array using fractional grid cell areas
 
@@ -176,7 +175,7 @@ class MapXtremePCIC:
 
         # get the ensemble means but ignore the grids at the edges of the fields
         # since the area cannot be determined 
-        X_prime = MapXtremePCIC.ensemble_mean(data_cube)[:, 0:p]
+        X_prime = MapXtremePCIC.ensemble_mean(self, data_cube)[:, 0:p]
 
         # apply fractional areas to get weighted array
         X_w = np.dot(X_prime, diag_f)
