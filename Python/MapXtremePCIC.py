@@ -3,6 +3,11 @@ import glob
 import numpy as np
 import xarray as xr
 import netCDF4 as nc
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+import cartopy.feature
+
 
 class MapXtremePCIC:
     """ 
@@ -181,3 +186,41 @@ class MapXtremePCIC:
         X_w = np.dot(X_prime, diag_f)
 
         return X_w
+    
+    def plot_reference(self, data_cube):
+        """
+        Plots the mean value along the run axis of CanRCM4 simulations
+
+        Parameters
+        ----------
+        xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
+
+        Returns
+        -------
+        out : matplotlib axis object
+
+        """
+        N = data_cube['pr'].mean(axis=2)
+
+        rlat, rlon = data_cube['rlat'], data_cube['rlon']
+
+        rp = ccrs.RotatedPole(pole_longitude=-97.28 + 180,
+                              pole_latitude=42.66)
+
+        cmap = mpl.colors.ListedColormap(['#ffffff', '#e11900', '#ff9f00', 
+                                          '#ffc801', '#ffff01', '#c8ff32', 
+                                          '#98ff00', '#64ff01', '#00c834', 
+                                          '#009695', '#3232c8', '#dc00dc', 
+                                          '#ae00b1'])
+
+        plt.figure(figsize=(15, 15))
+
+
+        ax = plt.axes(projection=rp)
+        ax.set_xlim(rlon.min(), rlon.max())
+        ax.set_ylim(rlat.min(), rlat.max())
+
+        ax.coastlines('110m', linewidth=2.)
+        ax.pcolormesh(rlon, rlat, N, transform=rp, cmap=cmap, snap=True)
+
+        return ax
