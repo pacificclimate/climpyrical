@@ -188,39 +188,62 @@ class MapXtremePCIC:
         return X_w
     
     def plot_reference(self, data_cube):
-        """
-        Plots the mean value along the run axis of CanRCM4 simulations
+            """
+            Plots the mean value along the run axis of CanRCM4 simulations
 
-        Parameters
-        ----------
-        xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
+            Parameters
+            ----------
+            xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
 
-        Returns
-        -------
-        out : matplotlib axis object
+            Returns
+            -------
+            out : matplotlib axis object
 
-        """
-        N = data_cube['pr'].mean(axis=2)
+            """
+            # take mean of all simulation runs
+            N = data_cube['pr'].mean(axis=2)
+            # take away all 0.0 values for ocean
+            N = N.where(N != 0.0)
 
-        rlat, rlon = data_cube['rlat'], data_cube['rlon']
+            
+            rlat, rlon = data_cube['rlat'], data_cube['rlon']
+            
+            # defined projection from pre-defined proj4 params
+            rp = ccrs.RotatedPole(pole_longitude=-97.45 + 180,
+                                  pole_latitude=42.66)
+            # custom colormap
+            
+            cdict = {'#e11900':1, '#ff7d00':2, '#ff9f00':3, 
+                     '#ffc801':4, '#ffff01':5, '#c8ff32':6, 
+                     '#64ff01':7, '#00c834':8, '#009695':9, 
+                     '#0065ff':10, '#3232c8':11, '#dc00dc':12, '#ae00b1':12}
+            
+            cmap = mpl.colors.ListedColormap(cdict)
+            
+            #cmap = mpl.colors.ListedColormap(['#e11900', '#ff7d00', '#ff9f00', 
+            #                                 '#ffc801', '#ffff01', '#c8ff32', 
+            #                                 '#64ff01', '#00c834', '#009695', 
+            #                                 '#0065ff', '#3232c8', '#dc00dc', 
+            #                                 '#ae00b1'])
+            
+            plt.figure(figsize=(15, 15))
+            
+            # define projections
+            ax = plt.axes(projection=rp)
+            ax.coastlines('110m', linewidth=2.)
+            ax.set_title('50-year daily precipitation [mm/h]', fontsize=30, verticalalignment='bottom')
+            
+            # plot design values with custom colormap
+            colorplot = plt.pcolormesh(rlon, rlat, N, transform=rp, cmap=cmap)
+            
+            # make colorbar object
+            cbar = plt.colorbar(colorplot, ax=ax, orientation="horizontal", fraction=0.07, pad=0.025)
+            
+            cbar.ax.tick_params(labelsize=25)
+            
+            # constrain to data
+            plt.xlim(rlon.min(), rlon.max())
+            plt.ylim(rlat.min(), rlat.max())
+            plt.savefig('north_america_simulation_mean')
 
-        rp = ccrs.RotatedPole(pole_longitude=-97.28 + 180,
-                              pole_latitude=42.66)
-
-        cmap = mpl.colors.ListedColormap(['#ffffff', '#e11900', '#ff9f00', 
-                                          '#ffc801', '#ffff01', '#c8ff32', 
-                                          '#98ff00', '#64ff01', '#00c834', 
-                                          '#009695', '#3232c8', '#dc00dc', 
-                                          '#ae00b1'])
-
-        plt.figure(figsize=(15, 15))
-
-
-        ax = plt.axes(projection=rp)
-        ax.set_xlim(rlon.min(), rlon.max())
-        ax.set_ylim(rlat.min(), rlat.max())
-
-        ax.coastlines('110m', linewidth=2.)
-        ax.pcolormesh(rlon, rlat, N, transform=rp, cmap=cmap, snap=True)
-
-        return ax
+            return ax
