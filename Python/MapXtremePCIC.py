@@ -1,6 +1,7 @@
 import glob
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 import netCDF4 as nc
 import matplotlib as mpl
@@ -71,14 +72,14 @@ class MapXtremePCIC:
 
             for path in nc_list:
                 if path.endswith('.nc') == False:
-                    raise IOError('{} is not a supported file type.'.format(path))
+                    raise IOError('{} is not a supported file type. Data directory must have only .nc files'.format(path))
 
             # Create list with datasets as entries
             dataset_list = np.empty(nc_list.shape) 
 
             inst = nc.Dataset(nc_list[0], 'r')
 
-            data_cube = np.empty((inst['lat'].shape[0], inst['lat'].shape[1], nc_list.shape[0]))
+            data_cube = np.ones((inst['lat'].shape[0], inst['lat'].shape[1], nc_list.shape[0]))*-999
 
             inst.close()
 
@@ -188,62 +189,182 @@ class MapXtremePCIC:
         return X_w
     
     def plot_reference(self, data_cube):
-            """
-            Plots the mean value along the run axis of CanRCM4 simulations
+        """
+        Plots the mean value along the run axis of CanRCM4 simulations
 
-            Parameters
-            ----------
-            xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
+        Parameters
+        ----------
+        xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
 
-            Returns
-            -------
-            out : matplotlib axis object
+        Returns
+        -------
+        out : matplotlib axis object
 
-            """
-            # take mean of all simulation runs
-            N = data_cube['pr'].mean(axis=2)
-            # take away all 0.0 values for ocean
-            N = N.where(N != 0.0)
+        """
+        # take mean of all simulation runs
+        N = data_cube['pr'][:, :, 0]#.mean(axis=2)
+        # take away all 0.0 values for ocean
+        #N = N.where(N != np.nan)
 
-            
-            rlat, rlon = data_cube['rlat'], data_cube['rlon']
-            
-            # defined projection from pre-defined proj4 params
-            rp = ccrs.RotatedPole(pole_longitude=-97.45 + 180,
-                                  pole_latitude=42.66)
-            # custom colormap
-            
-            cdict = {'#e11900':1, '#ff7d00':2, '#ff9f00':3, 
-                     '#ffc801':4, '#ffff01':5, '#c8ff32':6, 
-                     '#64ff01':7, '#00c834':8, '#009695':9, 
-                     '#0065ff':10, '#3232c8':11, '#dc00dc':12, '#ae00b1':12}
-            
-            cmap = mpl.colors.ListedColormap(cdict)
-            
-            #cmap = mpl.colors.ListedColormap(['#e11900', '#ff7d00', '#ff9f00', 
-            #                                 '#ffc801', '#ffff01', '#c8ff32', 
-            #                                 '#64ff01', '#00c834', '#009695', 
-            #                                 '#0065ff', '#3232c8', '#dc00dc', 
-            #                                 '#ae00b1'])
-            
-            plt.figure(figsize=(15, 15))
-            
-            # define projections
-            ax = plt.axes(projection=rp)
-            ax.coastlines('110m', linewidth=2.)
-            ax.set_title('50-year daily precipitation [mm/h]', fontsize=30, verticalalignment='bottom')
-            
-            # plot design values with custom colormap
-            colorplot = plt.pcolormesh(rlon, rlat, N, transform=rp, cmap=cmap)
-            
-            # make colorbar object
-            cbar = plt.colorbar(colorplot, ax=ax, orientation="horizontal", fraction=0.07, pad=0.025)
-            
-            cbar.ax.tick_params(labelsize=25)
-            
-            # constrain to data
-            plt.xlim(rlon.min(), rlon.max())
-            plt.ylim(rlat.min(), rlat.max())
-            plt.savefig('north_america_simulation_mean')
 
-            return ax
+        rlat, rlon = data_cube['rlat'], data_cube['rlon']
+
+        # defined projection from pre-defined proj4 params
+        rp = ccrs.RotatedPole(pole_longitude=-97.45 + 180,
+                              pole_latitude=42.66)
+        # custom colormap
+
+        cdict = {'#e11900':(0, 2), '#ff7d00':(2, 3), '#ff9f00':(3, 4), 
+                 '#ffc801':(4, 5), '#ffff01':(5, 6), '#c8ff32':(6, 7), 
+                 '#64ff01':(7, 8), '#00c834':(8, 9), '#009695':(9, 10), 
+                 '#0065ff':(10, 11), '#3232c8':(11, 12), '#dc00dc':(12, 13), '#ae00b1':(13, 14)}
+
+        cmap = mpl.colors.ListedColormap(cdict)
+
+        cmap = mpl.colors.ListedColormap(['#e11900', '#ff7d00', '#ff9f00', 
+                                         '#ffff01', '#c8ff32', 
+                                         '#64ff01', '#00c834', '#009695', 
+                                         '#0065ff', '#3232c8', '#dc00dc', 
+                                         '#ae00b1'])
+
+        plt.figure(figsize=(15, 15))
+
+        # define projections
+        ax = plt.axes(projection=rp)
+        ax.coastlines('110m', linewidth=2.)
+        ax.set_title('50-year daily precipitation [mm/h]', fontsize=30, verticalalignment='bottom')
+
+        # plot design values with custom colormap
+        vmin = np.min(N)
+        colorplot = plt.pcolormesh(rlon, rlat, N, transform=rp, cmap=cmap, vmin=1., vmax=13.)
+
+        # make colorbar object
+        cbar = plt.colorbar(colorplot, ax=ax, orientation="horizontal", fraction=0.07, pad=0.025)
+
+        cbar.ax.tick_params(labelsize=25)
+
+        # constrain to data
+        plt.xlim(rlon.min(), rlon.max())
+        plt.ylim(rlat.min(), rlat.max())
+        plt.savefig('north_america_simulation_mean')
+
+        return ax
+
+    def mask_ocean(self, data_cube):
+        """
+        Returns data cube containing only the land data
+
+        Parameters
+        ----------
+        xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
+
+        Returns
+        -------
+        out : xarray Dataset
+
+        """
+        data_cube_land = np.where(data_cube['pr'] != 0.0)
+        return data_cube_land
+
+
+    def sample(self, data_cube, frac):
+        """
+        Returns randomly sampled land data from an average of CanRCM4 runs
+
+        Parameters
+        ----------
+        xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
+        float : fraction of dataset desired
+
+        Returns
+        -------
+        out : xarray Dataset
+
+        """        
+        # approximate grid size
+        lat_grid_sz = ((data_cube['rlat'].max() - data_cube['rlat'].min())/data_cube['rlat'].shape[0])
+        lon_grid_sz = ((data_cube['rlon'].max() - data_cube['rlon'].min())/data_cube['rlon'].shape[0])
+
+        # construct a pandas dataframe
+        pr_n = data_cube['pr'][:, :, 0]#.mean(axis=2)
+
+        # reshape the lat/lon grids
+        lat = np.reshape(data_cube['lat'].values, (data_cube['lat'].shape[0]*data_cube['lat'].shape[1]))
+        lon = np.reshape(data_cube['lon'].values, (data_cube['lon'].shape[0]*data_cube['lon'].shape[1]))
+
+        # reshape the pr grids
+        pr = np.reshape(pr_n.values,  (data_cube['lat'].shape[0]*data_cube['lat'].shape[1]))
+
+        # set up repeating values of rlat, rlon times
+        rlat = np.repeat(data_cube['rlat'].values, data_cube['rlon'].shape[0]) + lat_grid_sz.values
+        # set up repeating sequence of rlon, rlat times
+        rlon = np.tile(data_cube['rlon'].values, data_cube['rlat'].shape[0]) + lon_grid_sz.values
+
+        # create a dictionary from arrays
+        pd_dict = {'lat': lat, 'lon': lon, 'rlon': rlon, 'rlat': rlat, 'pr': pr}
+
+
+        cdict = {'#e11900':1, '#ff7d00':2, '#ff9f00':3, 
+                 '#ffc801':4, '#ffff01':5, '#c8ff32':6, 
+                 '#64ff01':7, '#00c834':8, '#009695':9, 
+                 '#0065ff':10, '#3232c8':11, '#dc00dc':12, '#ae00b1':12}
+
+        cmap = mpl.colors.ListedColormap(cdict)
+
+        # create dataframe from pd dict
+        df = pd.DataFrame(pd_dict)
+        # mask out ocean
+        df = df[df['pr'] != 0.0]
+        # take a random sample
+        df = df.sample(frac=frac)
+
+        # reasemble the xarray Dataset
+        lat_r = np.reshape(lat, (data_cube['lat'].shape[0], data_cube['lat'].shape[1]))
+        lon_r = np.reshape(lon, (data_cube['lon'].shape[0], data_cube['lon'].shape[1]))
+
+        rlat_r = np.unique(rlat)
+        rlon_r = np.unique(rlon)
+
+        pr_r = np.reshape(pr, (data_cube['pr'].shape[0], data_cube['pr'].shape[1]))
+
+        ds = xr.Dataset({'pr': (['x', 'y'], pr_r)}, 
+                        coords = {'lon': (['x', 'y'], lon_r), 
+                                  'lat': (['x', 'y'], lat_r), 
+                                  'rlon': rlon_r, 
+                                  'rlat': rlat_r},
+                        attrs = {'pr': 'mm h-1',
+                                 'lon': 'degrees',
+                                 'lat': 'degrees',
+                                 'rlon': 'degrees',
+                                 'rlat': 'degrees'})
+        return ds, df
+    
+    def plot_scatter(self, data_cube, frac):
+        
+        df = MapXtremePCIC.sample(self, data_cube, frac)[1]
+        
+        rp = ccrs.RotatedPole(pole_longitude=-97.45 + 180, pole_latitude=42.76)
+        
+        cdict = {'#e11900':1, '#ff7d00':2, '#ff9f00':3, 
+                 '#ffc801':4, '#ffff01':5, '#c8ff32':6, 
+                 '#64ff01':7, '#00c834':8, '#009695':9, 
+                 '#0065ff':10, '#3232c8':11, '#dc00dc':12, '#ae00b1':12}
+
+        cmap = mpl.colors.ListedColormap(cdict)
+
+        plt.figure(figsize = (15, 15))
+        ax = plt.axes(projection=rp)
+        ax.coastlines('110m', linewidth=2.)
+
+        colorplot = ax.scatter(df['rlon'], df['rlat'], c = df['pr'], cmap = cmap, transform = rp)
+        # make colorbar object
+        cbar = plt.colorbar(colorplot, ax=ax, orientation="horizontal", fraction=0.07, pad=0.025)
+
+        cbar.ax.tick_params(labelsize=25)
+
+        # constrain to data
+        plt.xlim(df['rlon'].min(), df['rlon'].max())
+        plt.ylim(df['rlat'].min(), df['rlat'].max())
+        plt.savefig('north_america_scatter')
+        
+        return ax
