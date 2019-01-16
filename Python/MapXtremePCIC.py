@@ -274,7 +274,7 @@ class MapXtremePCIC:
         return ax
 
 
-    def sample(MapXtreme, frac, run = 0):
+    def sample(MapXtreme, frac, run = 0, seed = True):
         """
         Returns randomly sampled land data from an average of CanRCM4 runs
 
@@ -288,6 +288,8 @@ class MapXtremePCIC:
         out : xarray Dataset
 
         """
+        if seed == True:
+            seed = np.random.randint(0, 100)
 
         data_cube = MapXtreme.load_data
 
@@ -296,14 +298,21 @@ class MapXtremePCIC:
         lon_grid_sz = ((data_cube['rlon'].max() - data_cube['rlon'].min())/data_cube['rlon'].shape[0])
 
         # construct a pandas dataframe
-        obs_n = data_cube['obs'][:, :, run]
+        obs_n = data_cube['obs'][:, :, :].values
 
         # reshape the lat/lon grids
         lat = np.reshape(data_cube['lat'].values, (data_cube['lat'].shape[0]*data_cube['lat'].shape[1]))
         lon = np.reshape(data_cube['lon'].values, (data_cube['lon'].shape[0]*data_cube['lon'].shape[1]))
 
         # reshape the obs grids
-        obs = np.reshape(obs_n.values,  (data_cube['lat'].shape[0]*data_cube['lat'].shape[1]))
+        obs = np.reshape(obs_n,  (data_cube['lat'].shape[0]*data_cube['lat'].shape[1], data_cube['obs'].shape[2]))
+
+        # create array of arrays
+        obs_array = [row for row in obs]
+
+        # boolean list which is True for a obs value
+        # where any of the run numbers is nan
+        nan_row_list = [~np.any(np.isnan(row)) for row in obs_array]
 
         # set up repeating values of rlat, rlon times
         rlat = np.repeat(data_cube['rlat'].values, data_cube['rlon'].shape[0]) + lat_grid_sz.values
@@ -311,15 +320,24 @@ class MapXtremePCIC:
         rlon = np.tile(data_cube['rlon'].values, data_cube['rlat'].shape[0]) + lon_grid_sz.values
 
         # create a dictionary from arrays
-        pd_dict = {'lat': lat, 'lon': lon, 'rlon': rlon, 'rlat': rlat, 'obs': obs}
+        pd_dict = {'lat': lat, 'lon': lon, 'rlon': rlon, 'rlat': rlat, 'obs': obs_array}
 
         # create dataframe from pd dict
         df = pd.DataFrame(pd_dict)
 
-        # drop all NaNs
-        #df = df.dropna()
+        # create column with values as 
+        # observation array 
+        df['obs'] = obs_array
 
-        df = df.sample(frac=frac)
+        # create coolean column with True for any
+        # column array with nan values
+        df['isnan_arr'] = nan_row_list
+
+        # filter out any nan values
+        # equivalent to pd.DataFrame.dropna()
+        df = df[df['isnan_arr'] == True]
+
+        df = df.sample(frac=frac, random_state = seed)
 
         # reasemble the xarray Dataset
         lat_r = np.reshape(lat, (data_cube['lat'].shape[0], data_cube['lat'].shape[1]))
@@ -328,9 +346,9 @@ class MapXtremePCIC:
         rlat_r = np.unique(rlat)
         rlon_r = np.unique(rlon)
 
-        obs_r = np.reshape(obs, (data_cube['obs'].shape[0], data_cube['obs'].shape[1]))
+        obs_r = np.reshape(obs, (data_cube['obs'].shape[0], data_cube['obs'].shape[1], data_cube['obs'].shape[2]))
 
-        ds = xr.Dataset({'obs': (['x', 'y'], obs_r)}, 
+        ds = xr.Dataset({'obs': (['x', 'y','run'], obs_r)}, 
                         coords = {'lon': (['x', 'y'], lon_r), 
                                   'lat': (['x', 'y'], lat_r), 
                                   'rlon': rlon_r, 
@@ -342,19 +360,28 @@ class MapXtremePCIC:
                                  'rlat': 'degrees'})
         return ds, df
     
-    def plot_scatter(MapXtreme, frac):
+    def plot_scatter(MapXtreme, frac, run = 0, seed = True):
+
+        if seed == True:
+            seed = np.random.randint(0, 100)
+
+        res = MapXtreme.res
+
         
-        df = MapXtremePCIC.sample(MapXtreme, frac)[1]
+        df = MapXtremePCIC.sample(MapXtreme, frac = frac, seed = seed)[1]
+
+        # get observations from run number
+        run_obs = np.asarray([df['obs'].iloc[i][0] for i in range(len(df))])
         
         np.seterr(invalid = 'ignore')
 
-        cmap = MapXtremePCIC.color_pallette(MapXtreme)
+        cmap = MapXtremePCIC.color_pallette()
 
         # ocean mask
-        ocean = MapXtremePCIC.ocean_mask(MapXtreme)
+        ocean = MapXtremePCIC.ocean_mask(res)
 
         # custom ax object with projection
-        rp = MapXtremePCIC.rp(MapXtreme)
+        rp = MapXtremePCIC.rp()
 
         plt.figure(figsize = (15, 15))
 
@@ -364,7 +391,7 @@ class MapXtremePCIC:
         ax.add_feature(ocean, zorder=2)
 
         # plot sampled design values with custom colormap
-        colorplot = ax.scatter(df['rlon'], df['rlat'], c = df['obs'], cmap = cmap, transform = rp, vmin=1., vmax=13.)
+        colorplot = ax.scatter(df['rlon'], df['rlat'], c = run_obs, cmap = cmap, transform = rp, vmin=1., vmax=13.)
         
         # make colorbar object
         cbar = plt.colorbar(colorplot, ax=ax, orientation="horizontal", fraction=0.07, pad=0.025)
