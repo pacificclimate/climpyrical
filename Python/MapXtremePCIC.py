@@ -1,6 +1,8 @@
 import glob
+import warnings
 
 import numpy as np
+import numpy.ma as ma
 import pandas as pd
 import xarray as xr
 import netCDF4 as nc
@@ -32,12 +34,13 @@ class MapXtremePCIC:
      
     Author : Nic Annau at PCIC, University of Victoria, nannau@uvic.ca
     """
-    def __init__(self, res, method, data_path):
+    def __init__(self, res, method, data_path, variable):
         #self.obs = obs
         self.res = res
         self.method = method
         self.data_path = data_path
-        
+        self.variable = variable
+
         # Check inputs
         if (type(data_path) != type('string')):
             raise ValueError('Method argument requires {} got {}'.format(type('string'), type(data_path)))    
@@ -56,8 +59,8 @@ class MapXtremePCIC:
             self.res = 50
 
         # Check map resolution type    
-        if (type(res) != type(1)):
-            raise ValueError('Mapping resolution requires {}, got {}'.format(type(1), type(res)))
+        if (type(res) != type('a')):
+            raise ValueError('Mapping resolution requires {}, got {}'.format(type('a'), type(res)))
 
         def read_data(PATH = data_path):
             """
@@ -68,7 +71,7 @@ class MapXtremePCIC:
             """
 
             # Create a list of all files in PATH
-            nc_list = np.asarray(glob.glob(PATH+"*"))
+            nc_list = np.asarray(glob.glob(PATH+"*.nc"))
 
             for path in nc_list:
                 if path.endswith('.nc') == False:
@@ -79,27 +82,29 @@ class MapXtremePCIC:
 
             inst = nc.Dataset(nc_list[0], 'r')
 
-            data_cube = np.ones((inst['lat'].shape[0], inst['lat'].shape[1], nc_list.shape[0]))*-999
+            data_cube = np.ones((inst['lat'].shape[0], inst['lat'].shape[1], nc_list.shape[0]))
 
             inst.close()
 
             for i, path in enumerate(nc_list):
                 run = nc.Dataset(path, 'r')
-                pr = run.variables['pr'][:, :]
-                data_cube[:, :, i] = pr
+                obs = run.variables[variable][:, :]
+                data_cube[:, :, i] = obs
 
             lat = run.variables['lat'][:, :]
             lon = run.variables['lon'][:, :]
 
             rlat = run.variables['rlat'][:]
             rlon = run.variables['rlon'][:]
-
-            ds = xr.Dataset({'pr': (['x', 'y', 'run'], data_cube)},
+            
+            run.close()
+            
+            ds = xr.Dataset({'obs': (['x', 'y', 'run'], data_cube)},
                             coords = {'lon': (['x', 'y'], lon),
                                       'lat': (['x', 'y'], lat),
                                       'rlon': rlon,
                                       'rlat': rlat},
-                            attrs = {'pr': 'mm h-1',
+                            attrs = {'obs': 'mm h-1',
                                     'lon': 'degrees',
                                     'lat': 'degrees',
                                     'rlon': 'degrees',
@@ -110,7 +115,26 @@ class MapXtremePCIC:
         self.load_data = read_data(data_path)
         
         
-    def ensemble_mean(self, data_cube):
+    def color_pallette():
+        # custom colormap
+        cmap = mpl.colors.ListedColormap(['#e11900', '#ff7d00', '#ff9f00', 
+                                          '#ffff01', '#c8ff32', '#64ff01', 
+                                          '#00c834', '#009695', '#0065ff', 
+                                          '#3232c8', '#dc00dc', '#ae00b1'])
+        return cmap
+
+    def ocean_mask(res):
+        ocean = cartopy.feature.NaturalEarthFeature('physical', 'ocean', res,
+                                        edgecolor='k',
+                                        facecolor='white')
+        return ocean
+    
+    def rp():
+        rp = ccrs.RotatedPole(pole_longitude=-97.45 + 180,
+                              pole_latitude=42.66)
+        return rp
+
+    def ensemble_mean(MapXtreme, frac = .02):
         """
         Returns ensemble mean of data region
 
@@ -122,6 +146,8 @@ class MapXtremePCIC:
         -------
         out : n x p array of ensemble mean of design values
         """
+
+        data_cube = MapXtreme.sample(MapXtreme, frac)
 
         # number of simulation runs
         n = data_cube['run'].values.shape[0]
@@ -136,7 +162,7 @@ class MapXtremePCIC:
         one_n = np.ones((n, n))
 
         # n x p reshaped data
-        X = np.reshape(data_cube['pr'].values, (data_cube['run'].shape[0], p))
+        X = np.reshape(data_cube['obs'].values, (data_cube['run'].shape[0], p))
 
         # change nan values to zero for proper mean
         X = np.nan_to_num(X, 0.0)
@@ -147,7 +173,7 @@ class MapXtremePCIC:
         return X_prime
     
     
-    def weight_matrix(self, data_cube):
+    def weight_matrix(MapXtreme, frac = 0.02):
         """
         Returns weighted array using fractional grid cell areas
 
@@ -159,7 +185,9 @@ class MapXtremePCIC:
         -------
         out : n x p weighted spatial array
         """
-        # calculate differences between array entires to get grid sizes
+        data_cube = MapXtreme.sample(MapXtreme, frac = 0.02)
+
+        # calculate differences between array entires to get approximate grid sizes
         lat = np.diff(data_cube['lat'].values, axis=0)[:, :-1]
         lon = np.diff(data_cube['lon'].values, axis=1)[:-1, :]
 
@@ -181,14 +209,14 @@ class MapXtremePCIC:
 
         # get the ensemble means but ignore the grids at the edges of the fields
         # since the area cannot be determined 
-        X_prime = MapXtremePCIC.ensemble_mean(self, data_cube)[:, 0:p]
+        X_prime = MapXtremePCIC.ensemble_mean(MapXtreme, frac)[:, 0:p]
 
         # apply fractional areas to get weighted array
         X_w = np.dot(X_prime, diag_f)
 
         return X_w
     
-    def plot_reference(self, data_cube):
+    def plot_reference(MapXtreme, run = 0):
         """
         Plots the mean value along the run axis of CanRCM4 simulations
 
@@ -201,73 +229,52 @@ class MapXtremePCIC:
         out : matplotlib axis object
 
         """
+        # Ignore NaN calculations(for better plotting, for any calculations)
+        np.seterr(invalid = 'ignore')
+
+        data_cube = MapXtreme.load_data
+        res = MapXtreme.res
+
         # take mean of all simulation runs
-        N = data_cube['pr'][:, :, 0]#.mean(axis=2)
-        # take away all 0.0 values for ocean
-        #N = N.where(N != np.nan)
-
-
+        N = data_cube['obs'][:, :, run]
+        
         rlat, rlon = data_cube['rlat'], data_cube['rlon']
 
-        # defined projection from pre-defined proj4 params
-        rp = ccrs.RotatedPole(pole_longitude=-97.45 + 180,
-                              pole_latitude=42.66)
         # custom colormap
+        cmap = MapXtremePCIC.color_pallette()
 
-        cdict = {'#e11900':(0, 2), '#ff7d00':(2, 3), '#ff9f00':(3, 4), 
-                 '#ffc801':(4, 5), '#ffff01':(5, 6), '#c8ff32':(6, 7), 
-                 '#64ff01':(7, 8), '#00c834':(8, 9), '#009695':(9, 10), 
-                 '#0065ff':(10, 11), '#3232c8':(11, 12), '#dc00dc':(12, 13), '#ae00b1':(13, 14)}
+        # ocean mask
+        ocean = MapXtremePCIC.ocean_mask(res)
 
-        cmap = mpl.colors.ListedColormap(cdict)
+        # custom ax object with projection
+        rp = MapXtremePCIC.rp()
 
-        cmap = mpl.colors.ListedColormap(['#e11900', '#ff7d00', '#ff9f00', 
-                                         '#ffff01', '#c8ff32', 
-                                         '#64ff01', '#00c834', '#009695', 
-                                         '#0065ff', '#3232c8', '#dc00dc', 
-                                         '#ae00b1'])
-
-        plt.figure(figsize=(15, 15))
+        plt.figure(figsize = (15, 15))
 
         # define projections
-        ax = plt.axes(projection=rp)
-        ax.coastlines('110m', linewidth=2.)
+        ax = plt.axes(projection = rp)
         ax.set_title('50-year daily precipitation [mm/h]', fontsize=30, verticalalignment='bottom')
-
+        ax.add_feature(ocean, zorder=2)
+        
         # plot design values with custom colormap
-        vmin = np.min(N)
         colorplot = plt.pcolormesh(rlon, rlat, N, transform=rp, cmap=cmap, vmin=1., vmax=13.)
-
-        # make colorbar object
         cbar = plt.colorbar(colorplot, ax=ax, orientation="horizontal", fraction=0.07, pad=0.025)
-
         cbar.ax.tick_params(labelsize=25)
 
         # constrain to data
         plt.xlim(rlon.min(), rlon.max())
         plt.ylim(rlat.min(), rlat.max())
-        plt.savefig('north_america_simulation_mean')
+
+        warnings.simplefilter("ignore")
+        #plt.savefig('north_america_simulation_mean')
+        
+        # undo the supress invalid warning
+        np.seterr(invalid = 'warn')
 
         return ax
 
-    def mask_ocean(self, data_cube):
-        """
-        Returns data cube containing only the land data
 
-        Parameters
-        ----------
-        xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
-
-        Returns
-        -------
-        out : xarray Dataset
-
-        """
-        data_cube_land = np.where(data_cube['pr'] != 0.0)
-        return data_cube_land
-
-
-    def sample(self, data_cube, frac):
+    def sample(MapXtreme, frac, run = 0):
         """
         Returns randomly sampled land data from an average of CanRCM4 runs
 
@@ -280,20 +287,23 @@ class MapXtremePCIC:
         -------
         out : xarray Dataset
 
-        """        
+        """
+
+        data_cube = MapXtreme.load_data
+
         # approximate grid size
         lat_grid_sz = ((data_cube['rlat'].max() - data_cube['rlat'].min())/data_cube['rlat'].shape[0])
         lon_grid_sz = ((data_cube['rlon'].max() - data_cube['rlon'].min())/data_cube['rlon'].shape[0])
 
         # construct a pandas dataframe
-        pr_n = data_cube['pr'][:, :, 0]#.mean(axis=2)
+        obs_n = data_cube['obs'][:, :, run]
 
         # reshape the lat/lon grids
         lat = np.reshape(data_cube['lat'].values, (data_cube['lat'].shape[0]*data_cube['lat'].shape[1]))
         lon = np.reshape(data_cube['lon'].values, (data_cube['lon'].shape[0]*data_cube['lon'].shape[1]))
 
-        # reshape the pr grids
-        pr = np.reshape(pr_n.values,  (data_cube['lat'].shape[0]*data_cube['lat'].shape[1]))
+        # reshape the obs grids
+        obs = np.reshape(obs_n.values,  (data_cube['lat'].shape[0]*data_cube['lat'].shape[1]))
 
         # set up repeating values of rlat, rlon times
         rlat = np.repeat(data_cube['rlat'].values, data_cube['rlon'].shape[0]) + lat_grid_sz.values
@@ -301,21 +311,14 @@ class MapXtremePCIC:
         rlon = np.tile(data_cube['rlon'].values, data_cube['rlat'].shape[0]) + lon_grid_sz.values
 
         # create a dictionary from arrays
-        pd_dict = {'lat': lat, 'lon': lon, 'rlon': rlon, 'rlat': rlat, 'pr': pr}
-
-
-        cdict = {'#e11900':1, '#ff7d00':2, '#ff9f00':3, 
-                 '#ffc801':4, '#ffff01':5, '#c8ff32':6, 
-                 '#64ff01':7, '#00c834':8, '#009695':9, 
-                 '#0065ff':10, '#3232c8':11, '#dc00dc':12, '#ae00b1':12}
-
-        cmap = mpl.colors.ListedColormap(cdict)
+        pd_dict = {'lat': lat, 'lon': lon, 'rlon': rlon, 'rlat': rlat, 'obs': obs}
 
         # create dataframe from pd dict
         df = pd.DataFrame(pd_dict)
-        # mask out ocean
-        df = df[df['pr'] != 0.0]
-        # take a random sample
+
+        # drop all NaNs
+        #df = df.dropna()
+
         df = df.sample(frac=frac)
 
         # reasemble the xarray Dataset
@@ -325,38 +328,44 @@ class MapXtremePCIC:
         rlat_r = np.unique(rlat)
         rlon_r = np.unique(rlon)
 
-        pr_r = np.reshape(pr, (data_cube['pr'].shape[0], data_cube['pr'].shape[1]))
+        obs_r = np.reshape(obs, (data_cube['obs'].shape[0], data_cube['obs'].shape[1]))
 
-        ds = xr.Dataset({'pr': (['x', 'y'], pr_r)}, 
+        ds = xr.Dataset({'obs': (['x', 'y'], obs_r)}, 
                         coords = {'lon': (['x', 'y'], lon_r), 
                                   'lat': (['x', 'y'], lat_r), 
                                   'rlon': rlon_r, 
                                   'rlat': rlat_r},
-                        attrs = {'pr': 'mm h-1',
+                        attrs = {'obs': 'mm h-1',
                                  'lon': 'degrees',
                                  'lat': 'degrees',
                                  'rlon': 'degrees',
                                  'rlat': 'degrees'})
         return ds, df
     
-    def plot_scatter(self, data_cube, frac):
+    def plot_scatter(MapXtreme, frac):
         
-        df = MapXtremePCIC.sample(self, data_cube, frac)[1]
+        df = MapXtremePCIC.sample(MapXtreme, frac)[1]
         
-        rp = ccrs.RotatedPole(pole_longitude=-97.45 + 180, pole_latitude=42.76)
-        
-        cdict = {'#e11900':1, '#ff7d00':2, '#ff9f00':3, 
-                 '#ffc801':4, '#ffff01':5, '#c8ff32':6, 
-                 '#64ff01':7, '#00c834':8, '#009695':9, 
-                 '#0065ff':10, '#3232c8':11, '#dc00dc':12, '#ae00b1':12}
+        np.seterr(invalid = 'ignore')
 
-        cmap = mpl.colors.ListedColormap(cdict)
+        cmap = MapXtremePCIC.color_pallette(MapXtreme)
+
+        # ocean mask
+        ocean = MapXtremePCIC.ocean_mask(MapXtreme)
+
+        # custom ax object with projection
+        rp = MapXtremePCIC.rp(MapXtreme)
 
         plt.figure(figsize = (15, 15))
-        ax = plt.axes(projection=rp)
-        ax.coastlines('110m', linewidth=2.)
 
-        colorplot = ax.scatter(df['rlon'], df['rlat'], c = df['pr'], cmap = cmap, transform = rp)
+        # define projections
+        ax = plt.axes(projection = rp)
+        ax.set_title('50-year daily precipitation [mm/h]', fontsize=30, verticalalignment='bottom')
+        ax.add_feature(ocean, zorder=2)
+
+        # plot sampled design values with custom colormap
+        colorplot = ax.scatter(df['rlon'], df['rlat'], c = df['obs'], cmap = cmap, transform = rp, vmin=1., vmax=13.)
+        
         # make colorbar object
         cbar = plt.colorbar(colorplot, ax=ax, orientation="horizontal", fraction=0.07, pad=0.025)
 
@@ -365,6 +374,8 @@ class MapXtremePCIC:
         # constrain to data
         plt.xlim(df['rlon'].min(), df['rlon'].max())
         plt.ylim(df['rlat'].min(), df['rlat'].max())
-        plt.savefig('north_america_scatter')
+        #plt.savefig('north_america_scatter')
+        np.seterr(invalid = 'warn')
+
         
         return ax
