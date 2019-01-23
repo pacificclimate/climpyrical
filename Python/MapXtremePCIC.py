@@ -134,7 +134,69 @@ class MapXtremePCIC:
                               pole_latitude=42.66)
         return rp
 
-    def ensemble_mean(MapXtreme, frac = .02):
+    def get_arr(MapXtreme, df):
+
+        ds = MapXtreme.load_data
+
+        n = ds['obs'].shape[2]
+        p = df.shape[0]
+
+        run_list = ['run{}'.format(i) for i in range(n)]
+
+        X = np.empty((n, p))
+
+        for i, run in enumerate(run_list):
+            run_obs = df[run].values
+            X[i, :] = run_obs
+        
+        return n, p, X
+            
+    def get_df(MapXtreme, run = 0):
+
+        ds = MapXtreme.load_data
+
+        # calculate the differences along each axis to get grid
+        # cell size - shape is 1 smaller because the 
+        lat_sz = np.abs(np.diff(np.sin(np.deg2rad(ds['lat'].values)), axis=0)[:, :-1])
+        lon_sz = np.abs(np.deg2rad(np.diff(ds['lon'].values, axis=1)[:-1, :]))
+
+        lat = np.deg2rad(ds['lat'].values[:-1, :-1])
+
+        R = 6371.
+        p = lat.shape[0]*lat.shape[1]
+
+        # calculate rectangular area on sphere
+        area = (lat_sz * lon_sz) * R**2
+
+        # reshape to be flat
+        grid_area_flat = np.reshape(area, p)
+
+        # set up repeating values of rlat, rlon times
+        rlat = np.repeat(ds['rlat'][:-1].values, ds['rlon'][:-1].shape[0])# + lat_grid_sz.values/2.
+        # set up repeating sequence of rlon, rlat times
+        rlon = np.tile(ds['rlon'][:-1].values, ds['rlat'][:-1].shape[0])# + lon_grid_sz.values/2.
+
+        # sized 1 less in each dimension because of diff
+        obs_n = ds['obs'][:-1, :-1, :].values
+
+        # reshape the obs grids
+        obs = np.reshape(obs_n,  (p, ds['obs'].shape[2]))
+
+        d = dict(('run{}'.format(i), obs[:, i]) for i in range(obs[0, :].shape[0]))
+
+        # create a dictionary from arrays
+        pd_dict = {'rlon': rlon, 'rlat': rlat, 'areas': grid_area_flat}
+
+        # create dataframe from dict
+        df = pd.DataFrame(pd_dict)
+
+        # set a column to each run in simulation
+        for i in range(obs[0, :].shape[0]):
+            df['run{}'.format(i)] = obs[:, i]
+
+        return df
+
+    def ensemble_mean(MapXtreme, df):
         """
         Returns ensemble mean of data region
 
@@ -147,13 +209,7 @@ class MapXtremePCIC:
         out : n x p array of ensemble mean of design values
         """
 
-        data_cube = MapXtreme.sample(MapXtreme, frac)
-
-        # number of simulation runs
-        n = data_cube['run'].values.shape[0]
-
-        # number of grids
-        p = data_cube['lat'].shape[0]*data_cube['lat'].shape[1]
+        n, p, X = MapXtremePCIC.get_arr(MapXtreme, df)
 
         # n x n identity matrix
         I_n = np.eye(n)
@@ -161,18 +217,37 @@ class MapXtremePCIC:
         # all ones n x n matrix
         one_n = np.ones((n, n))
 
-        # n x p reshaped data
-        X = np.reshape(data_cube['obs'].values, (data_cube['run'].shape[0], p))
-
-        # change nan values to zero for proper mean
-        X = np.nan_to_num(X, 0.0)
-
         # n x p ensemble mean
         X_prime = np.dot((I_n - (1.0/n)*one_n), X)
-
+            
         return X_prime
-    
-    
+
+    def inv_ensemble_mean(MapXtreme, df):
+        """
+        Returns ensemble mean of data region
+
+        Parameters
+        ----------
+        xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
+
+        Returns
+        -------
+        out : n x p array of ensemble mean of design values
+        """
+
+        n, p, X = MapXtremePCIC.get_arr(MapXtreme, df)
+
+        # n x n identity matrix
+        I_n = np.eye(n)
+
+        # all ones n x n matrix
+        one_n = np.ones((n, n))
+
+        # n x p ensemble mean
+        X_prime = np.dot(X, np.linalg.inv(I_n - (1.0/n)*one_n))
+            
+        return X_prime
+
     def weight_matrix(MapXtreme, frac = 0.02):
         """
         Returns weighted array using fractional grid cell areas
@@ -185,11 +260,13 @@ class MapXtremePCIC:
         -------
         out : n x p weighted spatial array
         """
-        data_cube = MapXtreme.sample(MapXtreme, frac = 0.02)
 
         # calculate differences between array entires to get approximate grid sizes
-        lat = np.diff(data_cube['lat'].values, axis=0)[:, :-1]
-        lon = np.diff(data_cube['lon'].values, axis=1)[:-1, :]
+        ds = MapXtremePCIC.load_data(MapXtreme)
+
+        # calculate differences between array entires to get grid sizes
+        lat = np.diff(ds['lat'].values, axis=0)[:, 1:]
+        lon = np.diff(ds['lon'].values, axis=1)[1:, :]
 
         # define size of p
         p = (lat.shape[0])*(lon.shape[1])
@@ -209,13 +286,13 @@ class MapXtremePCIC:
 
         # get the ensemble means but ignore the grids at the edges of the fields
         # since the area cannot be determined 
-        X_prime = MapXtremePCIC.ensemble_mean(MapXtreme, frac)[:, 0:p]
+        X_prime = MapXtremePCIC.ensemble_mean(MapXtreme, frac)[:, p:]
 
         # apply fractional areas to get weighted array
         X_w = np.dot(X_prime, diag_f)
 
         return X_w
-    
+        
     def plot_reference(MapXtreme, run = 0):
         """
         Plots the mean value along the run axis of CanRCM4 simulations
@@ -264,17 +341,13 @@ class MapXtremePCIC:
         # constrain to data
         plt.xlim(rlon.min(), rlon.max())
         plt.ylim(rlat.min(), rlat.max())
-
-        warnings.simplefilter("ignore")
-        #plt.savefig('north_america_simulation_mean')
-        
-        # undo the supress invalid warning
+      
+        # return/undo the supress invalid warning
         np.seterr(invalid = 'warn')
 
         return ax
 
-
-    def sample(MapXtreme, frac, run = 0, seed = True):
+    def sample(MapXtreme, frac, run = 0, seed = True, dropna = True):
         """
         Returns randomly sampled land data from an average of CanRCM4 runs
 
@@ -288,78 +361,56 @@ class MapXtremePCIC:
         out : xarray Dataset
 
         """
+
+        # check seed, generate random int if necessary
         if seed == True:
             seed = np.random.randint(0, 100)
 
-        data_cube = MapXtreme.load_data
+        ds = MapXtreme.load_data
 
-        # approximate grid size
-        lat_grid_sz = ((data_cube['rlat'].max() - data_cube['rlat'].min())/data_cube['rlat'].shape[0])
-        lon_grid_sz = ((data_cube['rlon'].max() - data_cube['rlon'].min())/data_cube['rlon'].shape[0])
+        lat = np.deg2rad(ds['lat'].values[:-1, :-1])
 
-        # construct a pandas dataframe
-        obs_n = data_cube['obs'][:, :, :].values
+        R = 6371.
+        p = lat.shape[0]*lat.shape[1]
 
-        # reshape the lat/lon grids
-        lat = np.reshape(data_cube['lat'].values, (data_cube['lat'].shape[0]*data_cube['lat'].shape[1]))
-        lon = np.reshape(data_cube['lon'].values, (data_cube['lon'].shape[0]*data_cube['lon'].shape[1]))
+        # calculate the differences along each axis to get grid
+        # cell size - shape is 1 smaller because the 
+        lat_sz = np.abs(np.diff(np.sin(np.deg2rad(ds['lat'].values)), axis=0)[:, :-1])
+        lon_sz = np.abs(np.deg2rad(np.diff(ds['lon'].values, axis=1)[:-1, :]))
 
-        # reshape the obs grids
-        obs = np.reshape(obs_n,  (data_cube['lat'].shape[0]*data_cube['lat'].shape[1], data_cube['obs'].shape[2]))
+        # calculate rectangular area on sphere
+        area = (lat_sz * lon_sz) * R**2
 
-        # create array of arrays
-        obs_array = [row for row in obs]
-
-        # boolean list which is True for a obs value
-        # where any of the run numbers is nan
-        nan_row_list = [~np.any(np.isnan(row)) for row in obs_array]
+        # reshape to be flat
+        grid_area_flat = np.reshape(area, p)
 
         # set up repeating values of rlat, rlon times
-        rlat = np.repeat(data_cube['rlat'].values, data_cube['rlon'].shape[0]) + lat_grid_sz.values
+        rlat = np.repeat(ds['rlat'][:-1].values, ds['rlon'][:-1].shape[0])# + lat_grid_sz.values/2.
         # set up repeating sequence of rlon, rlat times
-        rlon = np.tile(data_cube['rlon'].values, data_cube['rlat'].shape[0]) + lon_grid_sz.values
+        rlon = np.tile(ds['rlon'][:-1].values, ds['rlat'][:-1].shape[0])# + lon_grid_sz.values/2.
 
         # create a dictionary from arrays
-        pd_dict = {'lat': lat, 'lon': lon, 'rlon': rlon, 'rlat': rlat, 'obs': obs_array}
+        pd_dict = {'rlon': rlon, 'rlat': rlat, 'areas': grid_area_flat}
 
-        # create dataframe from pd dict
+        # create dataframe from dict
         df = pd.DataFrame(pd_dict)
 
-        # create column with values as 
-        # observation array 
-        df['obs'] = obs_array
+        # sized 1 less in each dimension because of diff
+        obs_n = ds['obs'][:-1, :-1, :].values
 
-        # create coolean column with True for any
-        # column array with nan values
-        df['isnan_arr'] = nan_row_list
+        # reshape the obs grids
+        obs = np.reshape(obs_n,  (p, ds['obs'].shape[2]))
 
-        # filter out any nan values
-        # equivalent to pd.DataFrame.dropna()
-        df = df[df['isnan_arr'] == True]
-
+        # set a column to each run in simulation
+        for i in range(obs[0, :].shape[0]):
+            df['run{}'.format(i)] = obs[:, i]
+        
+        if dropna == True:
+            df = df.dropna()
         df = df.sample(frac=frac, random_state = seed)
 
-        # reasemble the xarray Dataset
-        lat_r = np.reshape(lat, (data_cube['lat'].shape[0], data_cube['lat'].shape[1]))
-        lon_r = np.reshape(lon, (data_cube['lon'].shape[0], data_cube['lon'].shape[1]))
+        return df
 
-        rlat_r = np.unique(rlat)
-        rlon_r = np.unique(rlon)
-
-        obs_r = np.reshape(obs, (data_cube['obs'].shape[0], data_cube['obs'].shape[1], data_cube['obs'].shape[2]))
-
-        ds = xr.Dataset({'obs': (['x', 'y','run'], obs_r)}, 
-                        coords = {'lon': (['x', 'y'], lon_r), 
-                                  'lat': (['x', 'y'], lat_r), 
-                                  'rlon': rlon_r, 
-                                  'rlat': rlat_r},
-                        attrs = {'obs': 'mm h-1',
-                                 'lon': 'degrees',
-                                 'lat': 'degrees',
-                                 'rlon': 'degrees',
-                                 'rlat': 'degrees'})
-        return ds, df
-    
     def plot_scatter(MapXtreme, frac, run = 0, seed = True):
 
         if seed == True:
@@ -371,7 +422,7 @@ class MapXtremePCIC:
         df = MapXtremePCIC.sample(MapXtreme, frac = frac, seed = seed)[1]
 
         # get observations from run number
-        run_obs = np.asarray([df['obs'].iloc[i][0] for i in range(len(df))])
+        run_obs = np.asarray([df['obs'].iloc[i][run] for i in range(len(df))])
         
         np.seterr(invalid = 'ignore')
 
