@@ -222,7 +222,7 @@ class MapXtremePCIC:
             
         return X_prime
 
-    def inv_ensemble_mean(MapXtreme, df):
+    def inv_ensemble_mean(MapXtreme, df = None, X = None):
         """
         Returns ensemble mean of data region
 
@@ -234,8 +234,11 @@ class MapXtremePCIC:
         -------
         out : n x p array of ensemble mean of design values
         """
+        if df != None:
+            n, p, X = MapXtremePCIC.get_arr(MapXtreme, df)
 
-        n, p, X = MapXtremePCIC.get_arr(MapXtreme, df)
+        if type(X) != None:
+            n, p = X.shape[1], X.shape[0]
 
         # n x n identity matrix
         I_n = np.eye(n)
@@ -244,7 +247,8 @@ class MapXtremePCIC:
         one_n = np.ones((n, n))
 
         # n x p ensemble mean
-        X_prime = np.dot(X, np.linalg.inv(I_n - (1.0/n)*one_n))
+        Ids = np.linalg.inv(I_n - (1.0/n)*one_n)
+        X_prime = np.dot(X, Ids)
             
         return X_prime
 
