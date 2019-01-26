@@ -351,7 +351,28 @@ class MapXtremePCIC:
 
         return ax
 
-    def sample(MapXtreme, frac, run = 0, seed = True, dropna = True):
+    def grid_area(ds, R = 6371.0):
+
+        lat = np.deg2rad(ds['lat'].values[:-1, :-1])
+
+        p = lat.shape[0]*lat.shape[1]
+
+        # calculate the differences along each axis to get grid
+        # cell size - shape is 1 smaller because the end point doesn't have a grid area. 
+        lat_sz = np.abs(np.diff(np.sin(np.deg2rad(ds['lat'].values)), axis=0)[:, :-1])
+        lon_sz = np.abs(np.deg2rad(np.diff(ds['lon'].values, axis=1)[:-1, :]))
+
+        # calculate rectangular area on sphere. 
+        area = (lat_sz * lon_sz) * R**2
+
+        # reshape to be flat
+        grid_area_flat = np.reshape(area, p)
+
+        return grid_area_flat
+
+
+
+    def sample(ds, frac, run = 0, seed = True, dropna = True):
         """
         Returns randomly sampled land data from an average of CanRCM4 runs
 
@@ -362,36 +383,22 @@ class MapXtremePCIC:
 
         Returns
         -------
-        out : xarray Dataset
+        out : sampled pandas df
 
         """
+
+        p = (ds['lat'].shape[0]-1)*(ds['lat'].shape[1]-1)
+
+        # set up repeating values of rlat, rlon times
+        rlat = np.repeat(ds['rlat'][:-1].values, ds['rlon'][:-1].shape[0])
+        # set up repeating sequence of rlon, rlat times
+        rlon = np.tile(ds['rlon'][:-1].values, ds['rlat'][:-1].shape[0])
+
+        grid_area_flat = MapXtremePCIC.grid_area(ds)
 
         # check seed, generate random int if necessary
         if seed == True:
             seed = np.random.randint(0, 100)
-
-        ds = MapXtreme.load_data
-
-        lat = np.deg2rad(ds['lat'].values[:-1, :-1])
-
-        R = 6371.
-        p = lat.shape[0]*lat.shape[1]
-
-        # calculate the differences along each axis to get grid
-        # cell size - shape is 1 smaller because the 
-        lat_sz = np.abs(np.diff(np.sin(np.deg2rad(ds['lat'].values)), axis=0)[:, :-1])
-        lon_sz = np.abs(np.deg2rad(np.diff(ds['lon'].values, axis=1)[:-1, :]))
-
-        # calculate rectangular area on sphere
-        area = (lat_sz * lon_sz) * R**2
-
-        # reshape to be flat
-        grid_area_flat = np.reshape(area, p)
-
-        # set up repeating values of rlat, rlon times
-        rlat = np.repeat(ds['rlat'][:-1].values, ds['rlon'][:-1].shape[0])# + lat_grid_sz.values/2.
-        # set up repeating sequence of rlon, rlat times
-        rlon = np.tile(ds['rlon'][:-1].values, ds['rlat'][:-1].shape[0])# + lon_grid_sz.values/2.
 
         # create a dictionary from arrays
         pd_dict = {'rlon': rlon, 'rlat': rlat, 'areas': grid_area_flat}
@@ -400,10 +407,10 @@ class MapXtremePCIC:
         df = pd.DataFrame(pd_dict)
 
         # sized 1 less in each dimension because of diff
-        obs_n = ds['obs'][:-1, :-1, :].values
+        obs = ds['obs'][:-1, :-1, :].values
 
         # reshape the obs grids
-        obs = np.reshape(obs_n,  (p, ds['obs'].shape[2]))
+        obs = np.reshape(obs,  (p, ds['obs'].shape[2]))
 
         # set a column to each run in simulation
         for i in range(obs[0, :].shape[0]):
