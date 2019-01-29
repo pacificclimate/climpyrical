@@ -13,6 +13,7 @@ import cartopy.feature
 
 
 class MapXtremePCIC:
+
     """ 
     MapXtremePCIC maps design values over North America
     ====================================================
@@ -34,12 +35,14 @@ class MapXtremePCIC:
      
     Author : Nic Annau at PCIC, University of Victoria, nannau@uvic.ca
     """
-    def __init__(self, res, method, data_path, variable):
+
+    def __init__(self, res, method, data_path, variable,  R = 6371.0):
         #self.obs = obs
         self.res = res
         self.method = method
         self.data_path = data_path
         self.variable = variable
+        self.R = R
 
         # Check inputs
         if (type(data_path) != type('string')):
@@ -62,60 +65,61 @@ class MapXtremePCIC:
         if (type(res) != type('a')):
             raise ValueError('Mapping resolution requires {}, got {}'.format(type('a'), type(res)))
 
-        def read_data(PATH = data_path):
-            """
-            Arguments
-              Path to data directory with netcdf files
-            Value
-              Data cube with lat and lon keys
-            """
+    def read_data(self):
+        """
+        Arguments
+          Path to data directory with netcdf files
+        Value
+          Data cube with lat and lon keys
+        """
 
-            # Create a list of all files in PATH
-            nc_list = np.asarray(glob.glob(PATH+"*.nc"))
+        PATH = self.data_path
+        variable = self.variable
 
-            for path in nc_list:
-                if path.endswith('.nc') == False:
-                    raise IOError('{} is not a supported file type. Data directory must have only .nc files'.format(path))
+        # Create a list of all files in PATH
+        nc_list = np.asarray(glob.glob(PATH+"*.nc"))
 
-            # Create list with datasets as entries
-            dataset_list = np.empty(nc_list.shape) 
+        for path in nc_list:
+            if path.endswith('.nc') == False:
+                raise IOError('{} is not a supported file type. Data directory must have only .nc files'.format(path))
 
-            inst = nc.Dataset(nc_list[0], 'r')
+        # Create list with datasets as entries
+        dataset_list = np.empty(nc_list.shape) 
 
-            data_cube = np.ones((inst['lat'].shape[0], inst['lat'].shape[1], nc_list.shape[0]))
+        inst = nc.Dataset(nc_list[0], 'r')
 
-            inst.close()
+        data_cube = np.ones((inst['lat'].shape[0], inst['lat'].shape[1], nc_list.shape[0]))
 
-            for i, path in enumerate(nc_list):
-                run = nc.Dataset(path, 'r')
-                obs = run.variables[variable][:, :]
-                data_cube[:, :, i] = obs
+        inst.close()
 
-            lat = run.variables['lat'][:, :]
-            lon = run.variables['lon'][:, :]
+        for i, path in enumerate(nc_list):
+            run = nc.Dataset(path, 'r')
+            obs = run.variables[variable][:, :]
+            data_cube[:, :, i] = obs
 
-            rlat = run.variables['rlat'][:]
-            rlon = run.variables['rlon'][:]
-            
-            run.close()
-            
-            ds = xr.Dataset({'obs': (['x', 'y', 'run'], data_cube)},
-                            coords = {'lon': (['x', 'y'], lon),
-                                      'lat': (['x', 'y'], lat),
-                                      'rlon': rlon,
-                                      'rlat': rlat},
-                            attrs = {'obs': 'mm h-1',
-                                    'lon': 'degrees',
-                                    'lat': 'degrees',
-                                    'rlon': 'degrees',
-                                    'rlat': 'degrees'})
+        lat = run.variables['lat'][:, :]
+        lon = run.variables['lon'][:, :]
 
-            return ds
+        rlat = run.variables['rlat'][:]
+        rlon = run.variables['rlon'][:]
+        
+        run.close()
+        
+        ds = xr.Dataset({'obs': (['x', 'y', 'run'], data_cube)},
+                        coords = {'lon': (['x', 'y'], lon),
+                                  'lat': (['x', 'y'], lat),
+                                  'rlon': rlon,
+                                  'rlat': rlat},
+                        attrs = {'obs': 'mm h-1',
+                                'lon': 'degrees',
+                                'lat': 'degrees',
+                                'rlon': 'degrees',
+                                'rlat': 'degrees'})
 
-        self.load_data = read_data(data_path)
+        return ds
         
         
-    def color_pallette():
+    def color_pallette(self):
         # custom colormap
         cmap = mpl.colors.ListedColormap(['#e11900', '#ff7d00', '#ff9f00', 
                                           '#ffff01', '#c8ff32', '#64ff01', 
@@ -123,22 +127,69 @@ class MapXtremePCIC:
                                           '#3232c8', '#dc00dc', '#ae00b1'])
         return cmap
 
-    def ocean_mask(res):
-        ocean = cartopy.feature.NaturalEarthFeature('physical', 'ocean', res,
+    def ocean_mask(self):
+        ocean = cartopy.feature.NaturalEarthFeature('physical', 'ocean', self.res,
                                         edgecolor='k',
                                         facecolor='white')
         return ocean
     
-    def rp():
+    def rp(self):
         rp = ccrs.RotatedPole(pole_longitude=-97.45 + 180,
                               pole_latitude=42.66)
         return rp
 
-    def get_arr(MapXtreme, df):
+    def grid_area(self):
+        """
+        Returns array of areas for grid space, calculated from rectangular section
+        on the sphere.
 
-        ds = MapXtreme.load_data
+        Parameters 
+        ----------
+        xarray : data cube from which to pull areas
+        float : radius of earth
+        """
+        ds = self.read_data()
+        R = self.R
 
-        n = ds['obs'].shape[2]
+        lat = np.deg2rad(ds['lat'].values[:-1, :-1])
+
+        p = lat.shape[0]*lat.shape[1]
+
+        # calculate the differences along each axis to get grid
+        # cell size - shape is 1 smaller because the end point doesn't have a grid area. 
+        lat_sz = np.abs(np.diff(np.sin(np.deg2rad(ds['lat'].values)), axis=0)[:, :-1])
+        lon_sz = np.abs(np.deg2rad(np.diff(ds['lon'].values, axis=1)[:-1, :]))
+
+        # calculate rectangular area on sphere. 
+        area = (lat_sz * lon_sz) * R**2
+
+        # reshape to be flat
+        grid_area_flat = np.reshape(area, p)
+
+        return grid_area_flat, area, p 
+
+    def get_arr(self, df = None):
+        """
+        Converts pandas dataframe containing runs as columns organized from dataset 
+        to n x p array
+
+        Parameters
+        ----------
+        pandas dataframe : full dataframe with each run labelled as in MapXtremePCIC.get_df
+
+        Returns
+        -------
+        out : n x p array containing design values
+        """
+        if df is None:
+            df = self.get_df()
+
+        n = 0
+
+        for column in df.columns:
+            if 'run' in column:
+                n += 1 
+
         p = df.shape[0]
 
         run_list = ['run{}'.format(i) for i in range(n)]
@@ -151,25 +202,23 @@ class MapXtremePCIC:
         
         return n, p, X
             
-    def get_df(MapXtreme, run = 0):
+    def get_df(self, ds = None):
+        """
+        Converts xarray Dataset to pandas dataframe
 
-        ds = MapXtreme.load_data
+        Parameters
+        ----------
+        xarray Dataset : Data cube with geospatial and field data for ensemble of CanRCM4 data
 
-        # calculate the differences along each axis to get grid
-        # cell size - shape is 1 smaller because the 
-        lat_sz = np.abs(np.diff(np.sin(np.deg2rad(ds['lat'].values)), axis=0)[:, :-1])
-        lon_sz = np.abs(np.deg2rad(np.diff(ds['lon'].values, axis=1)[:-1, :]))
-
-        lat = np.deg2rad(ds['lat'].values[:-1, :-1])
-
-        R = 6371.
-        p = lat.shape[0]*lat.shape[1]
-
-        # calculate rectangular area on sphere
-        area = (lat_sz * lon_sz) * R**2
+        Returns
+        -------
+        out : pandas dataframe in rotated polar coordinates
+        """
+        if ds is None:
+            ds = self.read_data()
 
         # reshape to be flat
-        grid_area_flat = np.reshape(area, p)
+        grid_area_flat, area, p = self.grid_area()
 
         # set up repeating values of rlat, rlon times
         rlat = np.repeat(ds['rlat'][:-1].values, ds['rlon'][:-1].shape[0])# + lat_grid_sz.values/2.
@@ -196,9 +245,10 @@ class MapXtremePCIC:
 
         return df
 
-    def ensemble_mean(MapXtreme, df):
+
+    def weight_matrix(self):
         """
-        Returns ensemble mean of data region
+        Returns fractional weighting array using fractional grid cell areas
 
         Parameters
         ----------
@@ -206,98 +256,103 @@ class MapXtremePCIC:
 
         Returns
         -------
-        out : n x p array of ensemble mean of design values
+        pandas Series : n x p weighted spatial array
         """
+        grid_areas_flat, area, p = self.grid_area()
 
-        n, p, X = MapXtremePCIC.get_arr(MapXtreme, df)
-
-        # n x n identity matrix
-        I_n = np.eye(n)
-
-        # all ones n x n matrix
-        one_n = np.ones((n, n))
-
-        # n x p ensemble mean
-        X_prime = np.dot((I_n - (1.0/n)*one_n), X)
-            
-        return X_prime
-
-    def inv_ensemble_mean(MapXtreme, df = None, X = None):
-        """
-        Returns ensemble mean of data region
-
-        Parameters
-        ----------
-        xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
-
-        Returns
-        -------
-        out : n x p array of ensemble mean of design values
-        """
-        if df != None:
-            n, p, X = MapXtremePCIC.get_arr(MapXtreme, df)
-
-        if type(X) != None:
-            n, p = X.shape[1], X.shape[0]
-
-        # n x n identity matrix
-        I_n = np.eye(n)
-
-        # all ones n x n matrix
-        one_n = np.ones((n, n))
-
-        # n x p ensemble mean
-        Ids = np.linalg.inv(I_n - (1.0/n)*one_n)
-        X_prime = np.dot(X, Ids)
-            
-        return X_prime
-
-    def weight_matrix(MapXtreme, frac = 0.02):
-        """
-        Returns weighted array using fractional grid cell areas
-
-        Parameters
-        ----------
-        xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
-
-        Returns
-        -------
-        out : n x p weighted spatial array
-        """
-
-        # calculate differences between array entires to get approximate grid sizes
-        ds = MapXtremePCIC.load_data(MapXtreme)
-
-        # calculate differences between array entires to get grid sizes
-        lat = np.diff(ds['lat'].values, axis=0)[:, 1:]
-        lon = np.diff(ds['lon'].values, axis=1)[1:, :]
-
-        # define size of p
-        p = (lat.shape[0])*(lon.shape[1])
-
-        # multiply each grid size by each other and sum 
-        grid_areas = np.multiply(lon, lat)
-        total_area = np.sum(grid_areas)
+        total_area = np.sum(grid_areas_flat)
 
         # divide by total area of grids
-        fractional_areas = (1.0/total_area)*grid_areas
+        fractional_areas = (1.0/total_area)*grid_areas_flat
 
         # reshape from p1 x p2 to 1 x p
-        f = np.reshape(fractional_areas, p)
+        f = pd.Series(np.reshape(fractional_areas, p))
 
-        # diagonalize reshapes fractional areas vector
-        diag_f = np.diag(f)
+        return f
 
-        # get the ensemble means but ignore the grids at the edges of the fields
-        # since the area cannot be determined 
-        X_prime = MapXtremePCIC.ensemble_mean(MapXtreme, frac)[:, p:]
+    def ensemble_mean(self, df = None, reverse = False):
+        """
+        Returns ensemble mean of data region for all runs
 
-        # apply fractional areas to get weighted array
-        X_w = np.dot(X_prime, diag_f)
+        Parameters
+        ----------
+        pandas dataframe : Data cube with geospatial and field data for ensemble of CanRCM4 data
 
-        return X_w
+        Returns
+        -------
+        out : n x p array of ensemble mean of design values
+        """
+
+        np.seterr(invalid = 'ignore')
+
+        # Check df input is defined, if not, get it from object
+        df_no_mean_corr = self.get_df()
+
+        if df is None:
+            if reverse == True:
+                warnings.warn("Incorrect mean if you do not provide a previously corrected dataframe")
+
+            df = self.get_df()
+
+        df_copy = df.copy()
+
+        # apply the mean correction if false
+        for column in df.columns:
+            if 'run' in column:
+                mean = df_no_mean_corr[column].mean()
+                if reverse == False:
+                    df_copy[column] =  df[column].subtract(mean)
+                # undo the mean correction if true
+                if reverse == True:
+                    df_copy[column] =  df[column].add(mean)
+
+        np.seterr(invalid = 'warn')
+
+        return df_copy
+
+    def standard_matrix(self, df = None, reverse = False, mean_run = None):
+        """
+        Returns weighted and standardized array using fractional grid cell areas
+
+        Returns
+        -------
+        ndarray : n x p weighted amd standardized spatial array
+        """
         
-    def plot_reference(MapXtreme, run = 0):
+        if df is None:
+
+            if reverse == True:
+                warnings.warn("Incorrect mean if you do not provide a previously corrected dataframe")
+
+            df = self.ensemble_mean(reverse = False)
+
+        df_copy = df.copy()
+        df_return = df.copy()
+        df_no_mean_corr = self.get_df()
+
+        #df = self.ensemble_mean(df, reverse = reverse)
+
+        f = self.weight_matrix()
+        for column in df_no_mean_corr.columns:
+            if 'run' in column:
+                mean = df_no_mean_corr[column].mean()
+                if reverse == False:
+                    df_copy[column] = df[column].multiply(f, axis = 0)
+                    df_return[column] = df_copy[column]
+
+                if reverse == True:
+                    df_copy[column] = df[column].div(f, axis = 0)
+                    df_return[column] = df_copy[column].add(mean)
+        
+        if mean_run is not None:
+            if reverse == True:
+                mean = df_no_mean_corr['run{}'.format(mean_run)].mean()
+                df_copy['run_eof'] = df_copy['run_eof'].div(f, axis = 0)
+                df_return['run_eof'] = df_copy['run_eof'].add(mean)
+
+        return df_return
+
+    def plot_reference(self, run = 0):
         """
         Plots the mean value along the run axis of CanRCM4 simulations
 
@@ -313,8 +368,8 @@ class MapXtremePCIC:
         # Ignore NaN calculations(for better plotting, for any calculations)
         np.seterr(invalid = 'ignore')
 
-        data_cube = MapXtreme.load_data
-        res = MapXtreme.res
+        data_cube = self.read_data()
+        res = self.res
 
         # take mean of all simulation runs
         N = data_cube['obs'][:, :, run]
@@ -322,13 +377,13 @@ class MapXtremePCIC:
         rlat, rlon = data_cube['rlat'], data_cube['rlon']
 
         # custom colormap
-        cmap = MapXtremePCIC.color_pallette()
+        cmap = self.color_pallette()
 
         # ocean mask
-        ocean = MapXtremePCIC.ocean_mask(res)
+        ocean = self.ocean_mask(res)
 
         # custom ax object with projection
-        rp = MapXtremePCIC.rp()
+        rp = self.rp()
 
         plt.figure(figsize = (15, 15))
 
@@ -351,76 +406,37 @@ class MapXtremePCIC:
 
         return ax
 
-    def grid_area(ds, R = 6371.0):
-
-        lat = np.deg2rad(ds['lat'].values[:-1, :-1])
-
-        p = lat.shape[0]*lat.shape[1]
-
-        # calculate the differences along each axis to get grid
-        # cell size - shape is 1 smaller because the end point doesn't have a grid area. 
-        lat_sz = np.abs(np.diff(np.sin(np.deg2rad(ds['lat'].values)), axis=0)[:, :-1])
-        lon_sz = np.abs(np.deg2rad(np.diff(ds['lon'].values, axis=1)[:-1, :]))
-
-        # calculate rectangular area on sphere. 
-        area = (lat_sz * lon_sz) * R**2
-
-        # reshape to be flat
-        grid_area_flat = np.reshape(area, p)
-
-        return grid_area_flat
-
-
-
-    def sample(ds, frac, run = 0, seed = True, dropna = True):
+    def sample(self, df = None, frac = 0.02, seed = None, dropna = True):
         """
         Returns randomly sampled land data from an average of CanRCM4 runs
 
         Parameters
         ----------
-        xarray dict : Data cube with geospatial and field data for ensemble of CanRCM4 data
-        float : fraction of dataset desired
-
+        float : fraction of data to return
+        int   : random state which to use. Use the same integer to preserve sample that is randomly
+        sampled between calls to the function. If None, returns a new random sample each call to the function.  
+        
         Returns
         -------
         out : sampled pandas df
-
         """
-
-        p = (ds['lat'].shape[0]-1)*(ds['lat'].shape[1]-1)
-
-        # set up repeating values of rlat, rlon times
-        rlat = np.repeat(ds['rlat'][:-1].values, ds['rlon'][:-1].shape[0])
-        # set up repeating sequence of rlon, rlat times
-        rlon = np.tile(ds['rlon'][:-1].values, ds['rlat'][:-1].shape[0])
-
-        grid_area_flat = MapXtremePCIC.grid_area(ds)
-
-        # check seed, generate random int if necessary
-        if seed == True:
-            seed = np.random.randint(0, 100)
-
-        # create a dictionary from arrays
-        pd_dict = {'rlon': rlon, 'rlat': rlat, 'areas': grid_area_flat}
-
-        # create dataframe from dict
-        df = pd.DataFrame(pd_dict)
-
-        # sized 1 less in each dimension because of diff
-        obs = ds['obs'][:-1, :-1, :].values
-
-        # reshape the obs grids
-        obs = np.reshape(obs,  (p, ds['obs'].shape[2]))
-
-        # set a column to each run in simulation
-        for i in range(obs[0, :].shape[0]):
-            df['run{}'.format(i)] = obs[:, i]
+        if df is None:
+            df = self.get_df()
         
         if dropna == True:
             df = df.dropna()
+
         df = df.sample(frac=frac, random_state = seed)
 
         return df
+
+    def pseudo_obs(self, df = None, run = 0, frac = 0.02, seed = None):
+
+        if df is None:
+            df = self.get_df()
+
+
+
 
     def plot_scatter(MapXtreme, frac, run = 0, seed = True):
 
@@ -463,8 +479,6 @@ class MapXtremePCIC:
         # constrain to data
         plt.xlim(df['rlon'].min(), df['rlon'].max())
         plt.ylim(df['rlat'].min(), df['rlat'].max())
-        #plt.savefig('north_america_scatter')
         np.seterr(invalid = 'warn')
-
         
         return ax
