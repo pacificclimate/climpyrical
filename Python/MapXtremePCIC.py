@@ -134,8 +134,8 @@ class MapXtremePCIC:
         return ocean
     
     def rp(self):
-        rp = ccrs.RotatedPole(pole_longitude=-97.45 + 180,
-                              pole_latitude=42.66)
+        rp = ccrs.RotatedPole(pole_longitude=-97 + 180,
+                              pole_latitude=42.5)
         return rp
 
     def grid_area(self):
@@ -184,15 +184,10 @@ class MapXtremePCIC:
         if df is None:
             df = self.get_df()
 
-        n = 0
+        run_list = [column for column in df.columns if 'run' in column]
 
-        for column in df.columns:
-            if 'run' in column:
-                n += 1 
-
+        n = len(run_list)
         p = df.shape[0]
-
-        run_list = ['run{}'.format(i) for i in range(n)]
 
         X = np.empty((n, p))
 
@@ -220,10 +215,13 @@ class MapXtremePCIC:
         # reshape to be flat
         grid_area_flat, area, p = self.grid_area()
 
+        tolerance_rlat = np.diff(ds['rlat'].values).mean()/2.
+        tolerance_rlon = np.diff(ds['rlon'].values).mean()/2.
+
         # set up repeating values of rlat, rlon times
-        rlat = np.repeat(ds['rlat'][:-1].values, ds['rlon'][:-1].shape[0])# + lat_grid_sz.values/2.
+        rlat = np.repeat(ds['rlat'][:-1].values, ds['rlon'][:-1].shape[0]) #+ tolerance_rlon
         # set up repeating sequence of rlon, rlat times
-        rlon = np.tile(ds['rlon'][:-1].values, ds['rlat'][:-1].shape[0])# + lon_grid_sz.values/2.
+        rlon = np.tile(ds['rlon'][:-1].values, ds['rlat'][:-1].shape[0]) #+ tolerance_rlat
 
         # sized 1 less in each dimension because of diff
         obs_n = ds['obs'][:-1, :-1, :].values
@@ -284,31 +282,37 @@ class MapXtremePCIC:
         """
 
         np.seterr(invalid = 'ignore')
-
         # Check df input is defined, if not, get it from object
         df_no_mean_corr = self.get_df()
 
         if df is None:
             if reverse == True:
-                warnings.warn("Incorrect mean if you do not provide a previously corrected dataframe")
+                warnings.warn("Incorrect mean if previously corrected dataframe not provided.")
 
             df = self.get_df()
 
-        df_copy = df.copy()
+        run_list = [run for run in df_no_mean_corr.columns if "run" in run]
+        other_list = ['areas', 'rlat', 'rlon']
 
-        # apply the mean correction if false
-        for column in df.columns:
-            if 'run' in column:
-                mean = df_no_mean_corr[column].mean()
-                if reverse == False:
-                    df_copy[column] =  df[column].subtract(mean)
-                # undo the mean correction if true
-                if reverse == True:
-                    df_copy[column] =  df[column].add(mean)
+        df_runs = df_no_mean_corr[run_list].copy()
+        df_others = df_no_mean_corr[other_list].copy()
+
+        mean = df_runs.mean(axis = 1)
+
+        if reverse == False:
+            df_new = df_runs.subtract(mean, axis = 0)
+
+        if reverse == True:
+            df_new = df.add(mean, axis = 0)
+            df_new = df_new.drop(['areas', 'rlon', 'rlat'], axis = 1)
+
+        df_mean = pd.concat([df_others, df_new], axis = 1)
+        print(df_others.head())
+        print(df_new.head())
 
         np.seterr(invalid = 'warn')
 
-        return df_copy
+        return df_mean
 
     def standard_matrix(self, df = None, reverse = False, mean_run = None):
         """
@@ -330,29 +334,28 @@ class MapXtremePCIC:
         df_return = df.copy()
         df_no_mean_corr = self.get_df()
 
+        run_list = [run for run in df_no_mean_corr.columns if "run" in run]
+        df_runs = df_no_mean_corr[run_list].copy()
+        mean = df_runs.mean(axis = 1)
+
         #df = self.ensemble_mean(df, reverse = reverse)
 
         f = self.weight_matrix()
-        for column in df_no_mean_corr.columns:
+        for column in df:
             if 'run' in column:
-                mean = df_no_mean_corr[column].mean()
                 if reverse == False:
                     df_copy[column] = df[column].multiply(f, axis = 0)
                     df_return[column] = df_copy[column]
 
                 if reverse == True:
                     df_copy[column] = df[column].div(f, axis = 0)
-                    df_return[column] = df_copy[column].add(mean)
-        
-        if mean_run is not None:
-            if reverse == True:
-                mean = df_no_mean_corr['run{}'.format(mean_run)].mean()
-                df_copy['run_eof'] = df_copy['run_eof'].div(f, axis = 0)
-                df_return['run_eof'] = df_copy['run_eof'].add(mean)
+
+        if reverse == True:       
+            df_return = self.ensemble_mean(df_copy, reverse = True)
 
         return df_return
 
-    def plot_reference(self, run = 0):
+    def plot_reference(self, df = None, run = 'run0', plot_title = '50-year daily precipitation [mm/h]', save_fig = False):
         """
         Plots the mean value along the run axis of CanRCM4 simulations
 
@@ -368,38 +371,35 @@ class MapXtremePCIC:
         # Ignore NaN calculations(for better plotting, for any calculations)
         np.seterr(invalid = 'ignore')
 
-        data_cube = self.read_data()
-        res = self.res
+        if df is None:
+            df = self.get_df()
 
-        # take mean of all simulation runs
-        N = data_cube['obs'][:, :, run]
-        
-        rlat, rlon = data_cube['rlat'], data_cube['rlon']
-
-        # custom colormap
-        cmap = self.color_pallette()
-
-        # ocean mask
-        ocean = self.ocean_mask(res)
-
-        # custom ax object with projection
         rp = self.rp()
+        ocean = self.ocean_mask()
+        cmap = self.color_pallette()
 
         plt.figure(figsize = (15, 15))
 
+        rlon = df['rlon']
+        rlat = df['rlat']
+        field = df[run]
+
         # define projections
-        ax = plt.axes(projection = rp)
-        ax.set_title('50-year daily precipitation [mm/h]', fontsize=30, verticalalignment='bottom')
+        ax = plt.axes(projection=rp)#ccrs.PlateCarree())
+        ax.set_title(plot_title, fontsize=30, verticalalignment='bottom')
         ax.add_feature(ocean, zorder=2)
-        
+
         # plot design values with custom colormap
-        colorplot = plt.pcolormesh(rlon, rlat, N, transform=rp, cmap=cmap, vmin=1., vmax=13.)
+        colorplot = ax.scatter(rlon, rlat, c = field, marker='s', cmap=cmap, vmin=1., vmax=13.)
         cbar = plt.colorbar(colorplot, ax=ax, orientation="horizontal", fraction=0.07, pad=0.025)
         cbar.ax.tick_params(labelsize=25)
 
         # constrain to data
         plt.xlim(rlon.min(), rlon.max())
         plt.ylim(rlat.min(), rlat.max())
+
+        if save_fig:
+            plt.savefig(run)
       
         # return/undo the supress invalid warning
         np.seterr(invalid = 'warn')
@@ -430,13 +430,38 @@ class MapXtremePCIC:
 
         return df
 
-    def pseudo_obs(self, df = None, run = 0, frac = 0.02, seed = None):
+    def get_pseudo_obs(self, frac = 0.02, seed = True):
 
-        if df is None:
-            df = self.get_df()
+        if seed == True:
+            seed = np.random.randint(0, 100)
+    
+        df = self.get_df().dropna()
+        df_pseudo = self.ensemble_mean(df = df).dropna().sample(frac = frac, random_state = seed)
+        df_pseudo = self.standard_matrix(df_pseudo)
+        noise = np.random.normal(0, 0.05*df_pseudo['run0'].std(), df_pseudo.shape[0])
+        df_pseudo['run_pseudo'] = df_pseudo['run0'] + noise
+        
+        return df_pseudo
+    
+    def combine_model_obs(self, df_obs, df_model):
 
+        df_obs = df_obs[['rlat', 'rlon', 'run_pseudo']].copy()
 
+        df_obs['rlat_copy'] = df_obs['rlat']
+        df_obs['rlon_copy'] = df_obs['rlon']
 
+        tolerance_rlat = np.diff(df_model['rlat'].values).mean()/2.
+        tolerance_rlon = np.diff(df_model['rlon'].values).mean()/2.
+
+        df_result = df_model.merge(df_obs, how = 'outer', on = ['rlat', 'rlon']).copy()
+
+        df_result.loc[abs(df_result["rlat"]-df_result["rlat_copy"]) >= tolerance_rlat, :] = np.nan
+        #df_result = df_result[np.isfinite(df_result['rlat'])]
+
+        df_result.loc[abs(df_result["rlon"]-df_result["rlon_copy"]) >= tolerance_rlon, :] = np.nan
+        #df_result = df_result[np.isfinite(df_result['rlon'])]
+
+        return df_result
 
     def plot_scatter(MapXtreme, frac, run = 0, seed = True):
 
