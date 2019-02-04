@@ -438,7 +438,7 @@ class MapXtremePCIC:
         df = self.get_df().dropna()
         df_pseudo = self.ensemble_mean(df = df).dropna().sample(frac = frac, random_state = seed)
         df_pseudo = self.standard_matrix(df_pseudo)
-        noise = np.random.normal(0, 0.05*df_pseudo['run0'].std(), df_pseudo.shape[0])
+        noise = np.random.normal(0, 0.5*df_pseudo['run0'].std(), df_pseudo.shape[0])
         df_pseudo['run_pseudo'] = df_pseudo['run0'] + noise
         
         return df_pseudo
