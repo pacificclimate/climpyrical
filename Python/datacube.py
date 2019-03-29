@@ -12,7 +12,7 @@ def read_data(data_path):
         dv_key_name (Str): name of the design value as 
             in the netCDF file
     Returns:
-        xr (xarray Dataset): data cube of assembled ensemble models 
+        data_cube (xarray Dataset): data cube of assembled ensemble models 
             into a single variable
     """
     if not isinstance(data_path, str):
