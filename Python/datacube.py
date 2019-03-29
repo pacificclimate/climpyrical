@@ -15,9 +15,6 @@ def read_data(data_path):
         data_cube (xarray Dataset): data cube of assembled ensemble models 
             into a single variable
     """
-    if not isinstance(data_path, str):
-        raise TypeError("data_path must be a string, got {}"
-                        .format(type(data_path)))
 
     nc_list = np.asarray(glob.glob(data_path+"*.nc"))
     xr_list = [xr.open_dataset(path) for path in nc_list]        
