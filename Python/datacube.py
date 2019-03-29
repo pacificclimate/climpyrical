@@ -27,11 +27,6 @@ def read_data(data_path, dv_key_name):
     # Create a list of all files in PATH
     nc_list = np.asarray(glob.glob(data_path+"*.nc"))
 
-    for path in nc_list:
-        if path.endswith('.nc') is False:
-            raise IOError('{} is not a supported file type. Data directory \
-                          must have only .nc files'.format(path))
-
     # create an example NetCDF4 dataset
     inst = nc.Dataset(nc_list[0], 'r')
     data_cube = np.ones((inst['lat'].shape[0],
