@@ -28,15 +28,15 @@ def read_data(data_path):
     # be renamed to dv for references throughout
     # map-xtreme project
     for var in list(data_cube.variables):
-        grids = ['rlon', 'rlat', 'lon', 'lat']
-        if var not in grids:
-            var_name = var
-            data_cube = data_cube.rename({var_name: 'dv'})
-        else:
-            raise ValueError("Could not find design value key. \
-                             Check that CanRCM4 model contains lon, lat,\
-                             rlat, rlon and the design value key only.")
 
+        grids = ['rlon', 'rlat', 'lon', 'lat']
+        
+        if var not in grids and var in data_cube.variables:
+            data_cube = data_cube.rename({var: 'dv'})
+        
+        elif var not in data_cube.variables:
+            raise KeyError("Invalid CanRCM4 model. Design value key not found.")
+        
     return data_cube
 
 class DataReader:
