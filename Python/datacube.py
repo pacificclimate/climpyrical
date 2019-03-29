@@ -3,7 +3,7 @@ import glob
 import numpy as np
 import xarray as xr
 
-def read_data(data_path, dv_key_name):
+def read_data(data_path):
     """Load an ensemble of CanRCM4
     models into a single datacube.
     ------------------------------
@@ -18,10 +18,6 @@ def read_data(data_path, dv_key_name):
     if not isinstance(data_path, str):
         raise TypeError("data_path must be a string, got {}"
                         .format(type(data_path)))
-
-    if not isinstance(dv_key_name, str):
-        raise TypeError("dv_key_name must be a string, got {}"
-                        .format(type(dv_key_name)))
 
     nc_list = np.asarray(glob.glob(data_path+"*.nc"))
     xr.open_dataset(nc_list[0])
