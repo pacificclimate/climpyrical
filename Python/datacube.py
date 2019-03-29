@@ -2,7 +2,6 @@ import glob
 
 import numpy as np
 import xarray as xr
-import netCDF4 as nc
 
 def read_data(data_path, dv_key_name):
     """Load an ensemble of CanRCM4
@@ -24,45 +23,16 @@ def read_data(data_path, dv_key_name):
         raise TypeError("dv_key_name must be a string, got {}"
                         .format(type(dv_key_name)))
 
-    # Create a list of all files in PATH
-    nc_list = np.asarray(glob.glob(data_path+"*.nc"))
+    nc_list = np.asarray(glob.glob(PATH+"*.nc"))
+    xr.open_dataset(nc_list[0])
 
-    # create an example NetCDF4 dataset
-    inst = nc.Dataset(nc_list[0], 'r')
-    data_cube = np.ones((inst['lat'].shape[0],
-                         inst['lat'].shape[1],
-                         nc_list.shape[0]))
-
-    inst.close()
-
-    # iterate through files in path
-    # to create data cube
+    xr_list = []
     for i, path in enumerate(nc_list):
-        run = nc.Dataset(path, 'r')
-        dv = run.variables[dv_key_name][:, :]
-        data_cube[:, :, i] = dv
+        xr_list.append(xr.open_dataset(path))
+        
+    xr.concat(xr_list, 'run')
 
-    lat = run.variables['lat'][:, :]
-    lon = run.variables['lon'][:, :]
-
-    rlat = run.variables['rlat'][:]
-    rlon = run.variables['rlon'][:]
-
-    run.close()
-
-    # constrube datacube as an xarray dataset
-    ds = xr.Dataset({'dv': (['x', 'y', 'run'], data_cube)},
-                    coords={'lon': (['x', 'y'], lon),
-                            'lat': (['x', 'y'], lat),
-                            'rlon': rlon,
-                            'rlat': rlat},
-                    attrs={'dv': 'mm h-1',
-                           'lon': 'degrees',
-                           'lat': 'degrees',
-                           'rlon': 'degrees',
-                           'rlat': 'degrees'})
-
-    return ds
+    return xr
 
 class DataReader:
     def __init__(self, data_path, dv_key_name):
