@@ -20,14 +20,26 @@ def read_data(data_path):
                         .format(type(data_path)))
 
     nc_list = np.asarray(glob.glob(data_path+"*.nc"))
-
     xr_list = [xr.open_dataset(path) for path in nc_list]        
-    xr.concat(xr_list, 'run')
+    
+    data_cube = xr.concat(xr_list, 'run')
 
-    return xr
+    # find design value key so that it can
+    # be renamed to dv for references throughout
+    # map-xtreme project
+    for var in list(data_cube.variables):
+        grids = ['rlon', 'rlat', 'lon', 'lat']
+        if var not in grids:
+            var_name = var
+            data_cube = data_cube.rename({var_name: 'dv'})
+        else:
+            raise ValueError("Could not find design value key. \
+                             Check that CanRCM4 model contains lon, lat,\
+                             rlat, rlon and the design value key only.")
+
+    return data_cube
 
 class DataReader:
-    def __init__(self, data_path, dv_key_name):
+    def __init__(self, data_path):
         self.data_path = data_path
-        self.dv_key_name = dv_key_name
-        self.read_data = read_data(data_path, dv_key_name)
+        self.read_data = read_data(data_path)
