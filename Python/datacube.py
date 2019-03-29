@@ -22,10 +22,7 @@ def read_data(data_path):
     nc_list = np.asarray(glob.glob(data_path+"*.nc"))
     xr.open_dataset(nc_list[0])
 
-    xr_list = []
-    for i, path in enumerate(nc_list):
-        xr_list.append(xr.open_dataset(path))
-        
+    xr_list = [xr.open_dataset(path) for path in nc_list]        
     xr.concat(xr_list, 'run')
 
     return xr
