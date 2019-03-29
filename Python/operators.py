@@ -50,7 +50,7 @@ def weight_by_area(data_cube):
             containing an ensemble of 
             CanRCM4 models 
     Returns:
-        (xarray Dataset): design value datacube 
+        data_cube (xarray Dataset): design value datacube 
             weighted by area
     """
  
