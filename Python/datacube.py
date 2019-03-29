@@ -23,7 +23,7 @@ def read_data(data_path, dv_key_name):
         raise TypeError("dv_key_name must be a string, got {}"
                         .format(type(dv_key_name)))
 
-    nc_list = np.asarray(glob.glob(PATH+"*.nc"))
+    nc_list = np.asarray(glob.glob(data_path+"*.nc"))
     xr.open_dataset(nc_list[0])
 
     xr_list = []
