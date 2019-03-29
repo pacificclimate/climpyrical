@@ -28,7 +28,7 @@ def center_data(data_cube):
             containing an ensemble of 
             CanRCM4 models
     Returns:
-        X (xarray Dataset): mean centered
+        data_cube (xarray Dataset): mean centered
             datacube  
     """
     check_keys(data_cube)
@@ -37,10 +37,9 @@ def center_data(data_cube):
         warnings.simplefilter("ignore", category=RuntimeWarning)
         mean = data_cube['dv'].mean(dim='run', skipna=True)
 
-        X = data_cube
-        X['dv'] = data_cube['dv'] - mean
+        data_cube['dv'] = data_cube['dv'] - mean
 
-    return X
+    return data_cube
 
 def weight_by_area(data_cube):
     """Weights each CanRCM4 grid cell 
@@ -51,7 +50,7 @@ def weight_by_area(data_cube):
             containing an ensemble of 
             CanRCM4 models 
     Returns:
-        X (xarray Dataset): design value datacube 
+        (xarray Dataset): design value datacube 
             weighted by area
     """
  
@@ -71,11 +70,10 @@ def weight_by_area(data_cube):
     # calculate rectangular area on sphere.
     # note that radius wolud cancel out 
     # in fraction
-    area = (lat_sz * lon_sz)
+    area = (lat_sz*lon_sz)
     total_area = area*p
     frac_area = area/total_area
 
-    X = data_cube
-    X['dv'] = data_cube['dv']*frac_area
-    
-    return X
+    data_cube['dv'] = data_cube['dv']*frac_area
+
+    return data_cube
