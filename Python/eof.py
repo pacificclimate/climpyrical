@@ -18,9 +18,10 @@ def ensemble_reshape(data_cube):
     """
     check_keys(data_cube)
 
-    x_field = data_cube['dv']
-    n, p = cell_count(data_cube)
-    field_ens = np.reshape(x_field.values, (p, n))
+    dv_field = data_cube['dv']
+
+    ensemble_sz, n_grid_cells = cell_count(data_cube)
+    field_ens = np.reshape(dv_field.values, (ensemble_sz, n_grid_cells))
 
     return field_ens
 
