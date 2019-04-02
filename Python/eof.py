@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.decomposition import pca 
 from sklearn import linear_model
 
-from operators import *
+from operators import cell_count, center_data, weight_by_area
 
 def ensemble_reshape(data_cube):
     """Reshapes data cube into array shape 
@@ -25,7 +25,7 @@ def ensemble_reshape(data_cube):
     return field_ens
 
 def get_land(ensemble_arr):
-    """Gets indeces of nan values to 
+    """Gets indices of nan values to 
     identify where land or ocean is. 
     --------------------------------
     Args: 
@@ -33,7 +33,7 @@ def get_land(ensemble_arr):
             into number of cells x ensemble size
     Returns:
         (numpy.ndarray): 2-d array containing
-            the indeces of nan values
+            the indices of nan values
     """
     return np.isnan(ensemble_arr)
 
@@ -45,7 +45,7 @@ def rand_sample_index(p, frac):
         frac (float): fractional size of p 
             to sample
     Returns:
-        (numpy.ndarray): array containing indeces from 
+        (numpy.ndarray): array containing indices from 
             a fraction of 0 to p
     """
     index = np.random.choice(np.arange(p), int(frac*p))
@@ -78,7 +78,7 @@ def pseudo_obs(data_cube, frac=0.02):
     i = np.random.randint(0, n-1)
     y_land = Y_land[:, i]
 
-    # select random indeces
+    # select random indices
     index = rand_sample_index(p, frac)
     y_sample = y_land[index]
 
