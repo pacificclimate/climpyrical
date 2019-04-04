@@ -16,8 +16,7 @@ def masked_nan(ds):
         (numpy.ndarray): 2-d array containing
             the indices of nan values
     """
-    #mask = ma.masked_values(ds['dv'][0,:,:], np.nan)
-    mask = ma.masked_values(ds['dv'], np.nan)
+    mask = ma.masked_invalid(ds['dv'][0,:,:].values)
     return mask
 
 def ensemble_reshape(ds, mask=None):
@@ -37,7 +36,7 @@ def ensemble_reshape(ds, mask=None):
     """
     check_keys(ds)
     if mask is None:
-        mask = ma.masked_invalid(ds['dv'][0,:,:].values)
+        mask = masked_nan(ds)
 
     if not isinstance(mask, np.ma.core.MaskedArray):
         raise ValueError("Please provide a mask of type {}".format(np.ma.core.MaskedArray))
