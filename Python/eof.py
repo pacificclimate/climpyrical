@@ -190,7 +190,7 @@ def eof_pseudo_full(ds, mask=None):
         ds (xarray.Dataset): datacube
             containing an ens of CanRCM4 models
     Returns:
-        ds (xarray.DataArray): datacube
+        pred (xarray.DataArray): datacube
             containing an ens of CanRCM4 models
             with added eofs variable
     """
