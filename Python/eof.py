@@ -2,10 +2,12 @@ import numpy as np
 import numpy.ma as ma
 from sklearn.decomposition import pca 
 from sklearn import linear_model
+from sklearn.metrics import mean_squared_error, r2_score
+import statsmodels.api as sm
 
-from operators import check_keys, cell_count, center_data, weight_by_area
+from operators import check_keys, cell_count, ens_means, frac_grid_area
 
-def masked_nan(ds):
+def mask_nan(ds):
     """Gets indices of nan values to 
     identify where land or ocean is. 
     --------------------------------
@@ -16,10 +18,17 @@ def masked_nan(ds):
         (numpy.ndarray): 2-d array containing
             the indices of nan values
     """
+    dv_field = ds['dv'].values
     mask = ma.masked_invalid(ds['dv'][0,:,:].values)
     return mask
 
-def ensemble_reshape(ds, mask=None):
+def mask_flat(ds, mask):
+    dv_field = ds['dv'].values
+    n_grid_cells = dv_field.shape[1]*dv_field.shape[2]
+    mask = np.reshape(mask, n_grid_cells)
+    return mask
+
+def ens_flat(ds):
     """Reshapes data cube into array shape 
     for eof calculations. 
     --------------------------------
@@ -35,25 +44,13 @@ def ensemble_reshape(ds, mask=None):
             into number of cells x ensemble size
     """
     check_keys(ds)
-    if mask is None:
-        mask = masked_nan(ds)
-
-    if not isinstance(mask, np.ma.core.MaskedArray):
-        raise ValueError("Please provide a mask of type {}".format(np.ma.core.MaskedArray))
-
-    if mask.shape != ds['dv'][0,:,:].shape:
-        raise ValueError("Data and mask have incompatible shapes with {} and {}"
-                         .format(mask.shape, ds['dv'][0,:,:].shape))
 
     dv_field = ds['dv'].values
 
     ensemble_sz = dv_field.shape[0]
     n_grid_cells = dv_field.shape[1]*dv_field.shape[2]
 
-    mask = np.reshape(mask, n_grid_cells)
     dv_field = np.reshape(dv_field, (ensemble_sz, n_grid_cells))
-
-    dv_field = dv_field[:, ~mask.mask]
 
     return dv_field
 
@@ -62,19 +59,19 @@ def rand_sample_index(y_obs, frac):
     """Randomly sample a range of integers. 
     --------------------------------
     Args: 
-        p (int): maximum integer to sample
-        frac (float): fractional size of p 
+        y_obs (numpy.ndarray): array to be sampled
+        frac (float): fractional size of y_obs 
             to sample
     Returns:
-        (numpy.ndarray): array containing indices from 
-            a fraction of 0 to p
+        (numpy.ndarray): array containing indices of 
+            sampled values
     """
     n_grid_cells = y_obs.shape[0]
     index = np.random.choice(np.arange(n_grid_cells),
                              int(frac*n_grid_cells))
     return index
 
-def get_obs(ds):
+def get_obs(ensemble_arr):
     """Randomly sample a data cube to generate
     pseudo observations from ensemble. 
     --------------------------------
@@ -89,15 +86,12 @@ def get_obs(ds):
         index (numpy.ndarray): index locations 
             of y_sample from original ensemble size
     """
-    Y_ens = ensemble_reshape(ds)
-    
-    ensemble_sz = Y_ens.shape[0]
-    n_grid_cells = Y_ens.shape[1]
+    ensemble_sz = ensemble_arr.shape[0]
 
     # randomly select an ensemble member
-    # to spatially sample
-    i = np.random.randint(0, n_grid_cells-1)
-    y_obs = Y_ens[:, i]
+    # to sample
+    i = np.random.randint(0, ensemble_sz-1)
+    y_obs = ensemble_arr[i, :]
 
     return y_obs
 
@@ -114,13 +108,8 @@ def ensemble_to_eof(ensemble_arr):
             explained
     """
     
-    skpca = pca.PCA()
-    
-    # transform to get proper shape for EOF dim reduction
-    skpca.fit_transform(ensemble_arr.T)
-    
-    # transform back to familiar shape n x p
-    eofs = skpca.components_.T
+    skpca = pca.PCA(0.95)
+    eofs = skpca.fit_transform(ensemble_arr)
     
     return eofs
 
@@ -139,6 +128,7 @@ def regress_eof(eofs, obs):
             model object to eofs and obs
     """
     lm = linear_model.LinearRegression()
+    eofs = eofs.reshape(-1, 1)
     model = lm.fit(eofs, obs)
     print("Model score:", model.score(eofs, obs))
     return model
@@ -157,33 +147,17 @@ def predict_dv(model, eofs_of_model):
         (numpy.ndarray): predicted design
             value field
     """
+    eofs_of_model = eofs_of_model.reshape(-1, 1)
     return model.predict(eofs_of_model)
 
-def reconstruct_eof_full(predictions, ds):
-    """Add EOF reconstructed predictions
-    to all grid cells of CanRCM4 model and 
-    add to data cube 
-    --------------------------------
-    Args:  
-        predictions (numpy.ndarray): predicted design
-            value field
-        ds (xarray Dataset): datacube 
-            containing an ensemble of CanRCM4 models
-    Returns:
-        ds (xarray Dataset): datacube 
-            containing an ensemble of CanRCM4 models
-            with added eofs variable
-    """
-    full_arr = ensemble_reshape(ds)
-    land_idx = get_land(full_arr)
-    # replace land values with predictions
-    full_arr[~land_idx.any(axis=1)][:, 0] = predictions
-    # add predictions to data cube
-    ds['eofs'] = full_arr[:, 0]
+def pred_to_grid(ds, pred, mask):
 
-    return ds
+    ds['eof'] = ds['dv'][0,:,:]
+    ds['eof'].values[~mask.mask] = pred
 
-def fit_transform(ds):
+    return ds['eof']
+
+def eof_pseudo_full(ds, mask=None):
     """Perform all steps to reconstruct a 
     design value field from pseudo observations
     ---------------
@@ -195,21 +169,32 @@ def fit_transform(ds):
             containing an ensemble of CanRCM4 models
             with added eofs variable
     """
-    y = get_obs(ds)
 
-    # select random indices
-    index = rand_sample_index(y, frac)
-    y = y[index]
+    mean = ens_means(ds)
+    area = frac_grid_area(ds)
+    if mask is None:
+        mask = mask_flat(ds, mask_nan(ds))
 
-    ds = center_data(ds)
-    ds = weight_by_area(ds)
+    # area weighted ensemble to get obs
+    ens_obs = ens_flat(ds*area)
 
-    ensemble = ensemble_reshape(ds)
-    ensemble_eof = ensemble_to_eof(ensemble)
+    # mask 
+    ens_obs = ens_obs[:, ~mask.mask]
 
-    ens_cross_eof = ensemble_eof[index, :] 
+    # get random ensemble to generate
+    # the pseudo obs 
+    obs = get_obs(ens_obs)
+    obs_idx = rand_sample_index(obs, 0.02)
+    obs_sample = obs[obs_idx]
 
-    model = regress_eof(ens_cross_eof, y)
-    predictions = predict_dv(model, ensemble_eof)
+    ens = ens_flat(ds*area - mean)
+    ens = ens[:, ~mask.mask]
+    ens = ensemble_to_eof(ens.T)[:, 0]
 
-    return reconstruct_eof_full(predictions, ds)
+    model = regress_eof(ens[obs_idx], obs_sample)
+    pred = predict_dv(model, ens)
+
+    pred = pred_to_grid(ds, pred, mask_nan(ds))
+    pred = (pred/area + mean)
+
+    return pred
