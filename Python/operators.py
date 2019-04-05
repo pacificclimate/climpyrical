@@ -1,7 +1,7 @@
 import warnings
 
-import xarray as xr
 import numpy as np
+
 
 def check_keys(data_cube):
     rlat = 'rlat' in data_cube.keys()
@@ -9,8 +9,10 @@ def check_keys(data_cube):
     run = 'run' in data_cube.keys()
     dv = 'dv' in data_cube.keys()
     if not rlat and rlon and run and dv:
-        raise KeyError("CanRCM4 ensemble is missing 'run', 'rlon', 'rlat', or 'dv'. Please ensure the model is properly \
-                        gridded with these names.")
+        raise KeyError(("CanRCM4 ensemble is missing 'run', 'rlon',\
+                        'rlat', or 'dv'. Please ensure the model\
+                         is properly gridded with these names."))
+
 
 def ens_mean(data_cube):
     """Centers each run in data_cube
@@ -32,6 +34,7 @@ def ens_mean(data_cube):
         mean = data_cube['dv'].mean(dim='run', skipna=True)
 
     return mean
+
 
 def frac_grid_area(data_cube, R=6371.0):
     """Calculates the fractional area of
