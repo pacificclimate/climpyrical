@@ -8,37 +8,44 @@ import statsmodels.api as sm
 from operators import check_keys, cell_count, ens_means, frac_grid_area
 
 def mask_nan(ds):
-    """Gets indices of nan values to 
-    identify where land or ocean is. 
+    """Gets mask for NaN values in 
+    first of CanRCM4 ensemble. 
     --------------------------------
     Args: 
-        ensemble_arr (numpy.ndarray): reshaped 2-d array
-            into number of cells x ensemble size
+        ds (xarray.Dataset): datacube 
+            containing an ensemble of CanRCM4 models
     Returns:
-        (numpy.ndarray): 2-d array containing
-            the indices of nan values
+        mask (numpy.ma): masked array 
     """
     dv_field = ds['dv'].values
     mask = ma.masked_invalid(ds['dv'][0,:,:].values)
     return mask
 
 def mask_flat(ds, mask):
+    """Flattens mask into ensemble shape
+    for compatibility. 
+    --------------------------------
+    Args: 
+        ds (xarray.Dataset): datacube 
+            containing an ensemble of CanRCM4 models
+        mask (numpy.ma): masked array for run in ds
+    Returns:
+        mask (nump.ma): masked array in ensemble shape,
+        ensemble_size x number of grid cells
+    """
     dv_field = ds['dv'].values
     n_grid_cells = dv_field.shape[1]*dv_field.shape[2]
     mask = np.reshape(mask, n_grid_cells)
+    
     return mask
 
 def ens_flat(ds):
-    """Reshapes data cube into array shape 
-    for eof calculations. 
+    """Flattens data cube into ensemble
+    size x number of cells. 
     --------------------------------
     Args: 
         ds (xarray Dataset): datacube 
-            containing an ensemble of 
-            CanRCM4 models
-        mask (numpy.ma.masked_invalid): masked array
-            of a single ensemble member grid. This mask
-            will usually be either an ocean or land mask. 
+            containing an ensemble of CanRCM4 models
     Returns:
         dv_field (numpy.ndarray): reshaped 2-d array
             into number of cells x ensemble size
@@ -47,10 +54,10 @@ def ens_flat(ds):
 
     dv_field = ds['dv'].values
 
-    ensemble_sz = dv_field.shape[0]
+    ens_sz = dv_field.shape[0]
     n_grid_cells = dv_field.shape[1]*dv_field.shape[2]
 
-    dv_field = np.reshape(dv_field, (ensemble_sz, n_grid_cells))
+    dv_field = np.reshape(dv_field, (ens_sz, n_grid_cells))
 
     return dv_field
 
@@ -71,7 +78,7 @@ def rand_sample_index(y_obs, frac):
                              int(frac*n_grid_cells))
     return index
 
-def get_obs(ensemble_arr):
+def get_obs(ens_arr):
     """Randomly sample a data cube to generate
     pseudo observations from ensemble. 
     --------------------------------
@@ -86,30 +93,28 @@ def get_obs(ensemble_arr):
         index (numpy.ndarray): index locations 
             of y_sample from original ensemble size
     """
-    ensemble_sz = ensemble_arr.shape[0]
+    ens_sz = ens_arr.shape[0]
 
     # randomly select an ensemble member
     # to sample
-    i = np.random.randint(0, ensemble_sz-1)
-    y_obs = ensemble_arr[i, :]
+    i = np.random.randint(0, ens_sz-1)
+    y_obs = ens_arr[i, :]
 
     return y_obs
 
-def ensemble_to_eof(ensemble_arr):
+def ens_to_eof(ens_arr):
     """Perform EOF/PCA dimensionality reduction
-    on ensemble array 
+    on ensemble array
     --------------------------------
     Args:  
-        ensemble_arr (numpy.ndarray): reshaped 2-d array
+        ens_arr (numpy.ndarray): reshaped 2-d array
             into number of cells x ensemble size
     Returns:
-        eofs (numpy.ndarray): EOF transformed
-            ensemble_arr sorted by max variance 
-            explained
+        eofs (numpy.ndarray): transformed EOFs of ens_arr
     """
     
     skpca = pca.PCA(0.95)
-    eofs = skpca.fit_transform(ensemble_arr)
+    eofs = skpca.fit_transform(ens_arr)
     
     return eofs
 
@@ -119,7 +124,7 @@ def regress_eof(eofs, obs):
     --------------------------------
     Args:  
         eofs (numpy.ndarray): EOF transformed
-            ensemble_arr containing same grid cells 
+            ens_arr containing same grid cells 
             sample as observations 
         obs (numpy.ndarray): Gridded observations
             either from pseudo or real observations
@@ -138,11 +143,10 @@ def predict_dv(model, eofs_of_model):
     full EOF sample 
     --------------------------------
     Args:  
-        model (scikit-learn model obj): fitted 
-            model object to eofs and obs
+        model (scikit-learn model): model of regressed obs
+            and models
         eofs_of_model (numpy.ndarray): EOF transformed
-            ensemble_arr containing all grid
-            cells in design value field
+            ens_arr
     Returns:
         (numpy.ndarray): predicted design
             value field
@@ -151,22 +155,37 @@ def predict_dv(model, eofs_of_model):
     return model.predict(eofs_of_model)
 
 def pred_to_grid(ds, pred, mask):
+    """Reshape from flattened ensemble size x
+    number of cells to rlat x rlon grid space 
+    --------------------------------
+    Args:  
+        ds (xarray.Dataset): datacube 
+            containing an ensemble of 
+            CanRCM4 models 
+        pred (numpy.ndarray): reconstructed 
+            predictions from EOF regression
+        mask (numpy.ma): mask used to mask 
+            values not considered
+    Returns:
+        dv_field (xarray.DataArray): reconstructed design
+            value field
+    """
 
-    ds['eof'] = ds['dv'][0,:,:]
-    ds['eof'].values[~mask.mask] = pred
+    dv_field = ds['dv'][0,:,:]
+    dv_field.values[~mask.mask] = pred
 
-    return ds['eof']
+    return dv_field
 
 def eof_pseudo_full(ds, mask=None):
     """Perform all steps to reconstruct a 
     design value field from pseudo observations
     ---------------
     Args: 
-        ds (xarray Dataset): datacube 
-            containing an ensemble of CanRCM4 models 
+        ds (xarray.Dataset): datacube 
+            containing an ens of CanRCM4 models 
     Returns:
-        ds (xarray Dataset): datacube 
-            containing an ensemble of CanRCM4 models
+        ds (xarray.DataArray): datacube 
+            containing an ens of CanRCM4 models
             with added eofs variable
     """
 
@@ -175,13 +194,13 @@ def eof_pseudo_full(ds, mask=None):
     if mask is None:
         mask = mask_flat(ds, mask_nan(ds))
 
-    # area weighted ensemble to get obs
+    # area weighted ens to get obs
     ens_obs = ens_flat(ds*area)
 
     # mask 
     ens_obs = ens_obs[:, ~mask.mask]
 
-    # get random ensemble to generate
+    # get random ens to generate
     # the pseudo obs 
     obs = get_obs(ens_obs)
     obs_idx = rand_sample_index(obs, 0.02)
@@ -189,7 +208,7 @@ def eof_pseudo_full(ds, mask=None):
 
     ens = ens_flat(ds*area - mean)
     ens = ens[:, ~mask.mask]
-    ens = ensemble_to_eof(ens.T)[:, 0]
+    ens = ens_to_eof(ens.T)[:, 0]
 
     model = regress_eof(ens[obs_idx], obs_sample)
     pred = predict_dv(model, ens)
