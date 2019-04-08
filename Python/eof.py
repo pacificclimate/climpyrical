@@ -103,7 +103,7 @@ def get_obs(ens_arr):
     return y_obs
 
 
-def ens_to_eof(ens_arr):
+def ens_to_eof(ens_arr, explained_variance=0.95):
     """Perform EOF/PCA dimensionality reduction
     on ensemble array
     --------------------------------
@@ -114,7 +114,7 @@ def ens_to_eof(ens_arr):
         eofs (numpy.ndarray): transformed EOFs of ens_arr
     """
 
-    skpca = pca.PCA(0.95)
+    skpca = pca.PCA(explained_variance)
     eofs = skpca.fit_transform(ens_arr)
 
     return eofs
