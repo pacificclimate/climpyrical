@@ -5,7 +5,6 @@ from sklearn import linear_model
 
 from operators import ens_mean, frac_grid_area
 
-
 def mask_nan(dv_field):
     """Gets mask for NaN values in
     first of CanRCM4 ensemble.
@@ -17,8 +16,10 @@ def mask_nan(dv_field):
     Returns:
         mask (numpy.ma): masked array
     """
-    mask = ma.masked_invalid(dv_field[0, :, :].values)
-    return mask
+    mask_grid = ma.masked_invalid(dv_field[0, :, :].values)
+    #mask_ens = ma.masked_invalid(dv_field[:, 0, 0].values)
+
+    return mask_grid
 
 
 def mask_flat(dv_field, mask):
@@ -213,7 +214,9 @@ def eof_pseudo_full(dv_field, mask=None):
     obs_sample = obs[obs_idx]
 
     ens = ens_flat(dv_field*area - mean)
+    print(ens.shape)
     ens = ens[:, ~mask.mask]
+    print(ens.shape)
     ens = ens_to_eof(ens.T)[:, 0]
 
     model = regress_eof(ens[obs_idx], obs_sample)
