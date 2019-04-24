@@ -21,7 +21,7 @@ def read_data(data_path):
             into a single variable
     """
 
-    nc_list = np.asarray(glob.glob(data_path+"*.nc"))
+    nc_list = np.asarray(glob.glob(data_path))
     xr_list = [xr.open_dataset(path) for path in nc_list]
 
     ds = xr.concat(xr_list, 'run')
@@ -31,9 +31,10 @@ def read_data(data_path):
     # map-xtreme project
     for var in list(ds.variables):
 
-        grids = ['rlon', 'rlat', 'lon', 'lat']
+        grids = ['rlon', 'rlat', 'lon', 'lat', 'time_bnds', 'time', 'rotated_pole']
 
         if var not in grids and var in ds.variables:
+            print(var)
             ds = ds.rename({var: 'dv'})
 
         elif var not in ds.variables:
@@ -42,3 +43,8 @@ def read_data(data_path):
     check_keys(ds)
     return ds
 
+def load_mask(data_path):
+    ds_mask = xr.open_dataset(data_path)
+    indices = np.where(ds_mask['sftlf'].values > 0.0)
+    mask = ma.masked_greater(ds_mask['sftlf'].values, 0.0).mask
+    return mask
