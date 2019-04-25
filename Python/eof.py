@@ -1,28 +1,12 @@
 import numpy as np
 import numpy.ma as ma
+import pandas as pd
 from sklearn.decomposition import pca
 from sklearn import linear_model
-
+import warnings
 from operators import ens_mean, frac_grid_area
 
-def mask_nan(dv_field):
-    """Gets mask for NaN values in
-    first of CanRCM4 ensemble.
-    --------------------------------
-    Args:
-        dv_field (xarray.DataArray): datacube
-            containing design values of from
-            an ensemble of CanRCM4 models
-    Returns:
-        mask (numpy.ma): masked array
-    """
-    mask_grid = ma.masked_invalid(dv_field[0, :, :].values)
-    #mask_ens = ma.masked_invalid(dv_field[:, 0, 0].values)
-
-    return mask_grid
-
-
-def mask_flat(dv_field, mask):
+def mask_flat(mask):
     """Flattens mask into ensemble shape
     for compatibility.
     --------------------------------
@@ -35,11 +19,41 @@ def mask_flat(dv_field, mask):
         mask (nump.ma): masked array in ensemble shape,
         ensemble_size x number of grid cells
     """
-    n_grid_cells = dv_field.shape[1]*dv_field.shape[2]
+    n_grid_cells = mask.shape[1]*mask.shape[2]
     mask = np.reshape(mask, n_grid_cells)
 
     return mask
 
+def mask_flat_ens(ens, mask):
+    """Gets only land values from flattened ensemble
+    of CanRCM4 models. Interpolates remaining
+    invalid NA values if necessary. Returns masked
+    flattened ensemble.
+    --------------------------------
+    Args:
+        ens (numpy.array): flattened array
+            containing design values of from
+            an ensemble of CanRCM4 models
+        mask (numpy.ma): flattened ocean mask array
+            for CanRCM4 grids
+    Returns:
+        masked (nump.ma): masked array in ensemble shape,
+        ensemble_size x number of grid cells
+    """
+    # apply mask along grid dimension
+    masked_flat_ens = ens[:, mask].T
+
+    # check if there are any non-finite, or nan values in ensemble
+    if np.any(np.isnan(masked_flat_ens)) or np.all(np.isfinite(masked_flat_ens)) is False:
+        # convert to dataframe to find NaN rows and interpolate over them
+        masked_flat_ens = pd.DataFrame(masked_flat_ens)
+        diff = masked_flat_ens.shape[0] - masked_flat_ens.dropna().shape[0]
+        masked_flat_ens = masked_flat_ens.interpolate().values.T
+
+        # warn user that NaN land values were found and will be interpolated
+        warnings.warn("Interpolated over {} grid cells containing NaN values found in ensemble".format(diff))
+
+    return masked_flat_ens
 
 def ens_flat(dv_field):
     """Flattens data cube into ensemble
@@ -177,12 +191,12 @@ def pred_to_grid(dv_field, pred, mask):
     """
 
     dv_field = dv_field[0, :, :]
-    dv_field.values[~mask.mask] = pred
+    dv_field.values[mask[0, :, :]] = pred
 
     return dv_field
 
 
-def eof_pseudo_full(dv_field, mask=None):
+def eof_pseudo_full(dv_field, mask):
     """Perform all steps to reconstruct a
     design value field from pseudo observations
     ---------------
@@ -195,34 +209,31 @@ def eof_pseudo_full(dv_field, mask=None):
             containing an ens of CanRCM4 models
             with added eofs variable
     """
-
+    maskflat = mask_flat(mask)
     mean = ens_mean(dv_field)
     area = frac_grid_area(dv_field)
-    if mask is None:
-        mask = mask_flat(dv_field, mask_nan(dv_field))
 
     # area weighted ens to get obs
     ens_obs = ens_flat(dv_field*area)
 
-    # mask
-    ens_obs = ens_obs[:, ~mask.mask]
+    # mask flattened ensemble
+    ens_obs = mask_flat_ens(ens_obs, maskflat)
 
     # get random ens to generate
     # the pseudo obs
     obs = get_obs(ens_obs)
+    print(obs.shape)
     obs_idx = rand_sample_index(obs, 0.02)
     obs_sample = obs[obs_idx]
 
     ens = ens_flat(dv_field*area - mean)
-    print(ens.shape)
-    ens = ens[:, ~mask.mask]
-    print(ens.shape)
+    ens = mask_flat_ens(ens, maskflat)
     ens = ens_to_eof(ens.T)[:, 0]
-
+    print(ens, obs_idx)
     model = regress_eof(ens[obs_idx], obs_sample)
     pred = predict_dv(model, ens)
 
-    pred = pred_to_grid(dv_field, pred, mask_nan(dv_field))
+    pred = pred_to_grid(dv_field, pred, mask)
     pred = (pred/area + mean)
 
     return pred
