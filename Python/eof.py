@@ -3,6 +3,7 @@ import numpy.ma as ma
 import pandas as pd
 from sklearn.decomposition import pca
 from sklearn import linear_model
+from sklearn.preprocessing import Imputer
 import warnings
 from operators import ens_mean, frac_grid_area
 
@@ -24,7 +25,7 @@ def mask_flat(mask):
 
     return mask
 
-def mask_flat_ens(ens, mask):
+def mask_land(ens, mask):
     """Gets only land values from flattened ensemble
     of CanRCM4 models. Interpolates remaining
     invalid NA values if necessary. Returns masked
@@ -42,18 +43,23 @@ def mask_flat_ens(ens, mask):
     """
     # apply mask along grid dimension
     masked_flat_ens = ens[:, mask].T
+    return masked_flat_ens
 
+def mask_invalid(ens):
+    print(ens.shape)
+    imputer = Imputer(axis=1)
+    ens = imputer.fit_transform(ens)
     # check if there are any non-finite, or nan values in ensemble
-    if np.any(np.isnan(masked_flat_ens)) or np.all(np.isfinite(masked_flat_ens)) is False:
-        # convert to dataframe to find NaN rows and interpolate over them
-        masked_flat_ens = pd.DataFrame(masked_flat_ens)
-        diff = masked_flat_ens.shape[0] - masked_flat_ens.dropna().shape[0]
-        masked_flat_ens = masked_flat_ens.interpolate().values.T
+    #if np.any(np.isnan(ens)) or np.all(np.isfinite(ens)) is False:
+    #    # convert to dataframe to find NaN rows and interpolate over them
+    #    ens = pd.DataFrame(ens)
+    #    diff = ens.shape[0] - ens.dropna().shape[0]
+    #    ens = ens.fillna(ens.mean(axis=1)).values
 
         # warn user that NaN land values were found and will be interpolated
-        warnings.warn("Interpolated over {} grid cells containing NaN values found in ensemble".format(diff))
+    #    warnings.warn("Removed {} land grid cells containing NaN values found in ensemble".format(diff))
 
-    return masked_flat_ens
+    return ens
 
 def ens_flat(dv_field):
     """Flattens data cube into ensemble
@@ -191,6 +197,7 @@ def pred_to_grid(dv_field, pred, mask):
     """
 
     dv_field = dv_field[0, :, :]
+    print(mask.shape, dv_field.shape, pred.shape)
     dv_field.values[mask[0, :, :]] = pred
 
     return dv_field
@@ -217,19 +224,21 @@ def eof_pseudo_full(dv_field, mask):
     ens_obs = ens_flat(dv_field*area)
 
     # mask flattened ensemble
-    ens_obs = mask_flat_ens(ens_obs, maskflat)
-
+    ens_obs = mask_land(ens_obs, maskflat)
+    ens_obs = mask_invalid(ens_obs)
+    #ens_obs = ens_obs.data[~ens_obs.mask]
+    print(ens_obs)
     # get random ens to generate
     # the pseudo obs
     obs = get_obs(ens_obs)
-    print(obs.shape)
     obs_idx = rand_sample_index(obs, 0.02)
     obs_sample = obs[obs_idx]
 
     ens = ens_flat(dv_field*area - mean)
-    ens = mask_flat_ens(ens, maskflat)
+    ens = mask_land(ens, maskflat)
+    ens = mask_invalid(ens)
     ens = ens_to_eof(ens.T)[:, 0]
-    print(ens, obs_idx)
+
     model = regress_eof(ens[obs_idx], obs_sample)
     pred = predict_dv(model, ens)
 
