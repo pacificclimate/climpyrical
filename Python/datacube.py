@@ -1,6 +1,8 @@
 import glob
 
 import numpy as np
+import numpy.ma as ma
+
 import xarray as xr
 
 def check_keys(ds):
@@ -45,6 +47,5 @@ def read_data(data_path):
 
 def load_mask(data_path):
     ds_mask = xr.open_dataset(data_path)
-    indices = np.where(ds_mask['sftlf'].values > 0.0)
     mask = ma.masked_greater(ds_mask['sftlf'].values, 0.0).mask
     return mask
