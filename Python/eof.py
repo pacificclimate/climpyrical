@@ -42,13 +42,12 @@ def mask_land(ens, mask):
         ensemble_size x number of grid cells
     """
     # apply mask along grid dimension
-    masked_flat_ens = ens[:, mask].T
-    return masked_flat_ens
+    idx = np.isnan(ens)
+    masked_flat_ens = ens[:, mask]
+    idx = idx[:, mask]
+    return ma.masked_array(masked_flat_ens, idx)
 
-def mask_invalid(ens):
-    print(ens.shape)
-    imputer = Imputer(axis=1)
-    ens = imputer.fit_transform(ens)
+def nan_index(ens):
     # check if there are any non-finite, or nan values in ensemble
     #if np.any(np.isnan(ens)) or np.all(np.isfinite(ens)) is False:
     #    # convert to dataframe to find NaN rows and interpolate over them
@@ -59,7 +58,7 @@ def mask_invalid(ens):
         # warn user that NaN land values were found and will be interpolated
     #    warnings.warn("Removed {} land grid cells containing NaN values found in ensemble".format(diff))
 
-    return ens
+    return np.isnan(ens)
 
 def ens_flat(dv_field):
     """Flattens data cube into ensemble
