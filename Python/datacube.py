@@ -38,6 +38,7 @@ def read_data(data_path):
         if var not in grids and var in ds.variables:
             print(var)
             ds = ds.rename({var: 'dv'})
+            ds = ds.squeeze('time')
 
         elif var not in ds.variables:
             raise KeyError("Invalid CanRCM4 model. Design value key not found.")
