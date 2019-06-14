@@ -48,5 +48,5 @@ def read_data(data_path):
 
 def load_mask(data_path):
     ds_mask = xr.open_dataset(data_path)
-    mask = ma.masked_greater(ds_mask['sftlf'].values, 0.0).mask
+    mask = ma.masked_greater(ds_mask['sftlf'].values, 0.70).mask
     return mask
