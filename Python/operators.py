@@ -67,32 +67,3 @@ def frac_grid_area(dv_field, R=6371.0):
     area = np.reshape(area, (rlat_diff.shape[0], rlon_diff.shape[0]))
 
     return area/total_area
-
-def mask_land_and_nan(dv_field, mask_land):
-    mask = np.apply_over_axes(np.logical_or.reduce, mask_land, (0))
-    mask = np.broadcast_to(mask, dv_field.shape)
-    masked_arr = ma.MaskedArray(dv_field, mask)
-
-    ens = masked_arr.reshape((masked_arr.shape[0], masked_arr.shape[1]*masked_arr.shape[2])).T
-    ens_land_masked = ens.data[~ens.mask[:,0], :]
-
-    indx = np.arange(0, ens.shape[0])
-    indx = indx[~ens.mask[:,0]]
-
-    nan_mask = np.apply_over_axes(
-                            np.logical_or.reduce,
-                            np.isnan(ens_land_masked),
-                            (1)
-                        )
-    nan_mask = np.broadcast_to(nan_mask, ens_land_masked.shape)
-
-    ens_masked = ens_land_masked[~nan_mask[:, 0], :]
-
-    new_indx = indx[~nan_mask[:, 0]]
-
-    mask_dict = {
-            'ens': ens_masked,
-            'idx': new_indx,
-    }
-
-    return mask_dict
