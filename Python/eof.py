@@ -23,7 +23,7 @@ def ens_to_eof(ens_arr, explained_variance=0.95):
     skpca = pca.PCA(explained_variance)
     eofs = skpca.fit(ens_arr)
 
-    return eofs.components_
+    return eofs
 
 def regress_eof(eofs, obs):
     """Perform a linear regression between
