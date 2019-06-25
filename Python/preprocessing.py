@@ -20,11 +20,11 @@ def mask_land_and_nan(dv_field, mask_land):
 
 
 def mask_land_and_nan_ens_index(mask_master):
-	mask_ens_master = (mask_master.reshape(mask_master.shape[0], mask_master.shape[1]*mask_master.shape[2]
+    mask_ens_master = (mask_master.reshape(mask_master.shape[0], mask_master.shape[1]*mask_master.shape[2]
                         )[0])
 
-	idx = np.where(mask_ens_master==True)[0]
-	return idx
+    idx = np.where(mask_ens_master==True)[0]
+    return idx
 
 
 def ens_flat(dv_field):
@@ -69,12 +69,30 @@ def generate_pseudo_obs(ens_arr, frac):
     n_grid_cells = y_obs.shape[0]
     index = np.random.choice(np.arange(n_grid_cells),
                              int(frac*n_grid_cells))
-    return y_obs[index]
+    return y_obs[index], index
 
 def correct_extend_rlat_and_rlon_to_ens(rlat, rlon, lat_corr=42.5, lon_corr=-97.):
 
-	rlon_ens = np.tile(rlon, rlat.shape[0])+lon_corr
-	rlat_ens = np.repeat(rlat, rlon.shape[0])+lat_corr
+    lat_lon_ens = list(zip(rlat, rlon))
+    return np.asarray(lat_lon_ens)
 
-	lat_lon_ens = list(zip(rlat_ens, rlon_ens))
-	return np.asarray(lat_lon_ens)
+def unrotate_poles(rlat, rlon, lat_corr=42.5, lon_corr=-97.):
+    x_p = np.cos(rlon)*np.cos(rlat)
+    y_p = np.sin(rlon)*np.cos(rlat)
+    z_p = np.sin(rlat)
+
+    lat_corr = np.deg2rad(lat_corr)
+    lon_corr = np.deg2rad(lon_corr)
+
+    ct, st = np.cos(np.deg2rad(lat_corr)), np.sin(np.deg2rad(lat_corr))
+    cphi, sphi = np.cos(np.deg2rad(lon_corr)), np.sin(np.deg2rad(lon_corr))
+
+    R1 = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(cphi, sphi, 0, -sphi, cphi, 0, 0, 0 ,1))
+    R2 = np.matrix('{} {} {}; {} {} {}; {} {} {}'.format(ct, 0, st, 0, 1, 0, -st, 0, ct))
+
+    x, y, z = np.dot(np.dot(R1, R2), (x_p, y_p, z_p))
+
+    new_lat = np.arcsin(np.cos(lat_corr)*np.sin(rlat) - np.cos(rlon)*np.sin(lat_corr)*np.cos(rlat))
+    new_lon = np.arctan2(np.sin(rlon), np.tan(rlat)*np.sin(lat_corr)+np.cos(rlon)*np.cos(lat_corr)-lon_corr)
+
+    return new_lat, new_lon
