@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.spatial import distance
 
-
 def euclidean_dist_index(lat_lon_obs, lat_lon_ens):
     dist_list = []
     for i, coord in enumerate(lat_lon_obs):
