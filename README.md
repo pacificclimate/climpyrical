@@ -1,17 +1,53 @@
 ![logo.png](https://images.zenhubusercontent.com/5bc02597fcc72f27390ed1f9/c2cf2ba4-edb1-4b47-856e-20338712d4a7)
-## Extreme Isopleth Mapping Tool
+# climpyrical
+
+climpyrical is a Python tool for reconstructing design value fields using meteorological station observations 
+
+and ensembles of design value fields provided in CanRCM4 models.
+
+### Requirements file
+
+To install the dependencies used by climpyrical, install from requirements file found in `Python/requirements.txt`
+
+```bash
+pip install -r requirements.txt
+```
+
+### Usage
+
+*To be added*
+
 A mapping tool for displaying North American design value isopleths.
 
 <a href="url"><img src="https://images.zenhubusercontent.com/5bc02597fcc72f27390ed1f9/a07326c9-8e16-4faa-9056-89ebcfdb7c2a" align="left" width="270" ></a>
 
 
-## Getting started
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Deployment for R
+
 The following instructions will guide installation and implementation on a local machine, including a stable Docker environment in which to use the software. It is recommended to use this Dockerized implementation, unless the user has confidence in their local environment. These instructions will only cover implementation using Docker images on Ubuntu OS.
+
+
+
+Note that this implementation of map-xtreme only functions as an example, and uses pseudo observations from a model ensemble itself. It also assumes that the ocean values from CanRCM4 models are marked as `NaN`. 
 
 ### Prerequisites 
 The only required software is `Docker`. Carefully choose the correct installation for the OS that you have from the [Docker Community Edition (CE) website](https://docs.docker.com/install/#supported-platforms). 
 
-### Deployment for R
 To get started, clone this repository to your local machine.
 ```
 git clone https://github.com/pacificclimate/map-xtreme.git
