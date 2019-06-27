@@ -111,28 +111,3 @@ def generate_pseudo_obs(ens_arr, frac):
                              int(frac*n_grid_cells))
 
     return index
-
-def rlat_rlon_to_ens(rlat, rlon):
-    """Takes the rlat and rlon 1D arrays from the
-    NetCDF files for each ensemble member, and creates
-    an ordered pairing of each grid cell coordinate in
-    rotated pole (rlat, rlon).
-
-    Args:
-        rlat (numpy.ndarray): 1D array containing
-            the locations of the rotated latitude
-            grid cells
-        rlat (numpy.ndarray): 1D array containing
-            the locations of the rotated longitude
-            grid cells
-
-    Return:
-        lat_lon_ens (numpy.ndarray): array containing
-            tuples of rlat and rlon for each grid cell
-            in the ensemble shape.
-    """
-    rlon_ens = np.tile(rlon, rlat.shape[0])
-    rlat_ens = np.repeat(rlat, rlon.shape[0])
-    lat_lon_ens = list(zip(rlat_ens, rlon_ens))
-
-    return np.asarray(lat_lon_ens)
