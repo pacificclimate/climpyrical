@@ -31,8 +31,22 @@ def rlat_rlon_to_ens(rlat, rlon):
 
     return coord_dict
 
-def distance(lat_lon_ens, coord, method='haversine'):
-    str(method)
+def ens_obs_distance(lat_lon_ens, coord, method='haversine'):
+    '''Determines the distances between a station's coordinates
+    and the grid cells in North America.
+    Args:
+        lat_lon_obs (numpy.ndarray): array containing
+            tuple pairs of latitudes and longitudes of
+            stations
+        coord (tuple): lat lon location of station
+        method (str): method to use for the
+            distance calculations
+    Returns:
+        (numpy.ndarray): array containing the
+            distance between each grid cell and the station
+            from coord
+    '''
+
     if method == 'haversine':
         lat1, lon1 = coord
         lat2, lon2 = zip(*lat_lon_ens)
@@ -66,6 +80,8 @@ def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
         lat_lon_ens (numpy.ndarray): array containing
             typle pairs of latitudes and longitudes
             locations of the grid cells in the ensemble
+        method (str): method to use for the
+            distance calculations
     Returns:
         dist_list (numpy.ndarray): array containing the
             indices of grid cells in the ensemble shape
@@ -79,8 +95,9 @@ def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
 
     for i, coord in enumerate(lat_lon_obs):
         dist_list.append(
-                        distance(lat_lon_ens,
-                                       coord
+                        ens_obs_distance(lat_lon_ens,
+                                       coord,
+                                       method
                         ).argmin()
         )
 
