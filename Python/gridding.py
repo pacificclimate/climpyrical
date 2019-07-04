@@ -20,6 +20,7 @@ def rlat_rlon_to_ens(rlat, rlon):
             tuples of rlat and rlon for each grid cell
             in the ensemble shape.
     """
+
     rlon_ens = np.tile(rlon, rlat.shape[0])
     rlat_ens = np.repeat(rlat, rlon.shape[0])
 
@@ -30,7 +31,31 @@ def rlat_rlon_to_ens(rlat, rlon):
 
     return coord_dict
 
-def euclidean_dist_index(lat_lon_obs, lat_lon_ens):
+def distance(lat_lon_ens, coord, method='haversine'):
+    str(method)
+    if method == 'haversine':
+        lat1, lon1 = coord
+        lat2, lon2 = zip(*lat_lon_ens)
+
+        lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
+
+        dlon = lon2 - lon1
+        dlat = lat2 - lat1
+
+        a = np.sin(dlat/2.0)**2+np.cos(lat1)*np.cos(lat2)*np.sin(dlon/2.0)**2
+
+        c = 2 * np.arcsin(np.sqrt(a))
+        return c
+
+    if method == 'euclidean':
+        return distance.cdist(
+                            lat_lon_ens,
+                            [coord],
+                            'euclidean')
+    else:
+        raise ValueError("must be \'euclidean\' or \'haversine\'")
+
+def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
     """Determines the index in the ensemble shape
     of grid cells with coordinates that are the closest
     in euclidean distance to stations.
@@ -47,13 +72,15 @@ def euclidean_dist_index(lat_lon_obs, lat_lon_ens):
             that are closest to the station locations
     """
 
+    lat_obs, lon_obs = zip(*lat_lon_obs)
+    lat_ens, lon_ens = zip(*lat_lon_ens)
+
     dist_list = []
 
     for i, coord in enumerate(lat_lon_obs):
         dist_list.append(
-                        distance.cdist(lat_lon_ens,
-                                       [coord],
-                                       'euclidean'
+                        distance(lat_lon_ens,
+                                       coord
                         ).argmin()
         )
 
