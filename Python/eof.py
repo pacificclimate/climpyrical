@@ -15,15 +15,18 @@ def ens_to_eof(ens_arr, explained_variance=0.95):
     Args:
         ens_arr (numpy.ndarray): reshaped 2-d array
             into number of cells x ensemble size
+        explained_variance (float): fraction of total
+            variance that the reductions account for
     Returns:
-        eofs (numpy.ndarray): transformed EOFs of ens_arr
+        eofs (sklearn.decomposition.pca.PCA): fitted
+            principal compoenent sklearn object
     """
 
 
     skpca = pca.PCA(explained_variance)
     eofs = skpca.fit(ens_arr)
 
-    return eofs.components_
+    return eofs
 
 def regress_eof(eofs, obs):
     """Perform a linear regression between
@@ -43,7 +46,7 @@ def regress_eof(eofs, obs):
 
     lm = linear_model.LinearRegression()
     model = lm.fit(eofs, obs)
-    print("Model score:", model.score(eofs, obs))
+    print("Regressed model score:", model.score(eofs, obs))
     return model
 
 
