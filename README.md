@@ -5,95 +5,44 @@ climpyrical is a Python tool for reconstructing design value fields using meteor
 
 and ensembles of design value fields provided in CanRCM4 models.
 
-### Requirements file
+### Requirements
+climpyrical relies on the great work done by the following open source projects:
+* [Numpy](https://www.numpy.org/)
+* [Cartopy](https://scitools.org.uk/cartopy/docs/latest/)
+* [xarray](http://xarray.pydata.org/en/stable/)
+* [matplotlib](https://matplotlib.org/)
+* [scipy](https://www.scipy.org/)
+* [pandas](https://pandas.pydata.org/)
 
-To install the dependencies used by climpyrical, install from requirements file found in `Python/requirements.txt`
+And many more. To install all of the dependencies used by climpyrical, install from requirements file found in `requirements.txt`
+
+via 
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Usage
+### Getting started
+There are a series of helper functions for conducting the empirical orthogonal function analysis. The software requires a list of NetCDF model files all contained within a single directory, and assmebles them into a datacube.
 
-*To be added*
+```python
+>>> from datacube import read_data
 
-A mapping tool for displaying North American design value isopleths.
+>>> PATH = '/path/to/climate/models'
 
-<a href="url"><img src="https://images.zenhubusercontent.com/5bc02597fcc72f27390ed1f9/a07326c9-8e16-4faa-9056-89ebcfdb7c2a" align="left" width="270" ></a>
+>>> ds = read_data(PATH)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### Deployment for R
-
-The following instructions will guide installation and implementation on a local machine, including a stable Docker environment in which to use the software. It is recommended to use this Dockerized implementation, unless the user has confidence in their local environment. These instructions will only cover implementation using Docker images on Ubuntu OS.
-
-
-
-Note that this implementation of map-xtreme only functions as an example, and uses pseudo observations from a model ensemble itself. It also assumes that the ocean values from CanRCM4 models are marked as `NaN`. 
-
-### Prerequisites 
-The only required software is `Docker`. Carefully choose the correct installation for the OS that you have from the [Docker Community Edition (CE) website](https://docs.docker.com/install/#supported-platforms). 
-
-To get started, clone this repository to your local machine.
+<xarray.Dataset>
+Dimensions:       (bnds: 2, rlat: 130, rlon: 155, run: 35)
+Coordinates:
+    time          object 1983-07-17 23:30:00
+    lon           (rlat, rlon) float64 232.9 233.3 233.7 ... 335.5 335.9 336.4
+    lat           (rlat, rlon) float64 12.36 12.52 12.68 ... 59.77 59.46 59.15
+  * rlon          (rlon) float64 -33.88 -33.44 -33.0 -32.56 ... 33.0 33.44 33.88
+  * rlat          (rlat) float64 -28.6 -28.16 -27.72 ... 27.28 27.72 28.16
+...
 ```
-git clone https://github.com/pacificclimate/map-xtreme.git
-```
-
-Change directories to cloned repo, i.e. `cd map-xtreme/R`
-
-The size of physical geospatial data required for plotting, by default is set to 1:50. However, if one requires larger or smaller scales, this can be changed by setting the environment variable in `.env` to either 10m, 50m or 110m as provided by [Natural Earth Data](https://www.naturalearthdata.com/downloads/). To do this, change `.env` to have one of the selected scales. 
-```
-export size=<10m, 50, 110m>
-```
-To activate the new scale choice, use 
-```source .env``` 
-
-And `echo $size` should display the correct scale selected. 
-
-Within this directory contains the Dockerfile necessary for R environment. If Docker has been installed correctly, build with
-```
-docker build --build-arg size --rm -t <DOCKER IMAGE NAME> .
-```
-Where `--build-arg size` sends the host environment variable `size` into the build, `--rm` tells Docker to remove intermediate containers after a successful build, and `-t` will automatically tag the image that was created. `<DOCKER IMAGE NAME>` can be any logical name for the iamge. We specify that the Dockerfile is in the current directory with `.`
-
-Now that the Docker image is built, with name `<DOCKER IMAGE NAME>`, it is time to run the image to create a container.
-
-```
-docker run -e PASSWORD="<CHOOSE A PASSWORD>" -p 8787:8787 --rm -it <DOCKER IMAGE NAME>:latest
-```
-
-This runs the built docker image in a container. The `-e` flag allows us to set a user defined password as an environment variable (more on that later). The `-p` flag lets Docker make the exposed port accessible on the host. These ports will be available to any client that can reach the host. The `--rm` flag is to automatically clean up the container and remove the file system when the container exits. The `-it` flag makes the container interactive.
-
-If all steps were successful, then the previous command will make an RStudio GUI and interactive session available at 
-```
-http://localhost:8787
-```
-
-You will be prompted to enter a username and password. The default username is `rstudio` and the password is the same that you set while running the docker image, i.e. `<CHOOSE A PASSWORD>`. 
-
-To use a Python environment, build and run with `docker run -itd --rm -p -v pcic pcic-vol8888:8888 python_testing:latest
-` for a shared directory.
-
-## About the Environment
-This Docker environment is a multilayered stack from [rocker](https://hub.docker.com/r/rocker/rstudio/)'s r-ver. This stack contains RStudio 3.5.1 as well as the R geospatial libraries required by map-xtreme.
-
-### Visualization and Data
-In addition to CanRCM data (which should be placed in `map-xtreme/data`).
+please see `demo.ipynb` for more information and example usage on a climate field.
 
 ## Authors
-* **Chao Li** - *map.xtreme.pcic R software* - [Pacific Climate Impacts Consortium](https://www.pacificclimate.org/)
-* **Nic Annau** - *Dockerized implementation of R environment* - [Pacific Climate Impacts Consortium](https://www.pacificclimate.org/)
+* **Nic Annau** - [Pacific Climate Impacts Consortium](https://www.pacificclimate.org/)
