@@ -23,7 +23,7 @@ def ens_mean(ens_array):
 
     return mean
 
-def frac_grid_area(dv_field, R=6371.0):
+def frac_grid_area(rlat_o, rlon_o, R=6371.0):
     """Calculates the fractional area of
     each CanRCM4 cell.
     --------------------------------
@@ -36,8 +36,6 @@ def frac_grid_area(dv_field, R=6371.0):
         A (numpy.ndarray): 2-dimensional array
             containing areas of each grid cell
     """
-    rlat_o = dv_field['rlat'].values
-    rlon_o = dv_field['rlon'].values
 
     # approximate grid cell size
     gridsz_rlat = rlat_o[-1]+np.diff(rlat_o).mean()
