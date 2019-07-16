@@ -1,4 +1,5 @@
 import numpy as np
+from numba import jit
 from scipy.spatial import distance
 
 def rlat_rlon_to_ens(rlat, rlon):
@@ -59,16 +60,17 @@ def ens_obs_distance(lat_lon_ens, coord, method='haversine'):
         a = np.sin(dlat/2.0)**2+np.cos(lat1)*np.cos(lat2)*np.sin(dlon/2.0)**2
 
         c = 2 * np.arcsin(np.sqrt(a))
-        return c
+        return c.argmin()
 
     if method == 'euclidean':
         return distance.cdist(
                             lat_lon_ens,
                             [coord],
-                            'euclidean')
+                            'euclidean').argmin()
     else:
         raise ValueError("must be \'euclidean\' or \'haversine\'")
 
+@jit(nopython=True, parallel=True)
 def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
     """Determines the index in the ensemble shape
     of grid cells with coordinates that are the closest
@@ -94,16 +96,38 @@ def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
     dist_list = []
 
     for i, coord in enumerate(lat_lon_obs):
+        print(coord)
         dist_list.append(
-                        ens_obs_distance(lat_lon_ens,
-                                       coord,
-                                       method
-                        ).argmin()
+                        ens_obs_distance(
+                                    lat_lon_ens,
+                                    coord,
+                                    method
+                        )
         )
 
     return np.asarray(dist_list)
 
-def lat_lon_lookup(rlat, rlon, ds, idx):
+def find_nearest(array, value):
+
+    if array.shape[0] == 1:
+        return 1
+
+    if array.shape[0] == 2:
+        return (np.abs(array - value)).argmin()
+
+    nidx = int(array.shape[0]/2)
+
+    if array[nidx] == value:
+        return nidx
+
+    elif  value < array[nidx]:
+        return find_nearest(array[:nidx], value)
+
+    else:
+        return (nidx-1)+find_nearest(array[nidx:], value)
+
+@jit(nopython=True, parallel=True)
+def lat_lon_lookup(rlat_ens, rlon_ens, rlat, rlon, lat, lon, idx):
     """Using the lat and lon grids in the CanRCM4 models,
     "look-up" the corresponding latitude and longitude at
     the intended grid cell. This effecitvely converts the
@@ -124,14 +148,20 @@ def lat_lon_lookup(rlat, rlon, ds, idx):
             latitude and of longitude in the ensemble shape.
 
     """
-    rlat_ens = rlat_rlon_to_ens(rlat, rlon)['rlat']
-    rlon_ens = rlat_rlon_to_ens(rlat, rlon)['rlon']
 
     lats, lons = [], []
 
     for i in idx:
-        lats.append(ds['lat'].sel(rlon=rlon_ens[i], rlat=rlat_ens[i], method='nearest'))
-        lons.append(ds['lon'].sel(rlon=rlon_ens[i], rlat=rlat_ens[i], method='nearest'))
+        ii, jj = (
+                np.argmin(rlat - rlat_ens[i]),
+                np.argmin(rlon - rlon_ens[i])
+        )
+
+        lats.append(lat[ii, jj])
+        lons.append(lon[ii, jj])
+
+        #lats.append(ds['lat'].sel(rlon=rlon_ens[i], rlat=rlat_ens[i], method='nearest'))
+        #lons.append(ds['lon'].sel(rlon=rlon_ens[i], rlat=rlat_ens[i], method='nearest'))
 
     coord_dict = {
                 'lat_ens': np.array(lats),
