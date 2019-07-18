@@ -20,7 +20,7 @@ def read_data(data_path):
             containing CanRCM4 ensemble
     Returns:
         ds (xarray Dataset): data cube of assembled ensemble models
-            into a single variable
+            into a single variable.
     """
 
     nc_list = np.asarray(glob.glob(data_path))
