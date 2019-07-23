@@ -1,6 +1,8 @@
 import numpy as np
 from numba import jit
 from scipy.spatial import distance
+from pyproj import Proj, transform
+from functools import partial
 
 def rlat_rlon_to_ens(rlat, rlon):
     """Takes the rlat and rlon 1D arrays from the
@@ -70,7 +72,7 @@ def ens_obs_distance(lat_lon_ens, coord, method='haversine'):
     else:
         raise ValueError("must be \'euclidean\' or \'haversine\'")
 
-@jit(nopython=True, parallel=True)
+#@jit(nopython=True, parallel=True)
 def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
     """Determines the index in the ensemble shape
     of grid cells with coordinates that are the closest
@@ -126,46 +128,24 @@ def find_nearest(array, value):
     else:
         return (nidx-1)+find_nearest(array[nidx:], value)
 
-@jit(nopython=True, parallel=True)
-def lat_lon_lookup(rlat_ens, rlon_ens, rlat, rlon, lat, lon, idx):
-    """Using the lat and lon grids in the CanRCM4 models,
-    "look-up" the corresponding latitude and longitude at
-    the intended grid cell. This effecitvely converts the
-    coordinates from rotated pole to the regular lat/lon grids
-    such that western longitude is negative.
+#@jit(nopython=True, parallel=True)
+def to_rotated(
+    lat_obs, lon_obs, 
+    proj4_str = '+proj=ob_tran +o_proj=latlon +o_lon_p=-97 +o_lat_p=42.5 +lon_0=180 +ellps=WGS84'
+    ):
 
-    Args:
-        rlat, rlon (np.ndarray): arrays containing the rotated
-            latitude and longitudes of the CanRCM4 models.
-        ds (xarray.DataSet): datacube containing the ensemble array
-            and the lat and lon grids.
-        idx (numpy.ndarray): array containing the indices in the ensemble
-            that correspond to qualified grid cells after the master
-            mask was applied. These are provided by the
-            mask_land_and_nan_ens_index() function in preprocessing.py
-    Returns:
-        coord_dict (dict): dictionary of containing arrays of regular
-            latitude and of longitude in the ensemble shape.
+    rpole = Proj(proj4_str)
+    crs = Proj('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
 
-    """
+    print(crs, rpole)
 
-    lats, lons = [], []
+    transformer = partial(transform, crs, rpole)
 
-    for i in idx:
-        ii, jj = (
-                np.argmin(rlat - rlat_ens[i]),
-                np.argmin(rlon - rlon_ens[i])
-        )
-
-        lats.append(lat[ii, jj])
-        lons.append(lon[ii, jj])
-
-        #lats.append(ds['lat'].sel(rlon=rlon_ens[i], rlat=rlat_ens[i], method='nearest'))
-        #lons.append(ds['lon'].sel(rlon=rlon_ens[i], rlat=rlat_ens[i], method='nearest'))
+    rlon_obs, rlat_obs = transformer(lon_obs, lat_obs)
 
     coord_dict = {
-                'lat_ens': np.array(lats),
-                'lon_ens': np.array(lons)-360.0
+        'rlat_obs': rlat_obs,
+        'rlon_obs': rlon_obs
     }
 
     return coord_dict
