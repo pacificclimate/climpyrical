@@ -130,22 +130,21 @@ def find_nearest(array, value):
 
 #@jit(nopython=True, parallel=True)
 def to_rotated(
-    lat_obs, lon_obs, 
-    proj4_str = '+proj=ob_tran +o_proj=latlon +o_lon_p=-97 +o_lat_p=42.5 +lon_0=180 +ellps=WGS84'
+    lat_obs, lon_obs,
+    proj4_str = '+proj=ob_tran +o_proj=longlat +lon_0=-97 +o_lat_p=42.5 +a=1 +to_meter=0.0174532925199 +no_defs'
     ):
 
-    rpole = Proj(proj4_str)
-    crs = Proj('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
 
-    print(crs, rpole)
+    rpole = Proj(proj4_str)
+    crs = Proj('+proj=longlat +ellps=WGS84')
 
     transformer = partial(transform, crs, rpole)
 
     rlon_obs, rlat_obs = transformer(lon_obs, lat_obs)
 
     coord_dict = {
-        'rlat_obs': rlat_obs,
-        'rlon_obs': rlon_obs
+        'rlat_obs': np.rad2deg(rlat_obs),
+        'rlon_obs':  np.rad2deg(rlon_obs)
     }
 
     return coord_dict
