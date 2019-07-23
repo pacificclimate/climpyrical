@@ -98,7 +98,6 @@ def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
     dist_list = []
 
     for i, coord in enumerate(lat_lon_obs):
-        print(coord)
         dist_list.append(
                         ens_obs_distance(
                                     lat_lon_ens,
