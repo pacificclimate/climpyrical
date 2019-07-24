@@ -109,7 +109,10 @@ def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
     return np.asarray(dist_list)
 
 def find_nearest(array, value):
-
+    """Recursive bisect search algorithm
+    to find the index of the nearest array
+    value to another value provided.
+    """
     if array.shape[0] == 1:
         return 1
 
@@ -132,7 +135,19 @@ def to_rotated(
     lat_obs, lon_obs,
     proj4_str = '+proj=ob_tran +o_proj=longlat +lon_0=-97 +o_lat_p=42.5 +a=1 +to_meter=0.0174532925199 +no_defs'
     ):
-
+    """Rotates regular latlon coordinates to rotated pole
+    coordinates given a proj4 string that defines
+    the rotated poles.
+    Args:
+        lat_obs/lon_obs (numpy.ndarray): array containing
+            latitudes and longitudes of
+            stations
+        proj4_str (str): proj4 string defining rotated pole
+            coordinates used.
+    Returns:
+        coords (dict): dictionary containing the newly rotated
+            coordinates
+    """
 
     rpole = Proj(proj4_str)
     crs = Proj('+proj=longlat +ellps=WGS84')
