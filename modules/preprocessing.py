@@ -34,14 +34,14 @@ def mask_land_and_nan(dv_field, mask_land):
             a boolean master mask
     """
     nan_mask = np.apply_over_axes(
-                            np.logical_or.reduce,
-                            np.isnan(dv_field),
-                            (0)
+                    np.logical_or.reduce,
+                    np.isnan(dv_field),
+                    (0)
     )
+
     mask_master = ~np.logical_or(~mask_land, nan_mask)
 
     return mask_master
-
 
 def mask_land_and_nan_ens_index(mask_master):
     """Reshapes the master mask created in mask_master into
