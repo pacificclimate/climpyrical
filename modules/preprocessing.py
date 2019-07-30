@@ -61,9 +61,9 @@ def mask_land_and_nan_ens_index(mask_master):
                         mask_master.shape[1]*mask_master.shape[2]
     )
 
-    idx = np.where(mask_ens_master[0]==True)[0]
+    idx = np.where(mask_ens_master==True)
 
-    return idx
+    return idx[1]
 
 
 def ens_flat(dv_field):
