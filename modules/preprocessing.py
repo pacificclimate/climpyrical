@@ -1,72 +1,9 @@
 import numpy as np
-import numpy.ma as ma
-import xarray as xr
+from datacube import read_data
+from mask import mask, interpolated_mask
+from interpolator import gen_new_coords, interpolate_ensemble
 
-def load_land_mask(data_path):
-    """Loads land fraction file from
-    http://climate-modelling.canada.ca/climatemodeldata/canrcm/CanRCM4/NAM-44_ECMWF-ERAINT_evaluation/fx/atmos/sftlf/index.shtml
-    and creates a mask for cells that are 0% land.
-    ----------------------------------------------
-    Args:
-        data_path (str): path to the land fraction mask file
-    Returns:
-        mask (numpy.masked_array): masked array based on file
-    """
-    ds_mask = xr.open_dataset(data_path)
-    mask = ma.masked_greater(ds_mask['sftlf'].values, 0.0).mask
-    return mask
-
-
-def mask_land_and_nan(dv_field, mask_land):
-    """Creates a master mask by masking any cell in the ensemble
-    that has a NaN value. If a NaN value is found in the ensemble,
-    that grid cell is masked for every ensemble member, thus
-    disqualifying that grid cell from further analysis. It is then
-    combined with the land mask, to create a master mask of cells
-    to use in the analysis.
-    ------------------------------------------------------------
-    Args:
-        dv_field (numpy.ndarray): datacube containing the ensemble members
-        mask_land (numpy.masked_array): land mask created by load_land_mask()
-
-    Returns:
-        mask_master (numpy.ndarray): a CanRCM4 field shaped array containing
-            a boolean master mask
-    """
-    nan_mask = np.apply_over_axes(
-                    np.logical_or.reduce,
-                    np.isnan(dv_field),
-                    (0)
-    )
-
-    mask_master = ~np.logical_or(~mask_land, nan_mask)
-
-    return mask_master
-
-def mask_land_and_nan_ens_index(mask_master):
-    """Reshapes the master mask created in mask_master into
-    the ensemble shape, that is, (number of grid cells) x (number of
-    ensemble members). Each row in this new shape represents a grid cell
-    from the ensemble members.
-
-    Args:
-        mask_master (numpy.ndarray): boolean mask containing qualified grid cells
-    Returns:
-        idx (numpy.ndarray): boolean mask containing qualified grid cells
-            in the ensemble shape (number of grid cells) x (number of
-            ensemble members)
-    """
-    mask_ens_master = mask_master.reshape(
-                        mask_master.shape[0],
-                        mask_master.shape[1]*mask_master.shape[2]
-    )
-
-    idx = np.where(mask_ens_master==True)
-
-    return idx[1]
-
-
-def ens_flat(dv_field):
+def flatten_ensemble(dv_field):
     """Flattens data cube into ensemble
     size x number of cells.
     --------------------------------
@@ -111,3 +48,15 @@ def generate_pseudo_obs(ens_arr, frac):
                              int(frac*n_grid_cells))
 
     return index
+
+def get_interpolation(mask_path, data_path, dv, factor=10):
+    ds = read_data(data_path, dv)
+    dv_field = ds[dv].values
+    ens = flatten_ensemble(dv_field)
+    coordict = gen_new_coords(ds['rlat'].values, ds['rlon'].values, factor)
+    mask_dict = mask(mask_path, dv_field)
+    imask_dict = interpolated_mask(mask_path, dv_field, coordict, factor)
+    points = coordict['icoordens'][imask_dict['index']]
+    interp_dict = interpolate_ensemble(dv_field, coordict, imask_dict, mask_dict, ens)
+
+    return interp_dict
