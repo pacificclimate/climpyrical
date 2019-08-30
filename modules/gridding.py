@@ -1,8 +1,9 @@
 import numpy as np
-from numba import jit
 from scipy.spatial import distance
+from sklearn.metrics import pairwise_distances_argmin
 from pyproj import Proj, transform
 from functools import partial
+from numba import njit, prange
 
 def rlat_rlon_to_ens(rlat, rlon):
     """Takes the rlat and rlon 1D arrays from the
@@ -72,7 +73,6 @@ def ens_obs_distance(lat_lon_ens, coord, method='haversine'):
     else:
         raise ValueError("must be \'euclidean\' or \'haversine\'")
 
-#@jit(nopython=True, parallel=True)
 def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
     """Determines the index in the ensemble shape
     of grid cells with coordinates that are the closest
@@ -95,42 +95,10 @@ def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
     lat_obs, lon_obs = zip(*lat_lon_obs)
     lat_ens, lon_ens = zip(*lat_lon_ens)
 
-    dist_list = []
-
-    for i, coord in enumerate(lat_lon_obs):
-        dist_list.append(
-                        ens_obs_distance(
-                                    lat_lon_ens,
-                                    coord,
-                                    method
-                        )
-        )
-
+    dist_list = pairwise_distances_argmin(lat_lon_obs, lat_lon_ens, metric='cosine')
     return np.asarray(dist_list)
 
-def find_nearest(array, value):
-    """Recursive bisect search algorithm
-    to find the index of the nearest array
-    value to another value provided.
-    """
-    if array.shape[0] == 1:
-        return 1
 
-    if array.shape[0] == 2:
-        return (np.abs(array - value)).argmin()
-
-    nidx = int(array.shape[0]/2)
-
-    if array[nidx] == value:
-        return nidx
-
-    elif  value < array[nidx]:
-        return find_nearest(array[:nidx], value)
-
-    else:
-        return (nidx-1)+find_nearest(array[nidx:], value)
-
-#@jit(nopython=True, parallel=True)
 def to_rotated(
     lat_obs, lon_obs,
     proj4_str = '+proj=ob_tran +o_proj=longlat +lon_0=-97 +o_lat_p=42.5 +a=1 +to_meter=0.0174532925199 +no_defs'
@@ -162,3 +130,26 @@ def to_rotated(
     }
 
     return coord_dict
+
+def match_coords(df, interp_dict, dv_obs_name):
+    coords = to_rotated(df['lat'].values, df['lon'].values)
+    master_idx = interp_dict['idx']
+
+    ens_coords = list(zip(interp_dict['irlat_ens'][master_idx],
+                          interp_dict['irlon_ens'][master_idx])
+                )
+    obs_coords = list(zip(coords['rlat_obs'], coords['rlon_obs']))
+
+    df['nearest_grid'] = dist_index(obs_coords, ens_coords)
+    df['obs_coords'] = obs_coords
+
+    ndf = df.groupby('nearest_grid').agg({
+                                        dv_obs_name: 'mean',
+                                        'lat':'min',
+                                        'lon':'min',
+                                        'obs_coords':'min'
+                                    })
+    ndf['matched_idx'] = ndf.index
+
+    return ndf
+
