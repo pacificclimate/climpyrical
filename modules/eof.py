@@ -4,11 +4,12 @@ import pandas as pd
 from sklearn.decomposition import pca
 from sklearn import linear_model
 from sklearn.preprocessing import Imputer
+from sklearn.metrics import r2_score
 import warnings
 from operators import ens_mean, frac_grid_area
 
 
-def ens_to_eof(ens_arr, explained_variance=0.95):
+def ens_to_eof(ens_arr, n_components, explained_variance=0.95):
     """Perform EOF/PCA dimensionality reduction
     on ensemble array
     --------------------------------
@@ -23,12 +24,12 @@ def ens_to_eof(ens_arr, explained_variance=0.95):
     """
 
 
-    skpca = pca.PCA(explained_variance)
+    skpca = pca.PCA(n_components, explained_variance)
     eofs = skpca.fit(ens_arr)
 
     return eofs
 
-def regress_eof(eofs, obs):
+def fit_eof(eofs, obs):
     """Perform a linear regression between
     EOFs and observations
     --------------------------------
@@ -46,7 +47,7 @@ def regress_eof(eofs, obs):
 
     lm = linear_model.LinearRegression()
     model = lm.fit(eofs, obs)
-    print("Regressed model score:", model.score(eofs, obs))
+    print("Regressed model score:", r2_score(obs, model.predict(eofs), multioutput='raw_values'))
     return model
 
 
