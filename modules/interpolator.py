@@ -2,92 +2,62 @@ import numpy as np
 from scipy import interpolate
 import xarray as xr
 
-def regrid_coords(ds, factor):
+def gen_new_coords(rlat, rlon, factor):
 
-	rlat, rlon = ds['rlat'].values, ds['rlon'].values
+    irlon = np.linspace(np.min(rlon), np.max(rlon), rlon.shape[0]*factor)
+    irlat = np.linspace(np.min(rlat), np.max(rlat), rlat.shape[0]*factor)
 
-	nrlonsz = rlon.shape[0]*factor
-	nrlatsz = rlat.shape[0]*factor
+    rlon_ens = np.tile(rlon, rlat.shape[0])
+    rlat_ens = np.repeat(rlat, rlon.shape[0])
 
-	nrlon = np.linspace(rlon.min(), rlon.max(), nrlonsz)
-	nrlat = np.linspace(rlat.min(), rlat.max(), nrlatsz)
+    irlon_ens = np.tile(irlon, irlat.shape[0])
+    irlat_ens = np.repeat(irlat, irlon.shape[0])
+    icoordens = np.array(list(zip(irlon_ens, irlat_ens)))
 
-	coord = {
-			'rlat': rlat,
-			'rlon': rlon,
-			'nrlat': nrlat,
-			'nrlon': nrlon,
-			'nrlatsz': nrlatsz,
-			'nrlonsz': nrlonsz
-	}
+    coordens = np.array(list(zip(rlon_ens, rlat_ens)))
 
-	return coord
+    coordict = {
+            'irlat': irlat,
+            'irlon': irlon,
+            'rlon_ens': rlon_ens,
+            'rlat_ens': rlat_ens,
+            'irlon_ens': irlon_ens,
+            'irlat_ens': irlat_ens,
+            'icoordens': icoordens,
+            'coordens': coordens
+    }
 
+    return coordict
 
-def interp_can(ds, header='dv', method='linear', factor=10):
+def interpolate_ensemble(dv_field, coordict, imask_dict, mask_dict, ens):
 
-	coords = regrid_coords(ds, factor)
+    idx = mask_dict['index']
+    iidx = imask_dict['index']
 
-	dv_field = ds[header].values
+    i, j = coordict['irlon'].shape[0], coordict['irlat'].shape[0]
+    iens = np.broadcast_to(
+                np.reshape(imask_dict['master_interp'], (i*j)),
+                (dv_field.shape[0], i*j)
+    ).astype(float)
 
-	rlat, rlon = coords['rlat'], coords['rlon']
+    points = coordict['icoordens'][imask_dict['index']]
 
-	nrlonsz = coords['nrlonsz']
-	nrlatsz = coords['nrlatsz']
+    for i in range(dv_field.shape[0]):
+        iens[i, iidx] = interpolate.griddata(coordict['coordens'][idx], ens[i, idx], points, method='linear')
 
-	nrlon = coords['nrlat']
-	nrlat = coords['nrlon']
+    nan_mask = np.apply_over_axes(
+                np.logical_or.reduce,
+                np.isnan(iens),
+                (0)
+    )
 
-	rlon_ens = np.tile(rlon, rlat.shape[0])
-	rlat_ens = np.repeat(rlat, rlon.shape[0])
+    master_idx = ~np.logical_or(~imask_dict['master'], nan_mask).flatten()
 
-	nrlon_ens = np.tile(nrlon, nrlat.shape[0])
-	nrlat_ens = np.repeat(nrlat, nrlon.shape[0])
+    interpolate_dict = {
+        'idx': master_idx,
+        'iens': iens,
+        'irlat_ens': coordict['irlat_ens'],
+        'irlon_ens': coordict['irlon_ens']
+    }
 
-	rlat_rlon = np.array(list(zip(rlat_ens, rlon_ens)))
-	nrlat_nrlon = np.array(list(zip(nrlat_ens, nrlon_ens)))
-
-	ds_interp = np.zeros((dv_field.shape[0], nrlonsz, nrlatsz))
-
-	flat = interpolate.interp2d(rlon, rlat, ds['lat'], kind='linear')
-	flon = interpolate.interp2d(rlon, rlat, ds['lon'], kind='linear')
-
-	if method != 'nearest':
-		for i in range(dv_field.shape[0]):
-			f = interpolate.interp2d(
-								rlon,
-								rlat,
-								ds['dv'].values[i, ...],
-								kind='linear'
-				)
-
-			ds_interp[i, ...] = f(nrlon, nrlat)
-
-		new_ds = xr.Dataset(
-						{'dv': (['run', 'rlat', 'rlon'], ds_interp)},
-						coords={'lon': (['rlat', 'rlon'], flon(nrlon, nrlat)),
-								'lat': (['rlat', 'rlon'], flat(nrlon, nrlat)),
-								'rlat': nrlat,
-								'rlon': nrlon,
-								'run': range(ds_interp.shape[0])}
-		)
-
-		return new_ds
-
-
-	elif method == 'nearest' and header=='sftlf':
-		f = interpolate.NearestNDInterpolator(rlat_rlon, dv_field.reshape(-1, 1))
-		ds_interp = f(nrlat_nrlon).reshape(nrlonsz, nrlatsz)
-		ds_interp = np.expand_dims(ds_interp, 0)
-
-		print(ds_interp.shape)
-
-		new_ds = xr.Dataset(
-						{'dv': (['rlat', 'rlon'], ds_interp[0, ...])},
-						coords={'lon': (['rlat', 'rlon'], flon(nrlon, nrlat)),
-								'lat': (['rlat', 'rlon'], flat(nrlon, nrlat)),
-								'rlat': nrlat,
-								'rlon': nrlon}
-		)
-
-	return ds_interp
+    return interpolate_dict
