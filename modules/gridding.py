@@ -101,7 +101,8 @@ def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
 
 def to_rotated(
     lat_obs, lon_obs,
-    proj4_str = '+proj=ob_tran +o_proj=longlat +lon_0=-97 +o_lat_p=42.5 +a=1 +to_meter=0.0174532925199 +no_defs'
+    to = '+proj=longlat +ellps=WGS84',
+    fro = '+proj=ob_tran +o_proj=longlat +lon_0=-97 +o_lat_p=42.5 +a=1 +to_meter=0.0174532925199 +no_defs'
     ):
     """Rotates regular latlon coordinates to rotated pole
     coordinates given a proj4 string that defines
@@ -117,8 +118,8 @@ def to_rotated(
             coordinates
     """
 
-    rpole = Proj(proj4_str)
-    crs = Proj('+proj=longlat +ellps=WGS84')
+    rpole = Proj(fro)
+    crs = Proj(to)
 
     transformer = partial(transform, crs, rpole)
 
@@ -132,6 +133,18 @@ def to_rotated(
     return coord_dict
 
 def match_coords(df, interp_dict, dv_obs_name):
+    """Creates modified pands dataframe containing the index
+    in the flattened ensemble shape of the corresponding observation.
+    Grid cells with more than one stations are averaged.
+    Args:
+        df (pandas.DataFrame): dataframe containing the station observations
+        interp_dict (dict): dictionary containing the interpolated data
+        dv_obs_name (str): name of the design value as found in the station
+            observations
+    Return:
+        ndf (pandas.DataFrame): new dataframe containing the observations
+            and the index of the closest model grid cell
+    """
     coords = to_rotated(df['lat'].values, df['lon'].values)
     master_idx = interp_dict['idx']
 
@@ -140,6 +153,7 @@ def match_coords(df, interp_dict, dv_obs_name):
                 )
     obs_coords = list(zip(coords['rlat_obs'], coords['rlon_obs']))
 
+    # get the nearest grids
     df['nearest_grid'] = dist_index(obs_coords, ens_coords)
     df['obs_coords'] = obs_coords
 

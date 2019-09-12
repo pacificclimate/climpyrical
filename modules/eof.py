@@ -29,7 +29,7 @@ def ens_to_eof(ens_arr, n_components, explained_variance=0.95):
 
     return eofs
 
-def fit_eof(eofs, obs):
+def fit_eof(eofs, obs, sample_weight=None):
     """Perform a linear regression between
     EOFs and observations
     --------------------------------
@@ -46,10 +46,13 @@ def fit_eof(eofs, obs):
 
 
     lm = linear_model.LinearRegression()
-    model = lm.fit(eofs, obs)
-    print("Regressed model score:", r2_score(obs, model.predict(eofs), multioutput='raw_values'))
+    model = lm.fit(eofs, obs, sample_weight=sample_weight)
+    print(
+        "Regressed model score:",
+        r2_score(obs, model.predict(eofs)),
+        lm.score(eofs, obs)
+    )
     return model
-
 
 def predict_dv(model, eofs_of_model):
     """Reconstruct design value field from

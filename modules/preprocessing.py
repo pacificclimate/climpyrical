@@ -50,6 +50,19 @@ def generate_pseudo_obs(ens_arr, frac):
     return index
 
 def get_interpolation(mask_path, data_path, dv, factor=10):
+    """Interpolates mask and ensemble data
+    to the desired factor
+    -------------------------------------
+    Args:
+        mask_path (str): path to mask file
+        data_path (str): path to ensemble file
+        dv (str): name of design value as found
+            in ensemble file
+        factor (int): factor to increase spatial resolution
+    Returns:
+        dict: dictionary containing new and old
+            coordinates as well as interpolated values
+    """
     ds = read_data(data_path, dv)
     dv_field = ds[dv].values
     ens = flatten_ensemble(dv_field)
@@ -59,4 +72,4 @@ def get_interpolation(mask_path, data_path, dv, factor=10):
     points = coordict['icoordens'][imask_dict['index']]
     interp_dict = interpolate_ensemble(dv_field, coordict, imask_dict, mask_dict, ens)
 
-    return interp_dict
+    return {**interp_dict, **coordict}
