@@ -1,7 +1,6 @@
 .local/
 .pytest_cache/
 modules/__pycache__/
-modules/**/*
 venv
 venv2
 .bash_history
