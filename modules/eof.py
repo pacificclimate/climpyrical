@@ -45,7 +45,6 @@ def fit_eof(eofs, obs, sample_weight=None):
 
     from sklearn import neighbors
     lm = linear_model.LinearRegression()
-    # lm = neighbors.KNeighborsRegressor(n_neighbors=100, weights='distance')
     model = lm.fit(eofs, obs)
     # print(
         # "Regressed model score:",
