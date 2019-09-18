@@ -159,11 +159,9 @@ def match_coords(df, interp_dict, dv_obs_name):
 
     ndf = df.groupby('nearest_grid').agg({
                                         dv_obs_name: 'mean',
-                                        'prov':'min',
                                         'lat':'min',
                                         'lon':'min',
                                         'obs_coords':'min',
-                                        'elevation':'min'
                                     })
     ndf['matched_idx'] = ndf.index
 
