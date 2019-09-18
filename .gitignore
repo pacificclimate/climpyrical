@@ -10,3 +10,4 @@ venv2
 .ipython/
 .jupyter/
 notebooks/.ipynb_checkpoints/
+*~
