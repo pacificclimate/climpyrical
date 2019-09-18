@@ -23,7 +23,6 @@ def ens_to_eof(ens_arr, n_components, explained_variance=0.95):
             principal compoenent sklearn object
     """
 
-
     skpca = pca.PCA(n_components, explained_variance)
     eofs = skpca.fit(ens_arr)
 
@@ -44,14 +43,15 @@ def fit_eof(eofs, obs, sample_weight=None):
             model object to eofs and obs
     """
 
-
+    from sklearn import neighbors
     lm = linear_model.LinearRegression()
-    model = lm.fit(eofs, obs, sample_weight=sample_weight)
-    print(
-        "Regressed model score:",
-        r2_score(obs, model.predict(eofs)),
-        lm.score(eofs, obs)
-    )
+    # lm = neighbors.KNeighborsRegressor(n_neighbors=100, weights='distance')
+    model = lm.fit(eofs, obs)
+    # print(
+        # "Regressed model score:",
+        # r2_score(obs, model.predict(eofs)),
+        # lm.score(eofs, obs)
+    # )
     return model
 
 def predict_dv(model, eofs_of_model):

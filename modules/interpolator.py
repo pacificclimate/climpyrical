@@ -31,6 +31,8 @@ def gen_new_coords(rlat, rlon, factor):
     coordict = {
             'irlat': irlat,
             'irlon': irlon,
+            'rlat': rlat,
+            'rlon': rlon,
             'rlon_ens': rlon_ens,
             'rlat_ens': rlat_ens,
             'irlon_ens': irlon_ens,

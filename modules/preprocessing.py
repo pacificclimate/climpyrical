@@ -49,6 +49,34 @@ def generate_pseudo_obs(ens_arr, frac):
 
     return index
 
+def get_ieof(mask_path, data_path, dv, factor=10):
+    """Interpolates mask and ensemble data
+    to the desired factor
+    -------------------------------------
+    Args:
+        mask_path (str): path to mask file
+        data_path (str): path to ensemble file
+        dv (str): name of design value as found
+            in ensemble file
+        factor (int): factor to increase spatial resolution
+    Returns:
+        dict: dictionary containing new and old
+            coordinates as well as interpolated values
+    """
+    from sklearn.manifold import TSNE
+
+    ds = read_data(data_path, dv)
+    dv_field = ds[dv].values
+    mask_dict = mask(mask_path, dv_field)
+    ens = flatten_ensemble(dv_field)
+    vT = np.linalg.svd(ens[:, mask_dict['index']], full_matrices=False)[2]
+
+    coordict = gen_new_coords(ds['rlat'].values, ds['rlon'].values, factor)
+    imask_dict = interpolated_mask(mask_path, dv_field, coordict, factor)
+    points = coordict['icoordens'][imask_dict['index']]
+    interp_dict = interpolate_ensemble(vT, coordict, imask_dict, mask_dict, ens)
+
+    return {**interp_dict, **coordict, 'ens': ens, 'idx_ni': mask_dict['index']}
 def get_interpolation(mask_path, data_path, dv, factor=10):
     """Interpolates mask and ensemble data
     to the desired factor
