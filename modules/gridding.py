@@ -132,7 +132,7 @@ def to_rotated(
 
     return coord_dict
 
-def match_coords(df, interp_dict, dv_obs_name):
+def match_coords(df, interp_dict, dv_obs_name, master_idx=None):
     """Creates modified pands dataframe containing the index
     in the flattened ensemble shape of the corresponding observation.
     Grid cells with more than one stations are averaged.
@@ -146,7 +146,8 @@ def match_coords(df, interp_dict, dv_obs_name):
             and the index of the closest model grid cell
     """
     coords = to_rotated(df['lat'].values, df['lon'].values)
-    master_idx = interp_dict['idx']
+    if master_idx is None:
+        master_idx = interp_dict['idx']
 
     ens_coords = list(zip(interp_dict['irlat_ens'][master_idx],
                           interp_dict['irlon_ens'][master_idx])
