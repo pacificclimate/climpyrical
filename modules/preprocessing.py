@@ -41,13 +41,14 @@ def generate_pseudo_obs(ens_arr, frac):
     # randomly select an ensemble member
     # to sample
     i = np.random.randint(0, ens_sz-1)
-    y_obs = ens_arr[i, :]
+    y_obs = ens_arr[0, :]
 
-    n_grid_cells = y_obs.shape[0]
-    index = np.random.choice(np.arange(n_grid_cells),
+    n_ens, n_grid_cells = ens_arr.shape
+    index_grid = np.random.choice(np.arange(n_grid_cells),
+                                int(frac*n_grid_cells))
+    index_ens = np.random.choice(np.arange(n_ens),
                              int(frac*n_grid_cells))
-
-    return index
+    return index_ens, index_grid
 
 def get_ieof(mask_path, data_path, dv, factor=10):
     """Interpolates mask and ensemble data

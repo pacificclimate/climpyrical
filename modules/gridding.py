@@ -91,11 +91,11 @@ def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
             indices of grid cells in the ensemble shape
             that are closest to the station locations
     """
-
+    import sklearn
     lat_obs, lon_obs = zip(*lat_lon_obs)
     lat_ens, lon_ens = zip(*lat_lon_ens)
-
-    dist_list = pairwise_distances_argmin(lat_lon_obs, lat_lon_ens, metric='cosine')
+    with sklearn.config_context(working_memory=128):
+        dist_list = pairwise_distances_argmin(lat_lon_obs, lat_lon_ens, metric='cosine')
     return np.asarray(dist_list)
 
 
