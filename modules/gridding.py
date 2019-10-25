@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.spatial import distance
+import sklearn
 from sklearn.metrics import pairwise_distances_argmin
 from pyproj import Proj, transform
 from functools import partial
-from numba import njit, prange
 
 def rlat_rlon_to_ens(rlat, rlon):
     """Takes the rlat and rlon 1D arrays from the
@@ -53,13 +53,17 @@ def dist_index(lat_lon_obs, lat_lon_ens):
             indices of grid cells in the ensemble shape
             that are closest to the station locations
     """
-    import sklearn
 
     lat_obs, lon_obs = zip(*lat_lon_obs)
     lat_ens, lon_ens = zip(*lat_lon_ens)
 
+    lat_obs, lon_obs = np.deg2rad(lat_obs), np.deg2rad(lon_obs)
+    lat_ens, lon_ens = np.deg2rad(lat_ens), np.deg2rad(lon_ens)
+
+    lat_lon_ens, lat_lon_obs = list(zip(lat_ens, lon_ens)), list(zip(lat_obs, lon_obs))
+
     with sklearn.config_context(working_memory=128):
-        dist_list = pairwise_distances_argmin(lat_lon_obs, lat_lon_ens, metric='euclidean')
+        dist_list = sklearn.metrics.pairwise_distances_argmin(lat_lon_obs, lat_lon_ens, metric='haversine')
     return np.asarray(dist_list)
 
 
@@ -70,7 +74,8 @@ def to_rotated(
     ):
     """Rotates regular latlon coordinates to rotated pole
     coordinates given a proj4 string that defines
-    the rotated poles.
+    the rotated poles. Projection string parameters are defined
+    here: https://proj.org/operations/projections/ob_tran.html
     Args:
         lat_obs/lon_obs (numpy.ndarray): array containing
             latitudes and longitudes of
@@ -119,7 +124,7 @@ def match_coords(df, interp_dict, dv_obs_name, master_idx=None):
     obs_coords = list(zip(coords['rlat_obs'], coords['rlon_obs']))
 
     # get the nearest grids
-    df['nearest_grid'] = dist_index(obs_coords, ens_coords)
+    df['nearest_grid'] = dist_index(obs_coords, ens_coords)[1]
     df['obs_coords'] = obs_coords
 
     ndf = df.groupby('nearest_grid').agg({
