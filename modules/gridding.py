@@ -35,45 +35,7 @@ def rlat_rlon_to_ens(rlat, rlon):
 
     return coord_dict
 
-def ens_obs_distance(lat_lon_ens, coord, method='haversine'):
-    '''Determines the distances between a station's coordinates
-    and the grid cells in North America.
-    Args:
-        lat_lon_obs (numpy.ndarray): array containing
-            tuple pairs of latitudes and longitudes of
-            stations
-        coord (tuple): lat lon location of station
-        method (str): method to use for the
-            distance calculations
-    Returns:
-        (numpy.ndarray): array containing the
-            distance between each grid cell and the station
-            from coord
-    '''
-
-    if method == 'haversine':
-        lat1, lon1 = coord
-        lat2, lon2 = zip(*lat_lon_ens)
-
-        lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
-
-        dlon = lon2 - lon1
-        dlat = lat2 - lat1
-
-        a = np.sin(dlat/2.0)**2+np.cos(lat1)*np.cos(lat2)*np.sin(dlon/2.0)**2
-
-        c = 2 * np.arcsin(np.sqrt(a))
-        return c.argmin()
-
-    if method == 'euclidean':
-        return distance.cdist(
-                            lat_lon_ens,
-                            [coord],
-                            'euclidean').argmin()
-    else:
-        raise ValueError("must be \'euclidean\' or \'haversine\'")
-
-def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
+def dist_index(lat_lon_obs, lat_lon_ens):
     """Determines the index in the ensemble shape
     of grid cells with coordinates that are the closest
     in euclidean distance to stations.
@@ -92,10 +54,12 @@ def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
             that are closest to the station locations
     """
     import sklearn
+
     lat_obs, lon_obs = zip(*lat_lon_obs)
     lat_ens, lon_ens = zip(*lat_lon_ens)
+
     with sklearn.config_context(working_memory=128):
-        dist_list = pairwise_distances_argmin(lat_lon_obs, lat_lon_ens, metric='cosine')
+        dist_list = pairwise_distances_argmin(lat_lon_obs, lat_lon_ens, metric='euclidean')
     return np.asarray(dist_list)
 
 
@@ -127,7 +91,7 @@ def to_rotated(
 
     coord_dict = {
         'rlat_obs': np.rad2deg(rlat_obs),
-        'rlon_obs':  np.rad2deg(rlon_obs)
+        'rlon_obs': np.rad2deg(rlon_obs)
     }
 
     return coord_dict
@@ -167,4 +131,3 @@ def match_coords(df, interp_dict, dv_obs_name, master_idx=None):
     ndf['matched_idx'] = ndf.index
 
     return ndf
-
