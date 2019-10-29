@@ -68,9 +68,10 @@ def dist_index(lat_lon_obs, lat_lon_ens):
 
 
 def to_rotated(
-    lat_obs, lon_obs,
+    lat_obs,
+    lon_obs,
     to = '+proj=longlat +ellps=WGS84',
-    fro = '+proj=ob_tran +o_proj=longlat +lon_0=-97 +o_lat_p=42.5 +a=1 +to_meter=0.0174532925199 +no_defs'
+    fro = '+proj=ob_tran +o_proj=longlat +lon_0=-97 +o_lat_p=42.5 +a=1 +to_meter=0.0174532925199 +no_defs',
     ):
     """Rotates regular latlon coordinates to rotated pole
     coordinates given a proj4 string that defines
@@ -90,8 +91,7 @@ def to_rotated(
     rpole = Proj(fro)
     crs = Proj(to)
 
-    transformer = partial(transform, crs, rpole)
-
+    transformer = partial(transform, crs, rpole, radians=False)
     rlon_obs, rlat_obs = transformer(lon_obs, lat_obs)
 
     coord_dict = {
@@ -124,7 +124,7 @@ def match_coords(df, interp_dict, dv_obs_name, master_idx=None):
     obs_coords = list(zip(coords['rlat_obs'], coords['rlon_obs']))
 
     # get the nearest grids
-    df['nearest_grid'] = dist_index(obs_coords, ens_coords)[1]
+    df['nearest_grid'] = dist_index(obs_coords, ens_coords)
     df['obs_coords'] = obs_coords
 
     ndf = df.groupby('nearest_grid').agg({
