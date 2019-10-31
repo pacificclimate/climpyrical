@@ -29,9 +29,6 @@ def read_data(
     ds = xr.open_dataset(data_path)
     actual_keys = set(ds.variables).union(set(ds.dims))
     keys.add(design_value_name)
-    check_keys(
-        actual_keys,
-        keys
-    )
+    check_keys(actual_keys, keys)
 
     return ds
