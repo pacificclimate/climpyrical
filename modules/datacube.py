@@ -4,14 +4,12 @@ import xarray as xr
 def check_keys(actual_keys, required_keys):
     # tests that required keys are a subset of actual keys
 
-    passed = True
     if not set(required_keys).issubset(actual_keys):
         raise KeyError(
                     "CanRCM4 ensemble is missing keys {}"
                     .format(required_keys - actual_keys)
             )
-        passed = False
-    return passed
+    return True
 
 
 def read_data(data_path, design_value_name, keys={'rlat', 'rlon', 'lat', 'lon', 'level'}):
