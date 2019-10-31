@@ -2,6 +2,7 @@
 .pytest_cache/
 modules/__pycache__/
 __pycache__/
+data/
 venv
 venv2
 .bash_history
@@ -13,3 +14,6 @@ notebooks/.ipynb_checkpoints/
 data/
 *~
 #*#
+notebooks/*.html
+notebooks/map1.geojson
+notebooks/reconstruction_snow.pdf

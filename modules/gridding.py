@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.spatial import distance
+import sklearn
 from sklearn.metrics import pairwise_distances_argmin
 from pyproj import Proj, transform
 from functools import partial
-from numba import njit, prange
 
 def rlat_rlon_to_ens(rlat, rlon):
     """Takes the rlat and rlon 1D arrays from the
@@ -35,45 +35,7 @@ def rlat_rlon_to_ens(rlat, rlon):
 
     return coord_dict
 
-def ens_obs_distance(lat_lon_ens, coord, method='haversine'):
-    '''Determines the distances between a station's coordinates
-    and the grid cells in North America.
-    Args:
-        lat_lon_obs (numpy.ndarray): array containing
-            tuple pairs of latitudes and longitudes of
-            stations
-        coord (tuple): lat lon location of station
-        method (str): method to use for the
-            distance calculations
-    Returns:
-        (numpy.ndarray): array containing the
-            distance between each grid cell and the station
-            from coord
-    '''
-
-    if method == 'haversine':
-        lat1, lon1 = coord
-        lat2, lon2 = zip(*lat_lon_ens)
-
-        lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
-
-        dlon = lon2 - lon1
-        dlat = lat2 - lat1
-
-        a = np.sin(dlat/2.0)**2+np.cos(lat1)*np.cos(lat2)*np.sin(dlon/2.0)**2
-
-        c = 2 * np.arcsin(np.sqrt(a))
-        return c.argmin()
-
-    if method == 'euclidean':
-        return distance.cdist(
-                            lat_lon_ens,
-                            [coord],
-                            'euclidean').argmin()
-    else:
-        raise ValueError("must be \'euclidean\' or \'haversine\'")
-
-def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
+def dist_index(lat_lon_obs, lat_lon_ens):
     """Determines the index in the ensemble shape
     of grid cells with coordinates that are the closest
     in euclidean distance to stations.
@@ -95,18 +57,26 @@ def dist_index(lat_lon_obs, lat_lon_ens, method='haversine'):
     lat_obs, lon_obs = zip(*lat_lon_obs)
     lat_ens, lon_ens = zip(*lat_lon_ens)
 
-    dist_list = pairwise_distances_argmin(lat_lon_obs, lat_lon_ens, metric='cosine')
+    lat_obs, lon_obs = np.deg2rad(lat_obs), np.deg2rad(lon_obs)
+    lat_ens, lon_ens = np.deg2rad(lat_ens), np.deg2rad(lon_ens)
+
+    lat_lon_ens, lat_lon_obs = list(zip(lat_ens, lon_ens)), list(zip(lat_obs, lon_obs))
+
+    with sklearn.config_context(working_memory=128):
+        dist_list = sklearn.metrics.pairwise_distances_argmin(lat_lon_obs, lat_lon_ens, metric='haversine')
     return np.asarray(dist_list)
 
 
 def to_rotated(
-    lat_obs, lon_obs,
+    lat_obs,
+    lon_obs,
     to = '+proj=longlat +ellps=WGS84',
-    fro = '+proj=ob_tran +o_proj=longlat +lon_0=-97 +o_lat_p=42.5 +a=1 +to_meter=0.0174532925199 +no_defs'
+    fro = '+proj=ob_tran +o_proj=longlat +lon_0=-97 +o_lat_p=42.5 +a=1 +to_meter=0.0174532925199 +no_defs',
     ):
     """Rotates regular latlon coordinates to rotated pole
     coordinates given a proj4 string that defines
-    the rotated poles.
+    the rotated poles. Projection string parameters are defined
+    here: https://proj.org/operations/projections/ob_tran.html
     Args:
         lat_obs/lon_obs (numpy.ndarray): array containing
             latitudes and longitudes of
@@ -121,18 +91,17 @@ def to_rotated(
     rpole = Proj(fro)
     crs = Proj(to)
 
-    transformer = partial(transform, crs, rpole)
-
+    transformer = partial(transform, crs, rpole, radians=False)
     rlon_obs, rlat_obs = transformer(lon_obs, lat_obs)
 
     coord_dict = {
         'rlat_obs': np.rad2deg(rlat_obs),
-        'rlon_obs':  np.rad2deg(rlon_obs)
+        'rlon_obs': np.rad2deg(rlon_obs)
     }
 
     return coord_dict
 
-def match_coords(df, interp_dict, dv_obs_name):
+def match_coords(df, interp_dict, dv_obs_name, master_idx=None):
     """Creates modified pands dataframe containing the index
     in the flattened ensemble shape of the corresponding observation.
     Grid cells with more than one stations are averaged.
@@ -146,7 +115,8 @@ def match_coords(df, interp_dict, dv_obs_name):
             and the index of the closest model grid cell
     """
     coords = to_rotated(df['lat'].values, df['lon'].values)
-    master_idx = interp_dict['idx']
+    if master_idx is None:
+        master_idx = interp_dict['idx']
 
     ens_coords = list(zip(interp_dict['irlat_ens'][master_idx],
                           interp_dict['irlon_ens'][master_idx])
@@ -166,4 +136,3 @@ def match_coords(df, interp_dict, dv_obs_name):
     ndf['matched_idx'] = ndf.index
 
     return ndf
-

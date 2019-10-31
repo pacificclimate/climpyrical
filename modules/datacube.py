@@ -1,9 +1,3 @@
-import glob
-import warnings
-
-import numpy as np
-import numpy.ma as ma
-
 import xarray as xr
 
 def check_keys(actual_keys, required_keys):
@@ -16,15 +10,11 @@ def check_keys(actual_keys, required_keys):
         passed = False
     return passed
 
-def check_path(data_path):
-    passed = True
-    if isinstance(data_path, str) is False:
-        raise ValueError('Path requires str got {}'.format(type(data_path)))
-        passed = False
-
-    return passed
-
-def read_data(data_path, design_value_name):
+def read_data(
+        data_path,
+        design_value_name,
+        keys={'rlat','rlon','lat','lon','level'}
+    ):
     """Load an ensemble of CanRCM4
     models into a single datacube.
     ------------------------------
@@ -35,14 +25,13 @@ def read_data(data_path, design_value_name):
         ds (xarray Dataset): data cube of assembled ensemble models
             into a single variable.
     """
-    check_path(data_path)
+
     ds = xr.open_dataset(data_path)
     actual_keys = set(ds.variables).union(set(ds.dims))
+    keys.add(design_value_name)
     check_keys(
         actual_keys,
-        {'rlat', 'rlon',
-        'lat', 'lon',
-        'level', design_value_name}
+        keys
     )
 
     return ds
