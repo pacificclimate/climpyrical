@@ -1,6 +1,9 @@
 import xarray as xr
 
+
 def check_keys(actual_keys, required_keys):
+    # tests that required keys are a subset of actual keys
+
     passed = True
     if not set(required_keys).issubset(actual_keys):
         raise KeyError(
@@ -10,11 +13,8 @@ def check_keys(actual_keys, required_keys):
         passed = False
     return passed
 
-def read_data(
-        data_path,
-        design_value_name,
-        keys={'rlat','rlon','lat','lon','level'}
-    ):
+
+def read_data(data_path, design_value_name, keys={'rlat', 'rlon', 'lat', 'lon', 'level'}):
     """Load an ensemble of CanRCM4
     models into a single datacube.
     ------------------------------
