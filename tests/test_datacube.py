@@ -7,16 +7,14 @@ from datacube import read_data, check_keys
 
 @pytest.mark.parametrize('actual_keys,required_keys,passed', [
     ({'rlat', 'rlon', 'dv', 4, 'lat', 'lon'}, {'rlat', 'rlon', 'dv', 4}, True),
-    ({'rlat', 'rlon', True, 99999}, {'rlat', 'rlon', True, 99999}, True)])
-def test_check_keys(actual_keys, required_keys, passed):
-    checker = check_keys(actual_keys, required_keys)
-    assert(checker == passed)
-
-@pytest.mark.parametrize('actual_keys,required_keys,passed', [
+    ({'rlat', 'rlon', True, 99999}, {'rlat', 'rlon', True, 99999}, True),
     ({'rlat', 'rlon', 4.0, False}, {'hi', 'nic', 'was', 'here', 'lon'}, False)])
-def test_bad_keys(actual_keys, required_keys, passed):
-    with pytest.raises(KeyError):
-        checker = check_keys(actual_keys, required_keys)
+def test_check_keys(actual_keys, required_keys, passed):
+    if passed:
+        assert check_keys(actual_keys, required_keys)
+    else:
+        with pytest.raises(KeyError):
+            check_keys(actual_keys, required_keys)
 
 @pytest.mark.parametrize('data_path,design_value_name,keys,shape', [
     ('./data/snw.nc', 'snw', {'rlat', 'rlon', 'lat', 'lon'}, (66, 130, 155)),
