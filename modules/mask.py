@@ -50,16 +50,42 @@ def rotate_shapefile(
         'to_meter': 0.0174532925199,
         'no_defs': True}
 ):
+    '''Rotates a shapefile to a new crs defined by a proj4 dictionary.
+    Args:
+        p (geopandas.GeoSeries object): polygons of Canada
+        crs (dict): proj4 dictorionary
+
+    Returns:
+        target (geopandas.GeoSeries object): geographic polygons
+            in new projection
+    '''
+    # this checks the polyon input
     check_polygon(p)
+    # this checks polygon can be rotated
     check_pre_proj(p)
     target = p.to_crs(crs)
+    # this checks the rotation
     check_post_proj(target)
+
     return target
 
 
 def gen_raster_mask_from_vector(x, y, p):
+    '''Determines if points are contained within polygons of Canada
+    Args:
+        x, y (np.ndarray): Arrays containing the rlon and rlat of CanRCM4
+            grids
+        p (geopandas.GeoSeries object): rotated polygons of Canada
+
+    Returns:
+        grid (np.ndarray): boolean 2D grid mask of CanRCM4 raster clipped
+            based on polygon boundaries
+    '''
+    # this checks the coordinate inputes
     check_coords(x, y)
+    # this checks the polygon input
     check_polygon(p)
+    # this checks that the polygon is in rotated form
     check_post_proj(p)
     grid = np.meshgrid(x, y)[0]
     for i, rlon in enumerate(x):
