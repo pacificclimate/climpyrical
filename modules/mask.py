@@ -32,9 +32,9 @@ def check_post_proj(p):
 def check_coords(x, y):
     if (not isinstance(x, np.ndarray)) or (not isinstance(y, np.ndarray)):
         raise TypeError("Please provide an object of type {}".format(np.ndarray))
-    if x.max() >= 35 or x.min() <= -35:
+    if (not np.isclose(x.max(), 33.8800048828125)) or (not np.isclose(x.min(), -33.8800048828125)):
         raise ValueError("Unexpected range of values in x dimension")
-    if y.max() >= 35 or y.min() <= -35:
+    if (not np.isclose(y.max(), 28.15999984741211)) or (not np.isclose(y.min(), -28.59999656677246)):
         raise ValueError("Unexpected range of values in y dimension")
     if x.size != 155 or y.size != 130:
         raise ValueError("Longitude and latitude expected size 155 and 130 respectively.")
