@@ -14,6 +14,7 @@ def check_polygon(p):
 
 
 def check_pre_proj(p):
+    # tests area expected in regular projection
     check_polygon(p)
     if not (np.isclose(p.area, 1712.995228)):
         raise ValueError('Incorrect area for Canada for expected projection. Check polygon.')
@@ -21,6 +22,7 @@ def check_pre_proj(p):
 
 
 def check_post_proj(p):
+    # tests area expected in rotated projection
     check_polygon(p)
     if not (np.isclose(p.area, 837.229487)):
         raise ValueError('Incorrect area for Canada for expected projection. Check polygon.')
@@ -53,7 +55,7 @@ def rotate_shapefile(
     '''Rotates a shapefile to a new crs defined by a proj4 dictionary.
     Args:
         p (geopandas.GeoSeries object): polygons of Canada
-        crs (dict): proj4 dictorionary
+        crs (dict): proj4 dictionary
 
     Returns:
         target (geopandas.GeoSeries object): geographic polygons
