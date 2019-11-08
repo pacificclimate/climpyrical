@@ -53,7 +53,7 @@ def test_check_post_proj(p, passed):
     ('x', np.linspace(-24, 24, 155), False),
     (np.linspace(-24, 24, 155), 'y', False),
     (np.linspace(0, 10, 30), np.linspace(0, 10, 30), False),
-    (np.linspace(-24, 24, 155), np.linspace(-30, 30, 130), True)])
+    (np.linspace(-33.8800048828125, 33.8800048828125, 155), np.linspace(-28.59999656677246, 28.15999984741211, 130), True)])
 def test_check_coords(x, y, passed):
     if passed:
         assert check_coords(x,y)
