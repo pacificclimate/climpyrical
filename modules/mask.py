@@ -1,35 +1,76 @@
+import warnings
+
 import numpy as np
 from shapely.geometry import Point
 import geopandas as gpd
 
 
-def check_polygon(p):
+def check_polygon_validity(p):
+    '''Checks that the polygon provided is valid
+    Args:
+        p: polygon of type geopandas.GeoSeries
+    Returns:
+        bool for passing the checker
+    '''
     if not isinstance(p, gpd.GeoSeries):
         raise TypeError('Must be gpd.GeoSeries, not {}'.format(type(p)))
     if p.hasnans:
-        raise ValueError('GeoSeries contains invalid values.')
+        raise ValueError('GeoDataFrame contains invalid values.')
     if not p.size > 0:
-        raise ValueError('GeoSeries is is_empty')
+        raise ValueError('GeoDataFrame is is_empty')
     return True
 
 
-def check_pre_proj(p):
-    # tests area expected in regular projection
-    check_polygon(p)
-    if not (np.isclose(p.area, 1712.995228)):
-        raise ValueError('Incorrect area for Canada for expected projection. Check polygon.')
+def check_polygon_before_projection(p):
+    '''Raises a warning if polygon provided does not
+    contain the expected WGS84 projection, but does not stop
+    code from running
+    Args:
+        p: polygon of type geopandas.GeoSeries
+    Returns:
+        bool True if passed
+    '''
+    check_polygon_validity(p)
+    crs = {'init': 'epsg:4326'}
+    if p.crs != crs:
+        raise ValueError('Polygon provided is in projection {}, expected {}'.format(p.crs, crs))
     return True
 
 
-def check_post_proj(p):
-    # tests area expected in rotated projection
-    check_polygon(p)
-    if not (np.isclose(p.area, 837.229487)):
-        raise ValueError('Incorrect area for Canada for expected projection. Check polygon.')
+def check_polygon_after_projection(p):
+    '''Checks that the polygon after rotation is in the correct
+    projection for rotated pole - a requirement of climpyrical
+    Args:
+        p: polygon after projection transformation
+    Returns:
+        bool True if passed
+    '''
+    check_polygon_validity(p)
+
+    crs={
+        'proj': 'ob_tran',
+        'o_proj': 'longlat',
+        'lon_0': -97,
+        'o_lat_p': 42.5,
+        'a': 6378137,
+        'to_meter': 0.0174532925199,
+        'no_defs': True
+    }
+
+    if p.crs != crs:
+        raise ValueError('{} is an incorrect projection'.format(p.crs))
     return True
 
 
-def check_coords(x, y):
+def check_input_grid_coords(x, y):
+    '''Checks that the input coordinates defining the CanRCM4 grid
+    are the expected type, size, and range of values.
+    Args:
+        x, y (np.ndarray): numpy arrays of rlon, rlat respectively
+            of CanRCM4 grids
+    Returns:
+        bool True if passed
+    '''
     if (not isinstance(x, np.ndarray)) or (not isinstance(y, np.ndarray)):
         raise TypeError("Please provide an object of type {}".format(np.ndarray))
     if (not np.isclose(x.max(), 33.8800048828125)) or (not np.isclose(x.min(), -33.8800048828125)):
@@ -62,12 +103,12 @@ def rotate_shapefile(
             in new projection
     '''
     # this checks the polyon input
-    check_polygon(p)
+    check_polygon_validity(p)
     # this checks polygon can be rotated
-    check_pre_proj(p)
+    check_polygon_before_projection(p)
     target = p.to_crs(crs)
     # this checks the rotation
-    check_post_proj(target)
+    check_polygon_after_projection(target)
 
     return target
 
