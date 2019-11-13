@@ -1,48 +1,51 @@
 ![logo.png](https://images.zenhubusercontent.com/5bc02597fcc72f27390ed1f9/c2cf2ba4-edb1-4b47-856e-20338712d4a7)
 # climpyrical
 
-climpyrical is a Python tool for reconstructing design value fields using meteorological station observations 
+`climpyrical` is a Python tool for reconstructing design value fields using meteorological station observations 
 
 and ensembles of design value fields provided in CanRCM4 models.
 
-### Requirements
-climpyrical relies on the great work done by the following open source projects:
-* [Numpy](https://www.numpy.org/)
-* [Cartopy](https://scitools.org.uk/cartopy/docs/latest/)
-* [xarray](http://xarray.pydata.org/en/stable/)
-* [matplotlib](https://matplotlib.org/)
-* [scipy](https://www.scipy.org/)
-* [pandas](https://pandas.pydata.org/)
+# Setup
 
-And many more. To install all of the dependencies used by climpyrical, install from requirements file found in `requirements.txt`
+`climpyrical` is still in development and is not registered. To package `climpyrical`, run
+```bash
+$ python setup.py sdist
+```
+
+# Requirements
+To install all of the dependencies used by climpyrical, install from requirements file found in `requirements.txt`
 
 via 
 
 ```bash
-pip install -r requirements.txt
+$ pip install -r requirements.txt
 ```
 
-### Getting started
-There are a series of helper functions for conducting the empirical orthogonal function analysis. The software requires a list of NetCDF model files all contained within a single directory, and assmebles them into a datacube.
-
+# Getting started
+### Reading Data
+Load an ensemble of climate models using `climpyrical`'s `read_data` function. `read_data` creates an `xarray` dataset containing the fields defined by `keys` and by the design value key as found in the climate model.
 ```python
->>> from datacube import read_data
+from climpyrical.datacube import read_data
 
->>> PATH = '/path/to/climate/models'
-
->>> ds = read_data(PATH)
-
-<xarray.Dataset>
-Dimensions:       (bnds: 2, rlat: 130, rlon: 155, run: 35)
-Coordinates:
-    time          object 1983-07-17 23:30:00
-    lon           (rlat, rlon) float64 232.9 233.3 233.7 ... 335.5 335.9 336.4
-    lat           (rlat, rlon) float64 12.36 12.52 12.68 ... 59.77 59.46 59.15
-  * rlon          (rlon) float64 -33.88 -33.44 -33.0 -32.56 ... 33.0 33.44 33.88
-  * rlat          (rlat) float64 -28.6 -28.16 -27.72 ... 27.28 27.72 28.16
-...
+# necessary keys to load from .nc file
+keys = {'rlat', 'rlon', 'lat', 'lon', 'level'}
+ds = read_data('/path/to/data.nc', 'snow', keys)
 ```
-please see `demo.ipynb` for more information and example usage on a climate field.
+
+### Masking Models
+To reamain domain flexible in `climpyrical`, shapefiles can be provided to mask the analysis to include only modeled values within that shape.
+
+```python3
+world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+can_index = world[world.name == "Canada"].index
+can_geom = world.loc[can_index, 'geometry']
+
+rotated_canada = rotate_shapefile(can_geom)
+
+mask = gen_raster_mask_from_vector(ds.rlon, ds.rlat, rotated_canada)
+```
+
+`mask` contains a 2 dimensional grid with boolean values masked based on the `rotated_canada` `GeoSeries`. 
 
 ## Authors
 * **Nic Annau** - [Pacific Climate Impacts Consortium](https://www.pacificclimate.org/)
