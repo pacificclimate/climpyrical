@@ -28,8 +28,8 @@ setup(
     author_email="nannau@uvic.ca",
     zip_safe=True,
     scripts=[
-        'scripts/datacube.py',
-        'scripts/mask.py',
+        'climpyrical/datacube.py',
+        'climpyrical/mask.py',
     ],
     install_requires=['numpy', 'shapely', 'geopandas', 'xarray'],
     tests_require=['pytest'],
