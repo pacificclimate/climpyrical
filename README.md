@@ -9,7 +9,7 @@ and ensembles of design value fields provided in CanRCM4 models.
 
 `climpyrical` is still in development and is not registered. To package `climpyrical`, run
 ```bash
-$ python setup.py sdist
+$ pip install .
 ```
 
 # Requirements
@@ -45,7 +45,7 @@ rotated_canada = rotate_shapefile(can_geom)
 mask = gen_raster_mask_from_vector(ds.rlon, ds.rlat, rotated_canada)
 ```
 
-`mask` contains a 2 dimensional grid with boolean values masked based on the `rotated_canada` `GeoSeries`. 
+`mask` contains a 2 dimensional grid with boolean values masked based on the `rotated_canada` `GeoSeries`.
 
 ## Authors
 * **Nic Annau** - [Pacific Climate Impacts Consortium](https://www.pacificclimate.org/)
