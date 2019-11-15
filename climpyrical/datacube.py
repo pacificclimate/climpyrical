@@ -1,9 +1,16 @@
 import xarray as xr
 
 
-def check_keys(actual_keys, required_keys):
-    # tests that required keys are a subset of actual keys
-
+def check_valid_keys(actual_keys, required_keys):
+    '''A functtion to test that the keys found in the
+    dataset are a valid and a subset of the actual required keys
+    Args:
+        actual_keys (dict): dictionary with keys found in the NetCDF file
+        required_keys (dict): dictionary of expected and required keys
+            that make sense for the climpyrical analyses
+    Returns:
+        bool: True of passed, raises error if not.
+    '''
     if not set(required_keys).issubset(actual_keys):
         raise KeyError(
             "CanRCM4 ensemble is missing keys {}".format(
@@ -22,6 +29,10 @@ def read_data(
     Args:
         data_path (Str): path to folder
             containing CanRCM4 ensemble
+        design_value_name (str): name of design value as found in the
+            NetCDF4 file
+        keys (dict, optional): dictionary of required keys in NetCDF4
+            file
     Returns:
         ds (xarray Dataset): data cube of assembled ensemble models
             into a single variable.
@@ -30,6 +41,6 @@ def read_data(
     ds = xr.open_dataset(data_path)
     actual_keys = set(ds.variables).union(set(ds.dims))
     keys.add(design_value_name)
-    check_keys(actual_keys, keys)
+    check_valid_keys(actual_keys, keys)
 
     return ds

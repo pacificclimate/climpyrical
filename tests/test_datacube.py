@@ -1,7 +1,7 @@
 import os
 import pytest
 from climpyrical.datacube import read_data
-from climpyrical.datacube import check_keys
+from climpyrical.datacube import check_valid_keys
 
 
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -23,12 +23,12 @@ THIS_DIR = os.path.dirname(os.path.abspath(__file__))
         ),
     ],
 )
-def test_check_keys(actual_keys, required_keys, passed):
+def test_check_valid_keys(actual_keys, required_keys, passed):
     if passed:
-        assert check_keys(actual_keys, required_keys)
+        assert check_valid_keys(actual_keys, required_keys)
     else:
         with pytest.raises(KeyError):
-            check_keys(actual_keys, required_keys)
+            check_valid_keys(actual_keys, required_keys)
 
 
 @pytest.mark.parametrize(
@@ -73,5 +73,7 @@ def test_check_keys(actual_keys, required_keys, passed):
     ],
 )
 def test_shape(data_path, design_value_name, keys, shape):
+    # tests that the function loads a variety of test data
+    # properly
     ds = read_data(data_path, design_value_name, keys)
     assert ds[design_value_name].shape == shape
