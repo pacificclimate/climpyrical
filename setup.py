@@ -38,7 +38,7 @@ setup(
         'climpyircal':'climpyrical'
     },
     package_data={
-        'climpyrical': 'tests/data/*'
+        'climpyrical': ['tests/data/*', 'climpyrical']
     },
     classifiers='''
 Intended Audience :: Science/Research
