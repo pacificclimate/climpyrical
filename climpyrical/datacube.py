@@ -30,8 +30,8 @@ def read_data(
     Args:
         data_path (Str): path to folder
             containing CanRCM4 ensemble
-        design_value_name (str): name of design value as found in the
-            NetCDF4 file
+        design_value_name (str): name of design value exactly as appears
+            in the NetCDF4 file
         keys (dict, optional): dictionary of required keys in NetCDF4
             file
 
