@@ -1,5 +1,5 @@
 import sys
-from setuptools import setup
+from setuptools import setup, find_packages
 from setuptools.command.test import test as TestCommand
 
 
@@ -21,7 +21,7 @@ setup(
     name="climpyrical",
     description="A spatial basis pattern reconstruction tool",
     keywords="geography fields regression climate meteorology",
-    packages=['climpyrical'],
+    packages=find_packages(),
     version='0.1dev',
     url="http://www.pacificclimate.org/",
     author="Nic Annau",
@@ -34,7 +34,12 @@ setup(
     install_requires=['numpy', 'shapely', 'geopandas', 'xarray'],
     tests_require=['pytest'],
     cmdclass={'test': PyTest},
-
+    package_dir={
+        'climpyircal':'climpyrical'
+    },
+    package_data={
+        'climpyrical': 'tests/data/*'
+    },
     classifiers='''
 Intended Audience :: Science/Research
 License :: GNU General Public License v3 (GPLv3)
