@@ -20,4 +20,4 @@ install:
   - pip install .
 script:
   - flake8 climpyrical/
-  - py.test -v calimpyrical/tests
+  - py.test -v climpyrical/tests
