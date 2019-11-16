@@ -2,14 +2,15 @@ import xarray as xr
 
 
 def check_valid_keys(actual_keys, required_keys):
-    '''A functtion to test that the keys found in the
-    dataset are a valid and a subset of the actual required keys
+    '''A function to test that required_keys is a subset of actual_keys.
     Args:
         actual_keys (dict): dictionary with keys found in the NetCDF file
         required_keys (dict): dictionary of expected and required keys
             that make sense for the climpyrical analyses
     Returns:
         bool: True of passed, raises error if not.
+    Raises:
+        KeyError if required_keys are not a subset of the actual keys
     '''
     if not set(required_keys).issubset(actual_keys):
         raise KeyError(
@@ -33,6 +34,7 @@ def read_data(
             NetCDF4 file
         keys (dict, optional): dictionary of required keys in NetCDF4
             file
+
     Returns:
         ds (xarray Dataset): data cube of assembled ensemble models
             into a single variable.
