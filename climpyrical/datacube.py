@@ -1,4 +1,5 @@
 import xarray as xr
+import numpy as np
 
 
 def check_valid_data_path(data_path):
@@ -42,6 +43,33 @@ def check_valid_keys(actual_keys, required_keys):
     return True
 
 
+def check_valid_data(ds, design_value_name):
+    """A function to test that the data loaded is valid and expected.
+    Args:
+        ds (xarray.DataSet): ensemble with all relevant data
+        design_value_name (str): name of design value exactly as appears
+            in the NetCDF4 file
+    Returns:
+        bool: True of passed, raises error if not.
+    Raises:
+        ValueError if data is not expected
+    """
+    if ds[design_value_name].size == 0:
+        raise ValueError("Design value field is empty")
+    if ("rlat" in set(ds.variables).union(set(ds.dims))) or (
+        "rlon" in set(ds.variables).union(set(ds.dims))
+    ):
+        if (np.any(np.isnan(ds.rlat))) or (np.any(np.isnan(ds.rlon))):
+            raise ValueError("Coordinate axis contain unexpected NaN values")
+        if (np.any(np.diff(ds.rlat.values) < 0)) or np.any(
+            (np.diff(ds.rlon.values) < 0)
+        ):
+            raise ValueError(
+                "Coordinate axis are not monotonically increasing"
+            )
+    return True
+
+
 def read_data(
     data_path, design_value_name, keys={"rlat", "rlon", "lat", "lon", "level"}
 ):
@@ -65,5 +93,6 @@ def read_data(
     actual_keys = set(ds.variables).union(set(ds.dims))
     keys.add(design_value_name)
     check_valid_keys(actual_keys, keys)
+    check_valid_data(ds, design_value_name)
 
     return ds
