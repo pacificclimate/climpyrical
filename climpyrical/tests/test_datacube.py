@@ -16,13 +16,14 @@ import numpy as np
         (resource_filename("climpyrical", "tests/data/snw.nc"), True),
         (4, False),
         (resource_filename("climpyrical", "tests/data/maskarray.npy"), False),
+        # ("tests/data/bananas.nc", False)
     ],
 )
 def test_check_valid_data_path(data_path, passed):
     if passed:
         assert check_valid_data_path(data_path)
     else:
-        with pytest.raises((KeyError, TypeError)):
+        with pytest.raises((KeyError, TypeError, EnvironmentError)):
             check_valid_data_path(data_path)
 
 
