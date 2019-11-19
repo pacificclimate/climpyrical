@@ -52,7 +52,7 @@ def check_valid_data(ds, design_value_name):
     Returns:
         bool: True of passed, raises error if not.
     Raises:
-        ValueError if data is not expected
+        ValueError if loaded data is unexpected or invalid
     """
     if ds[design_value_name].size == 0:
         raise ValueError("Design value field is empty")
@@ -87,6 +87,11 @@ def read_data(
     Returns:
         ds (xarray Dataset): data cube of assembled ensemble models
             into a single variable.
+    Raises:
+        FileNotFoundError: if file not found
+        ValueError: if file contains unexpected or invalid data
+        KeyError if NetCDF4 file is missing required keys
+        TypeError if path provided is invalid
     """
     check_valid_data_path(data_path)
     ds = xr.open_dataset(data_path)
