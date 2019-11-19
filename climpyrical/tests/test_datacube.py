@@ -50,8 +50,9 @@ def test_check_valid_keys(actual_keys, required_keys, passed):
         with pytest.raises(KeyError):
             check_valid_keys(actual_keys, required_keys)
 
-
+# simulate an empty design value input
 empty_ds = xr.Dataset({"empty": []}, coords={"rlon": 0, "rlat": 0})
+# simulate unexpected coordinate value inputs
 bad_coords = xr.Dataset(
     {"empty": [-10, 10, -10]},
     coords={
