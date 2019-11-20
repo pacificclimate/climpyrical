@@ -1,9 +1,6 @@
 import numpy as np
-from scipy.spatial import distance
 from scipy.interpolate import NearestNDInterpolator
-
 from pyproj import Transformer, Proj
-from functools import partial
 
 
 def check_input_coords(x, y):
@@ -42,19 +39,22 @@ def check_coords_are_flattened(x, y, xext, yext):
     if xext.size != x.size * y.size:
         # bad shape
         raise ValueError(
-            "extended arrays must be equivalent to the product of the coordinate grid original axis"
+            "extended arrays must be equivalent to the product of the coordinate \
+            grid original axis"
         )
 
-    if not np.array_equal(xext[: x.size], xext[x.size : 2 * x.size]):
+    if not np.array_equal(xext[:x.size], xext[x.size: 2 * x.size]):
         # they should all be increasing tile wise
         raise ValueError(
-            "Flat coords should increase np.tile-wise, i.e: 1, 2, 3, 1, 2, 3, ..."
+            "Flat coords should increase np.tile-wise, i.e: 1, 2, 3, 1, 2, 3, \
+            ..."
         )
 
     if not np.allclose(yext[: y.size], y[0]):
         # they should all be increasing repeat wise
         raise ValueError(
-            "Flat coords should increase np.repeat-wise, i.e: 1, 1, 2, 2, 3, 3, ..."
+            "Flat coords should increase np.repeat-wise, i.e: 1, 1, 2, 2, 3, 3, \
+            ..."
         )
 
     return True
@@ -116,7 +116,7 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
 def transform_coords(
     x,
     y,
-    source_crs={"init": "epsg:4326",},
+    source_crs={"init": "epsg:4326"},
     target_crs={
         "proj": "ob_tran",
         "o_proj": "longlat",
@@ -197,7 +197,8 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
         )
     if x.size != y.size:
         raise ValueError(
-            "To find the values in the supplied arrays, the arrays must be same shape."
+            "To find the values in the supplied arrays, the arrays must be \
+            same shape."
         )
     if x_obs.size != y_obs.size:
         raise ValueError(
@@ -206,30 +207,40 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
 
     return True
 
+
 def find_element_wise_nearest_pos(x, y, x_obs, y_obs):
     check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs)
     x_i = np.array([find_nearest_index(x, obs) for obs in x_obs])
     y_i = np.array([find_nearest_index(y, obs) for obs in y_obs])
     return x_i, y_i
 
+
 def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
     # x y are numpy arrays consistent with rlon rlat
     if x_i.size >= x.size or y_i.size >= y.size:
-        raise ValueError("More stations than grid cells. Ensure correct station array/grid cell array is provided.")
+        raise ValueError(
+            "More stations than grid cells. Ensure correct station \
+            array/grid cell array is provided."
+        )
     # field same shape as xiyi
     if field.shape != (y.size, x.size):
-        raise ValueError("Field provided is not consistent with coordinates provided.")
+        raise ValueError(
+            "Field provided is not consistent with coordinates provided."
+        )
     # mask same shape as field
     if field.shape != mask.shape:
         raise ValueError("Field and mask are not the same shape.")
 
     return True
 
+
 def check_final(x_i, y_i, final):
     if np.any(np.isnan(final)):
         raise ValueError("Final field contains unexpected NaN values.")
     if final.size != y_i.size or final.size != x_i.size:
-        raise ValueError("Final field is not consistent with coordinates provided.")
+        raise ValueError(
+            "Final field is not consistent with coordinates provided."
+        )
 
     return True
 
@@ -262,4 +273,3 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask):
     check_final(x_i, y_i, final)
 
     return final
-
