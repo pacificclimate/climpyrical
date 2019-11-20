@@ -28,7 +28,7 @@ setup(
     author_email="nannau@uvic.ca",
     zip_safe=True,
     scripts=[
-        'climpyrical/datacube.py',
+        'climpyrical/gridding.py',
         'climpyrical/mask.py',
     ],
     install_requires=['numpy', 'shapely', 'geopandas', 'xarray'],
