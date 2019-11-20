@@ -19,5 +19,5 @@ install:
   - pip install -r test_requirements.txt .
   - pip install .
 script:
-  - flake8 tests/ climpyrical/
-  - py.test -v tests
+  - flake8 climpyrical/
+  - py.test -v climpyrical/tests
