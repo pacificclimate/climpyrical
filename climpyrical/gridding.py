@@ -154,7 +154,8 @@ def check_find_nearest_index_inputs(data, val):
         raise TypeError(
             "Please provide a data array of type {}".format(np.ndarray)
         )
-
+    if np.any(np.diff(data) < 0):
+        raise ValueError("Array must be monotonically increasing.")
     if data.size < 2:
         raise TypeError("Array size must be greater than 1")
 
@@ -211,11 +212,32 @@ def find_element_wise_nearest_pos(x, y, x_obs, y_obs):
     y_i = np.array([find_nearest_index(y, obs) for obs in y_obs])
     return x_i, y_i
 
+def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
+    # x y are numpy arrays consistent with rlon rlat
+    if x_i.size >= x.size or y_i.size >= y.size:
+        raise ValueError("More stations than grid cells. Ensure correct station array/grid cell array is provided.")
+    # field same shape as xiyi
+    if field.shape != (y.size, x.size):
+        raise ValueError("Field provided is not consistent with coordinates provided.")
+    # mask same shape as field
+    if field.shape != mask.shape:
+        raise ValueError("Field and mask are not the same shape.")
+
+    return True
+
+def check_final(x_i, y_i, final):
+    if np.any(np.isnan(final)):
+        raise ValueError("Final field contains unexpected NaN values.")
+    if final.size != y_i.size or final.size != x_i.size:
+        raise ValueError("Final field is not consistent with coordinates provided.")
+
+    return True
+
 
 def find_nearest_index_value(x, y, x_i, y_i, field, mask):
     # check field has same shape of at least (x_i, y_i)
-
     # find station locations over nan
+    check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
     nanloc = np.isnan(field[y_i, x_i])
     if np.any(nanloc):
         xarr, yarr = np.meshgrid(x, y)
@@ -236,5 +258,8 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask):
         field[y_i[nanloc], x_i[nanloc]] = f(nan_pairs)
 
     # check that final array contains no nan
+    final = field[y_i, x_i]
+    check_final(x_i, y_i, final)
 
-    return field[y_i, x_i]
+    return final
+
