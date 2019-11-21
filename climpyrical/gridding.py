@@ -12,8 +12,10 @@ def check_input_coords(x, y):
     Returns:
         bool True if passed
     Raises:
-        TypeError: If numpy array not provided
-        ValueError: If x or y are not in expected range of values
+        TypeError:
+            If numpy array not provided
+        ValueError:
+            If x or y are not in expected range of values
     """
     if (not isinstance(x, np.ndarray)) or (not isinstance(y, np.ndarray)):
         raise TypeError(
@@ -42,12 +44,15 @@ def check_coords_are_flattened(x, y, xext, yext):
             bool True if passed
         Raises:
             TypeError, ValueError in check_input_coords
-            ValueError: If xext and yexy are not the same shape
-                        If extended flattened shape is not expected
-                        If flattened longitude is not increasing
-                            numpy tile-wise
-                        If flattened latitude is not increasing
-                            numpy repeat-wise
+            TypeError:
+                If input coords are not numpy arrays
+            ValueError:
+                If xext and yexy are not the same shape
+                If extended flattened shape is not expected
+                If flattened longitude is not increasing
+                    numpy tile-wise
+                If flattened latitude is not increasing
+                    numpy repeat-wise
     """
     check_input_coords(x, y)
     check_input_coords(xext, yext)
@@ -99,6 +104,18 @@ def flatten_coords(x, y):
             array containing tuples of rlat and
             rlon for each grid cell in the
             ensemble shape.
+    Raises:
+        ValueError, TypError in check_coords_are_flattened and
+            check)input_coords
+        TypeError:
+            If input coords are not numpy arrays
+        ValueError:
+            If xext and yexy are not the same shape
+            If extended flattened shape is not expected
+            If flattened longitude is not increasing
+                numpy tile-wise
+            If flattened latitude is not increasing
+                numpy repeat-wise
     """
     check_input_coords(x, y)
     xext = np.tile(x, y.shape[0])
@@ -109,6 +126,25 @@ def flatten_coords(x, y):
 
 
 def check_transform_coords_inputs(x, y, source_crs, target_crs):
+    """Checks the inputs of transform_coords(). Tests assume that
+    the target and source CRS are WGS84 and rotated pole respectively.
+    Args:
+        x,y (numpy.ndarray): array containing
+            latitudes and longitudes of
+            stations in source_crs projection
+        source_crs (dict): source proj4 crs
+        target_crs(dict): destination proj4 crs
+    Returns:
+        bool True if passed
+    Raises:
+        TypeError:
+                If input coords are not numpy arrays
+                If crs provided are not dict
+        ValueError:
+                If x and y are not the same shape
+                If x and y ranges are outside of the CanRCM4 grid cell
+                    in WGS84
+    """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
         raise TypeError(
             "Please provide an object of type {}".format(np.ndarray)
@@ -160,14 +196,23 @@ def transform_coords(
     the rotated poles. Projection string parameters are defined
     here: https://proj.org/operations/projections/ob_tran.html
     Args:
-        lat_obs/lon_obs (numpy.ndarray): array containing
+        x,y (numpy.ndarray): array containing
             latitudes and longitudes of
             stations
-        proj4_str (str): proj4 string defining rotated pole
+        source_crs (dict): proj4 dict defining source coordinates
             coordinates used.
     Returns:
         x,y (tuple): tuple containing the newly rotated
             coordinates rlon, rlat
+    Raises:
+        TypeError, ValueError in check_transform_coords_inputs
+        TypeError:
+                If input coords are not numpy arrays
+                If crs provided are not dict
+        ValueError:
+                If x and y are not the same shape
+                If x and y ranges are outside of the CanRCM4 grid cell
+                    in WGS84
     """
     check_transform_coords_inputs(x, y, source_crs, target_crs)
     p_source = Proj(source_crs)
@@ -188,10 +233,12 @@ def check_find_nearest_index_inputs(data, val):
     Returns:
         bool True if passed
     Raises:
-        TypeError: If data or val are not the correct type
-        ValueError: If data is not monotonically increasing
-                    If size is not greater than 1
-                    If val is not within data's range of values
+        TypeError:
+                If data or val are not the correct type
+        ValueError:
+                If data is not monotonically increasing
+                If size is not greater than 1
+                If val is not within data's range of values
     """
     if not isinstance(data, np.ndarray):
         raise TypeError(
@@ -221,10 +268,13 @@ def find_nearest_index(data, val):
     Returns:
         best_ind (integer): index in data of closest data value to val
     Raises:
-        TypeError: If data or val are not the correct type
-        ValueError: If data is not monotonically increasing
-                    If size is not greater than 1
-                    If val is not within data's range of values
+        TypeError, ValueError in check_find_nearest_index_inputs
+        TypeError:
+                If data or val are not the correct type
+        ValueError:
+                If data is not monotonically increasing
+                If size is not greater than 1
+                If val is not within data's range of values
     """
     check_find_nearest_index_inputs(data, val)
     lo, hi = 0, len(data) - 1
@@ -254,9 +304,10 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
     Returns:
         bool True if passed
     Raises:
-        TypeError: If any arrays provided are not np.ndarray
-        ValueError: If sizes of x and y or x_obs and y_obs are
-            not the same
+        TypeError:
+                If any arrays provided are not np.ndarray
+        ValueError:
+                If sizes of x and y or x_obs and y_obs are not the same
     """
 
     is_ndarray = [
@@ -294,13 +345,15 @@ def find_element_wise_nearest_pos(x, y, x_obs, y_obs):
             of locations in x and y where x_obs and y_obs are respectively
             closest
     Raises:
-        TypeError: If any arrays provided are not np.ndarray
-        ValueError: If sizes of x and y or x_obs and y_obs are
-                        not the same
-                    If data is not monotonically increasing
-                    If val in x_obs or y_obs is not within
-                        data's range of values
-                    If x or y are not in expected range of values
+        TypeError, ValueError in check_find_element_wise_nearest_pos_inputs
+        TypeError:
+                If any arrays provided are not np.ndarray
+        ValueError:
+                If sizes of x and y or x_obs and y_obs are not the same
+                If data is not monotonically increasing
+                If val in x_obs or y_obs is not within
+                    data's range of values
+                If x or y are not in expected range of values
     """
     check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs)
     x_i = np.array([find_nearest_index(x, obs) for obs in x_obs])
@@ -322,8 +375,9 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
     Returns:
         bool True if passed
     Raises:
-        ValueError: If field provided is not made of x and y coordinates
-                    If field shape and mask shapes are different
+        ValueError:
+                If field provided is not made of x and y coordinates
+                If field shape and mask shapes are different
     """
     if (not isinstance(x_i, np.ndarray)) or (not isinstance(y_i, np.ndarray)):
         raise TypeError(
@@ -365,14 +419,17 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask):
     Returns:
         bool True if passed
     Raises:
-        TypeError: If arrays are not of type np.ndarray
-        ValueError: If field provided is not made of x and y coordinates
-                    If field shape and mask shapes are different
-                    If x and y arrays are not monotonically increasing
-                    If x and y arrays do not have expected range
-                    If there are indices provided in x_i or y_i outside
-                        of the expected grid space
-                    If all values in x_i or y_i are not integers
+        TypeError, ValueError in check_find_nearest_value_inputs
+        TypeError:
+                If arrays are not of type np.ndarray
+        ValueError:
+                If field provided is not made of x and y coordinates
+                If field shape and mask shapes are different
+                If x and y arrays are not monotonically increasing
+                If x and y arrays do not have expected range
+                If there are indices provided in x_i or y_i outside
+                    of the expected grid space
+                If all values in x_i or y_i are not integers
     """
     check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
 
