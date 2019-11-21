@@ -32,7 +32,7 @@ setup(
     tests_require=["pytest"],
     cmdclass={"test": PyTest},
     package_dir={"climpyircal": "climpyrical"},
-    package_data={"climpyrical": ["tests/data/*", "climpyrical"]},
+    package_data={"climpyrical": ["tests/data/*", "climpyrical/"]},
     classifiers="""
 
 Intended Audience :: Science/Research
