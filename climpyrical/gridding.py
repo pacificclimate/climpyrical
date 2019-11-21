@@ -11,6 +11,9 @@ def check_input_coords(x, y):
             of CanRCM4 grids
     Returns:
         bool True if passed
+    Raises:
+        TypeError: If numpy array not provided
+        ValueError: If x or y are not in expected range of values
     """
     if (not isinstance(x, np.ndarray)) or (not isinstance(y, np.ndarray)):
         raise TypeError(
@@ -29,6 +32,23 @@ def check_input_coords(x, y):
 
 
 def check_coords_are_flattened(x, y, xext, yext):
+    """Checks that the coordinates provided are flattened correctly
+    Args:
+        x, y (np.ndarray): numpy arrays of rlon, rlat respectively
+            of CanRCM4 grids
+        xext, yext (np.ndarray): numpy arrays of flattened
+            rlon, rlat respectively of CanRCM4 grids
+        Returns:
+            bool True if passed
+        Raises:
+            TypeError, ValueError in check_input_coords
+            ValueError: If xext and yexy are not the same shape
+                        If extended flattened shape is not expected
+                        If flattened longitude is not increasing
+                            numpy tile-wise
+                        If flattened latitude is not increasing
+                            numpy repeat-wise
+    """
     check_input_coords(x, y)
     check_input_coords(xext, yext)
 
@@ -39,21 +59,21 @@ def check_coords_are_flattened(x, y, xext, yext):
     if xext.size != x.size * y.size:
         # bad shape
         raise ValueError(
-            "extended arrays must be equivalent to the product of the coordinate \
+            "extended arrays must be equivalent to the product of the coordinate\
             grid original axis"
         )
 
-    if not np.array_equal(xext[:x.size], xext[x.size: 2 * x.size]):
+    if not np.array_equal(xext[: x.size], xext[x.size: 2*x.size]):
         # they should all be increasing tile wise
         raise ValueError(
-            "Flat coords should increase np.tile-wise, i.e: 1, 2, 3, 1, 2, 3, \
+            "Flat coords should increase np.tile-wise, i.e: 1, 2, 3, 1, 2, 3,\
             ..."
         )
 
     if not np.allclose(yext[: y.size], y[0]):
         # they should all be increasing repeat wise
         raise ValueError(
-            "Flat coords should increase np.repeat-wise, i.e: 1, 1, 2, 2, 3, 3, \
+            "Flat coords should increase np.repeat-wise, i.e: 1, 1, 2, 2, 3, 3,\
             ..."
         )
 
@@ -150,6 +170,21 @@ def transform_coords(
 
 
 def check_find_nearest_index_inputs(data, val):
+    """Checks the inputs for find_nearest_index() for correct
+    datatypem are increasing monotonically, have a size greater than 1, and are
+    located somewhere in the CanRCM4 grid cell bounds.
+    Args:
+        data (np.ndarray): monotonically increasing array of column or
+            rowcoordinates
+        val (float): location of grid cell in x (rlon) or y (rlat) coords
+    Returns:
+        bool True if passed
+    Raises:
+        TypeError: If data or val are not the correct type
+        ValueError: If data is not monotonically increasing
+                    If size is not greater than 1
+                    If val is not within data's range of values
+    """
     if not isinstance(data, np.ndarray):
         raise TypeError(
             "Please provide a data array of type {}".format(np.ndarray)
@@ -157,7 +192,7 @@ def check_find_nearest_index_inputs(data, val):
     if np.any(np.diff(data) < 0):
         raise ValueError("Array must be monotonically increasing.")
     if data.size < 2:
-        raise TypeError("Array size must be greater than 1")
+        raise ValueError("Array size must be greater than 1")
 
     if not isinstance(val, float):
         raise TypeError("Please provide a value of type {}".format(float))
@@ -169,6 +204,20 @@ def check_find_nearest_index_inputs(data, val):
 
 
 def find_nearest_index(data, val):
+    """Bisect search algorithm to find a value within a monotonically
+    increasing array
+    Args:
+        data (np.ndarray): monotonically increasing array of column or row
+            coordinates
+        val (float): location of grid cell in x (rlon) or y (rlat) coords
+    Returns:
+        best_ind (integer): index in data of closest data value to val
+    Raises:
+        TypeError: If data or val are not the correct type
+        ValueError: If data is not monotonically increasing
+                    If size is not greater than 1
+                    If val is not within data's range of values
+    """
     check_find_nearest_index_inputs(data, val)
     lo, hi = 0, len(data) - 1
     best_ind = lo
@@ -188,12 +237,26 @@ def find_nearest_index(data, val):
 
 
 def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
+    """Checks the inputs for find_element_wise_nearest_pos()
+    Args:
+        x, y (np.ndarray): monotonically increasing array of column
+            or rowcoordinates
+        x_obs, y_obs (np.ndarray): observations full of values to find
+            in x and y
+    Returns:
+        bool True if passed
+    Raises:
+        TypeError: If any arrays provided are not np.ndarray
+        ValueError: If sizes of x and y or x_obs and y_obs are
+            not the same
+    """
+
     is_ndarray = [
         isinstance(array, np.ndarray) for array in [x, y, x_obs, y_obs]
     ]
     if not np.any(is_ndarray):
         raise TypeError(
-            "Please provide a data array of type {}".format(np.ndarray)
+            "Please provide data arrays of type {}".format(np.ndarray)
         )
     if x.size != y.size:
         raise ValueError(
@@ -209,6 +272,28 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
 
 
 def find_element_wise_nearest_pos(x, y, x_obs, y_obs):
+    """Finds the nearest positions in x and y for each value in
+    x_obs and y_obs. x and y should be the rlon and rlat arrays,
+    and the x_obs and y_obs should be the station coordinates in
+    rotated pole coords.
+    Args:
+        x, y (np.ndarray): monotonically increasing array of column
+            or rowcoordinates
+        x_obs, y_obs (np.ndarray): observations full of values to find
+            in x and y
+    Returns:
+        x_i, y_i (array of indices): locations in each coordinate axis
+            of locations in x and y where x_obs and y_obs are respectively
+            closest
+    Raises:
+        TypeError: If any arrays provided are not np.ndarray
+        ValueError: If sizes of x and y or x_obs and y_obs are
+                        not the same
+                    If data is not monotonically increasing
+                    If val in x_obs or y_obs is not within
+                        data's range of values
+                    If x or y are not in expected range of values
+    """
     check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs)
     x_i = np.array([find_nearest_index(x, obs) for obs in x_obs])
     y_i = np.array([find_nearest_index(y, obs) for obs in y_obs])
@@ -216,11 +301,29 @@ def find_element_wise_nearest_pos(x, y, x_obs, y_obs):
 
 
 def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
-    # x y are numpy arrays consistent with rlon rlat
-    if x_i.size >= x.size or y_i.size >= y.size:
+    """Checks find_nearest_value() inputs.
+    Args:
+        x, y (np.ndarray): monotonically increasing array of column
+            or rowcoordinates
+        x_i, y_i (np.ndarray): indices in the rlon and rlat arrays
+            of the closest grid to stations
+        field (np.ndarray): 2 dimensional field array containing
+            the CanRCM4 field
+        mask (np.ndarray of bool): 2 dimensional mask array matching field
+            with a boolean mask of accepted values for analyses
+    Returns:
+        bool True if passed
+    Raises:
+        ValueError: If field provided is not made of x and y coordinates
+                    If field shape and mask shapes are different
+    """
+    if (not x_i.dtype == np.dtype("int")) or (
+        not y_i.dtype == np.dtype("int")
+    ):
+        raise ValueError("Index array must contain integers")
+    if (x_i.max() > x.size) or (y_i.max() > y.size):
         raise ValueError(
-            "More stations than grid cells. Ensure correct station \
-            array/grid cell array is provided."
+            "Indices in index arrays are larger than coordinate array size"
         )
     # field same shape as xiyi
     if field.shape != (y.size, x.size):
@@ -234,22 +337,12 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
     return True
 
 
-def check_final(x_i, y_i, final):
-    if np.any(np.isnan(final)):
-        raise ValueError("Final field contains unexpected NaN values.")
-    if final.size != y_i.size or final.size != x_i.size:
-        raise ValueError(
-            "Final field is not consistent with coordinates provided."
-        )
-
-    return True
-
-
 def find_nearest_index_value(x, y, x_i, y_i, field, mask):
     # check field has same shape of at least (x_i, y_i)
     # find station locations over nan
     check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
     nanloc = np.isnan(field[y_i, x_i])
+    master_mask = np.logical_and(mask, ~np.isnan(field))
     if np.any(nanloc):
         xarr, yarr = np.meshgrid(x, y)
 
@@ -259,17 +352,16 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask):
         # arrange the pairs
         pairs = np.array(list(zip(xext, yext)))
 
-        f = NearestNDInterpolator(pairs[mask.flatten()], field[mask])
+        f = NearestNDInterpolator(
+            pairs[master_mask.flatten()], field[master_mask]
+        )
 
         x_nan = xarr[y_i, x_i][nanloc]
         y_nan = yarr[y_i, x_i][nanloc]
 
         nan_pairs = np.array(list(zip(x_nan, y_nan)))
-
         field[y_i[nanloc], x_i[nanloc]] = f(nan_pairs)
-
     # check that final array contains no nan
     final = field[y_i, x_i]
-    check_final(x_i, y_i, final)
 
     return final
