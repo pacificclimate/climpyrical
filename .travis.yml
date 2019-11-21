@@ -20,4 +20,4 @@ install:
   - pip install .
 script:
   - flake8 climpyrical/
-  - pytest --cov=climpyrical --cov-fail-under 100 climpyrical/tests/test_gridding.py
+  - py.test --cov=climpyrical --cov-fail-under 100 climpyrical/tests/test_gridding.py
