@@ -317,6 +317,10 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
         ValueError: If field provided is not made of x and y coordinates
                     If field shape and mask shapes are different
     """
+    if (not isinstance(x_i, np.ndarray)) or (not isinstance(y_i, np.ndarray)):
+        raise TypeError(
+            "Please provide index array of type {}".format(np.ndarray)
+        )
     if (not x_i.dtype == np.dtype("int")) or (
         not y_i.dtype == np.dtype("int")
     ):
@@ -338,6 +342,30 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
 
 
 def find_nearest_index_value(x, y, x_i, y_i, field, mask):
+    """Finds the nearest model value to a station location in the CanRCM4
+    grid space
+    Args:
+        x, y (np.ndarray): monotonically increasing array of column
+            or rowcoordinates
+        x_i, y_i (np.ndarray): indices in the rlon and rlat arrays
+            of the closest grid to stations
+        field (np.ndarray): 2 dimensional field array containing
+            the CanRCM4 field
+        mask (np.ndarray of bool): 2 dimensional mask array matching field
+            with a boolean mask of accepted values for analyses
+
+    Returns:
+        bool True if passed
+    Raises:
+        TypeError: If arrays are not of type np.ndarray
+        ValueError: If field provided is not made of x and y coordinates
+                    If field shape and mask shapes are different
+                    If x and y arrays are not monotonically increasing
+                    If x and y arrays do not have expected range
+                    If there are indices provided in x_i or y_i outside
+                        of the expected grid space
+                    If all values in x_i or y_i are not integers
+    """
     # check field has same shape of at least (x_i, y_i)
     # find station locations over nan
     check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
