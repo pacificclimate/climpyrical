@@ -257,10 +257,11 @@ bad_idx = np.array([10, 12, 200])
     "x,y,x_i,y_i,field,mask,passed",
     [
         (x, y, idx, idx, good_field, mask, True),
+        (x, y, 'x', 'y', good_field, mask, False),
+        (idx, idx, x, y, good_field, bad_mask, False),
         (x, y, idx, idx, bad_field, mask, False),
         (x, y, idx, idx, good_field, bad_mask, False),
         (x, y, bad_idx, bad_idx, good_field, bad_mask, False),
-        (idx, idx, x, y, good_field, bad_mask, False),
         (x, y, idx, idx, good_field_nan, mask, True),
     ],
 )

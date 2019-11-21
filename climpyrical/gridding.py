@@ -366,12 +366,21 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask):
                         of the expected grid space
                     If all values in x_i or y_i are not integers
     """
-    # check field has same shape of at least (x_i, y_i)
-    # find station locations over nan
     check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
+
+    # find any stations that have a NaN corresponding grid cell
     nanloc = np.isnan(field[y_i, x_i])
+
+    # combine mask and nan locations in field to
+    # create a master mask of eligible grid cells
+    # for interpolation
     master_mask = np.logical_and(mask, ~np.isnan(field))
+
+    # if any NaN values found over station values,
+    # perform a nearest neighbour interpolation to get
+    # valid model value at that location
     if np.any(nanloc):
+        # create grids of rlon and rlat
         xarr, yarr = np.meshgrid(x, y)
 
         # flatten coordinates
@@ -380,16 +389,25 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask):
         # arrange the pairs
         pairs = np.array(list(zip(xext, yext)))
 
+        # create interpolation function for every point
+        # except the locations of the NaN values
         f = NearestNDInterpolator(
             pairs[master_mask.flatten()], field[master_mask]
         )
 
+        # get the rlon and rlat locations of the NaN values
         x_nan = xarr[y_i, x_i][nanloc]
         y_nan = yarr[y_i, x_i][nanloc]
 
+        # interpolate a value at the locations of those NaN values
         nan_pairs = np.array(list(zip(x_nan, y_nan)))
+
+        # replace the field value at NaN locations with the
+        # interpolated values
         field[y_i[nanloc], x_i[nanloc]] = f(nan_pairs)
-    # check that final array contains no nan
+
+    # provide a final array of field values at station locations
+    # including any replaced NaN values if program found it neccessary
     final = field[y_i, x_i]
 
     return final
