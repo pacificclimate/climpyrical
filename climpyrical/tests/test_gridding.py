@@ -7,7 +7,6 @@ from climpyrical.gridding import (
     check_find_nearest_index_inputs,
     check_find_element_wise_nearest_pos_inputs,
     check_find_nearest_value_inputs,
-    check_final,
     find_nearest_index,
     find_element_wise_nearest_pos,
     find_nearest_index_value,
@@ -238,6 +237,7 @@ def test_find_element_wise_nearest_pos(x, y, x_obs, y_obs, expected):
 
 # simulate a field
 good_field = np.ones((130, 155))
+good_field_nan = good_field.copy()
 bad_field = np.ones((128, 145))
 
 mask = good_field == 1
@@ -249,18 +249,19 @@ y = np.linspace(-28.59999656677246, 28.15999984741211, 130)
 badx = np.linspace(-33.8800048828125, 33.8800048828125, 156)
 bady = np.linspace(-28.59999656677246, 28.15999984741211, 133)
 
-x_i, y_i = np.array([0.0, 0.0]), np.array([0.0, 0.0])
+idx = np.array([10, 12, 14])
+bad_idx = np.array([10, 12, 200])
 
 
 @pytest.mark.parametrize(
     "x,y,x_i,y_i,field,mask,passed",
     [
-        (x, y, x_i, y_i, good_field, mask, True),
-        (x, y, x_i, y_i, bad_field, mask, False),
-        (x, y, x_i, y_i, good_field, bad_mask, False),
-        (x_i, y_i, x, y, good_field, bad_mask, False)
-        # (badx, y, x_i, y_i, good_field, mask, False),
-        # (x, bady, x_i, y_i, good_field, mask, False)
+        (x, y, idx, idx, good_field, mask, True),
+        (x, y, idx, idx, bad_field, mask, False),
+        (x, y, idx, idx, good_field, bad_mask, False),
+        (x, y, bad_idx, bad_idx, good_field, bad_mask, False),
+        (idx, idx, x, y, good_field, bad_mask, False),
+        (x, y, idx, idx, good_field_nan, mask, True),
     ],
 )
 def test_check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask, passed):
@@ -271,40 +272,29 @@ def test_check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask, passed):
             check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
 
 
-good_final = np.empty((20))
-bad_final = np.empty((20))
-
-bad_final_a = np.empty((20))[:-1]
-bad_final[10] = np.nan
+good_final = np.ones((20)) * np.pi
 x_i = np.arange(20)
 y_i = np.arange(20)
-
-
-@pytest.mark.parametrize(
-    "x_i,y_i,field,passed",
-    [
-        (x_i, y_i, good_final, True),
-        (x_i, y_i, bad_final, False),
-        (x_i, y_i, bad_final_a, False),
-    ],
-)
-def test_check_final(x_i, y_i, field, passed):
-    if passed:
-        assert check_final(x_i, y_i, field)
-    else:
-        with pytest.raises((ValueError, KeyError, TypeError)):
-            check_final(x_i, y_i, field)
-
-
 idx = np.array([10, 12, 14])
-good_field[idx, idx] = np.pi
+good_field *= np.pi
+good_field_nan = good_field.copy()
+good_field_nan[idx, idx] = np.nan
 
 
 @pytest.mark.parametrize(
     "x,y,x_i,y_i,field,mask,expected",
-    [(x, y, idx, idx, good_field, mask, np.ones(3) * np.pi)]
+    [
+        (x, y, idx, idx, good_field, mask, np.ones(idx.size) * np.pi),
+        (x, y, idx, idx, good_field_nan, mask, np.ones(idx.size) * np.pi),
+    ],
 )
 def test_find_nearest_index_value(x, y, x_i, y_i, field, mask, expected):
-    assert np.allclose(
-        expected, find_nearest_index_value(x, y, x_i, y_i, field, mask)
+    final = find_nearest_index_value(x, y, x_i, y_i, field, mask)
+    truth = (
+        np.any(np.isnan(final))
+        or final.size != x_i.size
+        or final.size != y_i.size
+        or (np.allclose(expected, final) is False)
     )
+
+    assert truth is False
