@@ -126,24 +126,24 @@ def test_check_transform_coords_inputs(x, y, source_crs, target_crs, passed):
     "x,y,source_crs,target_crs,expected_tuple",
     [
         (
-            -123.0,
-            49.0,
+            np.array([-123.0]),
+            np.array([49.0]),
             source_crs,
             target_crs,
             (-16.762937096809097, 4.30869242838931),
         ),
         (
-            -53.0,
-            49.0,
+            np.array([-60.0]),
+            np.array([49.0]),
             source_crs,
             target_crs,
-            (27.50539689105958, 9.319029395345673),
+            (23.44545622, 7.09855438),
         ),
     ],
 )
 def test_transform_coords(x, y, source_crs, target_crs, expected_tuple):
-    assert np.array_equal(
-        np.array(transform_coords(x, y)), np.array(expected_tuple)
+    assert np.allclose(
+        np.array(transform_coords(x, y)).flatten(), np.array(expected_tuple)
     )
 
 
@@ -257,7 +257,7 @@ bad_idx = np.array([10, 12, 200])
     "x,y,x_i,y_i,field,mask,passed",
     [
         (x, y, idx, idx, good_field, mask, True),
-        (x, y, 'x', 'y', good_field, mask, False),
+        (x, y, "x", "y", good_field, mask, False),
         (idx, idx, x, y, good_field, bad_mask, False),
         (x, y, idx, idx, bad_field, mask, False),
         (x, y, idx, idx, good_field, bad_mask, False),

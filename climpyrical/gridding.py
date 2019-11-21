@@ -63,7 +63,7 @@ def check_coords_are_flattened(x, y, xext, yext):
             grid original axis"
         )
 
-    if not np.array_equal(xext[: x.size], xext[x.size: 2*x.size]):
+    if not np.array_equal(xext[: x.size], xext[x.size: 2 * x.size]):
         # they should all be increasing tile wise
         raise ValueError(
             "Flat coords should increase np.tile-wise, i.e: 1, 2, 3, 1, 2, 3,\
@@ -109,7 +109,7 @@ def flatten_coords(x, y):
 
 
 def check_transform_coords_inputs(x, y, source_crs, target_crs):
-    if (not isinstance(x, np.ndarray)) or (not isinstance(y, np.ndarray)):
+    if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
         raise TypeError(
             "Please provide an object of type {}".format(np.ndarray)
         )
@@ -120,12 +120,20 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
     if x.shape != y.shape:
         raise ValueError("x and y must be pairwise station coordinates")
 
-    if (np.any(x <= -139.024025)) or (np.any(x >= -53.006653)):
+    if (
+        isinstance(x, np.ndarray)
+        and (np.any(x <= -139.024025))
+        or (np.any(x >= -53.006653))
+    ):
         raise ValueError(
             "A station location is outside of expected bounds in x dim"
         )
 
-    if (np.any(y >= 82.511053)) or (np.any(y <= 41.631742)):
+    if (
+        isinstance(y, np.ndarray)
+        and (np.any(y >= 82.511053))
+        or (np.any(y <= 41.631742))
+    ):
         raise ValueError(
             "A station location is outside of expected bounds in y dim"
         )
@@ -161,7 +169,7 @@ def transform_coords(
         x,y (tuple): tuple containing the newly rotated
             coordinates rlon, rlat
     """
-
+    check_transform_coords_inputs(x, y, source_crs, target_crs)
     p_source = Proj(source_crs)
     p_target = Proj(target_crs)
     t = Transformer.from_proj(p_source, p_target)
