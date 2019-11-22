@@ -15,6 +15,7 @@ from climpyrical.gridding import (
 import pytest
 import numpy as np
 
+
 @pytest.mark.parametrize(
     "data,n,passed,error",
     [
@@ -31,6 +32,7 @@ def test_check_ndims(data, n, passed, error):
     else:
         with pytest.raises(error):
             check_ndims(data, n)
+
 
 # create pseudo grids with expected dimension and ranges
 xi = np.linspace(-33.8800048828125, 33.8800048828125, 155)
