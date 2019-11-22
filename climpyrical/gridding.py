@@ -3,34 +3,78 @@ from scipy.interpolate import NearestNDInterpolator
 from pyproj import Transformer, Proj
 
 
+def check_ndims(data, n):
+    """Checks that a provided array has n dimensions
+    Args:
+        data (np.ndarray): Array to check dimensions of
+        n (integer): data's expected dimensions
+    Raises:
+        TypeError:
+            If data or n are not arrays or an integer
+        ValueError:
+            If data's dimension is not expected
+    """
+    if not isinstance(data, np.ndarray):
+        raise TypeError(
+            "Provide an array of type {}, received {}"
+            .format(np.ndarray, type(data))
+        )
+    if not isinstance(n, int):
+        raise TypeError(
+            "Provide a dimension of type {}, received {}"
+            .format(int, type(n))
+        )
+    if data.ndim != n:
+        raise ValueError(
+            "Array has dimensions {}, expected {} dimensions."
+            .format(data.ndim, n)
+        )
+
+
 def check_input_coords(x, y):
     """Checks that the input coordinates defining the CanRCM4 grid
     are the expected type, size, and range of values.
     Args:
         x, y (np.ndarray): numpy arrays of rlon, rlat respectively
             of CanRCM4 grids
-    Returns:
-        bool True if passed
     Raises:
         TypeError:
             If numpy array not provided
         ValueError:
             If x or y are not in expected range of values
     """
+
     if (not isinstance(x, np.ndarray)) or (not isinstance(y, np.ndarray)):
         raise TypeError(
             "Please provide an object of type {}".format(np.ndarray)
         )
+
+    check_ndims(x, 1)
+    check_ndims(y, 1)
+
     if (not np.isclose(x.max(), 33.8800048828125)) or (
         not np.isclose(x.min(), -33.8800048828125)
     ):
-        raise ValueError("Unexpected range of values in x dimension")
+        raise ValueError(
+            "x dimension array must have min/max values between \
+            -33.8800048828125 and 33.8800048828125. Array \
+            provided has values between {} \
+            and {}".format(
+                x.min(), x.max()
+            )
+        )
+
     if (not np.isclose(y.max(), 28.15999984741211)) or (
         not np.isclose(y.min(), -28.59999656677246)
     ):
-        raise ValueError("Unexpected range of values in y dimension")
-
-    return True
+        raise ValueError(
+            "y dimension array must have min/max values between \
+            -28.59999656677246 and 28.15999984741211. Array \
+            provided has values between {} \
+            and {}".format(
+                y.min(), y.max()
+            )
+        )
 
 
 def check_coords_are_flattened(x, y, xext, yext):
@@ -59,13 +103,15 @@ def check_coords_are_flattened(x, y, xext, yext):
 
     if xext.size != yext.size:
         # bad shape
-        raise ValueError("xext, and yexy must have the same shape")
+        raise ValueError("xext, and yexy must have the same size")
 
     if xext.size != x.size * y.size:
         # bad shape
         raise ValueError(
-            "extended arrays must be equivalent to the product of the coordinate\
-            grid original axis"
+            "Extended arrays must be equivalent to the product of the "
+            "coordinate grid original axis. Received size {}, based on "
+            "provided coordinates, expected size {}."
+            .format(xext.size, x.size * y.size)
         )
 
     if not np.array_equal(xext[: x.size], xext[x.size: 2 * x.size]):
@@ -81,8 +127,6 @@ def check_coords_are_flattened(x, y, xext, yext):
             "Flat coords should increase np.repeat-wise, i.e: 1, 1, 2, 2, 3, 3,\
             ..."
         )
-
-    return True
 
 
 def flatten_coords(x, y):
@@ -107,7 +151,7 @@ def flatten_coords(x, y):
     Raises:
         ValueError, TypError in check_coords_are_flattened and
             check)input_coords
-        TypeError:
+        ITypeError:
             If input coords are not numpy arrays
         ValueError:
             If xext and yexy are not the same shape
@@ -149,10 +193,15 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
         raise TypeError(
             "Please provide an object of type {}".format(np.ndarray)
         )
+
+    check_ndims(x, 1)
+    check_ndims(y, 1)
+
     if (not isinstance(source_crs, dict)) or (
         not isinstance(target_crs, dict)
     ):
         raise TypeError("Please provide an object of type {}".format(dict))
+
     if x.shape != y.shape:
         raise ValueError("x and y must be pairwise station coordinates")
 
@@ -173,8 +222,6 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
         raise ValueError(
             "A station location is outside of expected bounds in y dim"
         )
-
-    return True
 
 
 def transform_coords(
@@ -244,6 +291,7 @@ def check_find_nearest_index_inputs(data, val):
         raise TypeError(
             "Please provide a data array of type {}".format(np.ndarray)
         )
+    check_ndims(data, 1)
     if np.any(np.diff(data) < 0):
         raise ValueError("Array must be monotonically increasing.")
     if data.size < 2:
@@ -254,8 +302,6 @@ def check_find_nearest_index_inputs(data, val):
 
     if val > data.max() or val < data.min():
         raise ValueError("Value is not within supplied array's range.")
-
-    return True
 
 
 def find_nearest_index(data, val):
@@ -327,8 +373,6 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
             "Array of values to find in arrays must be the same shape."
         )
 
-    return True
-
 
 def find_element_wise_nearest_pos(x, y, x_obs, y_obs):
     """Finds the nearest positions in x and y for each value in
@@ -355,6 +399,10 @@ def find_element_wise_nearest_pos(x, y, x_obs, y_obs):
                     data's range of values
                 If x or y are not in expected range of values
     """
+    check_ndims(x, 1)
+    check_ndims(y, 1)
+    check_ndims(x_obs, 1)
+    check_ndims(y_obs, 1)
     check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs)
     x_i = np.array([find_nearest_index(x, obs) for obs in x_obs])
     y_i = np.array([find_nearest_index(y, obs) for obs in y_obs])
@@ -399,8 +447,6 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
     # mask same shape as field
     if field.shape != mask.shape:
         raise ValueError("Field and mask are not the same shape.")
-
-    return True
 
 
 def find_nearest_index_value(x, y, x_i, y_i, field, mask):

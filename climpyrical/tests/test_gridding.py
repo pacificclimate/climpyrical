@@ -7,12 +7,30 @@ from climpyrical.gridding import (
     check_find_nearest_index_inputs,
     check_find_element_wise_nearest_pos_inputs,
     check_find_nearest_value_inputs,
+    check_ndims,
     find_nearest_index,
     find_element_wise_nearest_pos,
     find_nearest_index_value,
 )
 import pytest
 import numpy as np
+
+@pytest.mark.parametrize(
+    "data,n,passed,error",
+    [
+        (np.linspace(0, 10), 1, True, None),
+        (np.ones((10, 10)), 2, True, None),
+        ("array", 3, False, TypeError),
+        (np.ones((10, 10)), 'int', False, TypeError),
+        (np.ones((10, 10, 10)), 4, False, ValueError)
+    ],
+)
+def test_check_ndims(data, n, passed, error):
+    if passed:
+        check_ndims(data, n)
+    else:
+        with pytest.raises(error):
+            check_ndims(data, n)
 
 # create pseudo grids with expected dimension and ranges
 xi = np.linspace(-33.8800048828125, 33.8800048828125, 155)
@@ -22,29 +40,31 @@ xext_bad, yext_bad = np.repeat(xi, yi.size), np.tile(yi, xi.shape)
 
 
 @pytest.mark.parametrize(
-    "x,y,passed",
+    "x,y,passed,error",
     [
-        ("x", np.linspace(-24, 24, 155), False),
-        (np.linspace(-24, 24, 155), "y", False),
+        ("x", np.linspace(-24, 24, 155), False, TypeError),
+        (np.linspace(-24, 24, 155), "y", False, TypeError),
         (
             np.linspace(0, 10, 30),
             np.linspace(-28.59999656677246, 28.15999984741211, 130),
             False,
+            ValueError,
         ),
         (
             np.linspace(-33.8800048828125, 33.8800048828125, 155),
             np.linspace(0, 10, 130),
             False,
+            ValueError,
         ),
-        (xi, yi, True),
-        (xext, yext, True),
+        (xi, yi, True, None),
+        (xext, yext, True, None),
     ],
 )
-def test_check_input_coords(x, y, passed):
+def test_check_input_coords(x, y, passed, error):
     if passed:
-        assert check_input_coords(x, y)
+        check_input_coords(x, y)
     else:
-        with pytest.raises((ValueError, TypeError)):
+        with pytest.raises(error):
             check_input_coords(x, y)
 
 
@@ -62,7 +82,7 @@ def test_check_input_coords(x, y, passed):
 )
 def test_check_coords_are_flattened(x, y, xext, yext, passed):
     if passed:
-        assert check_coords_are_flattened(x, y, xext, yext)
+        check_coords_are_flattened(x, y, xext, yext)
     else:
         with pytest.raises((TypeError, ValueError)):
             check_coords_are_flattened(x, y, xext, yext)
@@ -100,25 +120,27 @@ target_crs = {
 
 
 @pytest.mark.parametrize(
-    "x,y,source_crs,target_crs,passed",
+    "x,y,source_crs,target_crs,passed,error",
     [
-        (4, 4, source_crs, target_crs, False),
-        (x_station, 4, source_crs, target_crs, False),
-        (4, x_station, source_crs, target_crs, False),
-        (x_station, y_station, source_crs, target_crs, True),
-        (x_station_bad, y_station, source_crs, target_crs, False),
-        (x_station, y_station_bad, source_crs, target_crs, False),
-        (x_station, y_station, "source_crs", target_crs, False),
-        (x_station, y_station, source_crs, "target_crs", False),
-        (x_station[:-1], y_station, source_crs, target_crs, False),
-        (x_station, y_station[:-1], source_crs, target_crs, False),
+        (4, 4, source_crs, target_crs, False, TypeError),
+        (x_station, 4, source_crs, target_crs, False, TypeError),
+        (4, x_station, source_crs, target_crs, False, TypeError),
+        (x_station, y_station, source_crs, target_crs, True, None),
+        (x_station_bad, y_station, source_crs, target_crs, False, ValueError),
+        (x_station, y_station_bad, source_crs, target_crs, False, ValueError),
+        (x_station, y_station, "source_crs", target_crs, False, TypeError),
+        (x_station, y_station, source_crs, "target_crs", False, TypeError),
+        (x_station[:-1], y_station, source_crs, target_crs, False, ValueError),
+        (x_station, y_station[:-1], source_crs, target_crs, False, ValueError),
     ],
 )
-def test_check_transform_coords_inputs(x, y, source_crs, target_crs, passed):
+def test_check_transform_coords_inputs(
+    x, y, source_crs, target_crs, passed, error
+):
     if passed:
-        assert check_transform_coords_inputs(x, y, source_crs, target_crs)
+        check_transform_coords_inputs(x, y, source_crs, target_crs)
     else:
-        with pytest.raises((TypeError, ValueError)):
+        with pytest.raises(error):
             check_transform_coords_inputs(x, y, source_crs, target_crs)
 
 
@@ -153,21 +175,21 @@ bad_data_a = np.linspace(30, 1, 30)
 
 
 @pytest.mark.parametrize(
-    "data,val,passed",
+    "data,val,passed,error",
     [
-        ("data", 1.0, False),
-        (data, 1.0, True),
-        (data, "2", False),
-        (bad_data, 1.0, False),
-        (bad_data_a, 1.0, False),
-        (data, 30.0, False),
+        ("data", 1.0, False, TypeError),
+        (data, 1.0, True, None),
+        (data, "2", False, TypeError),
+        (bad_data, 1.0, False, ValueError),
+        (bad_data_a, 1.0, False, ValueError),
+        (data, 30.0, False, ValueError),
     ],
 )
-def test_check_find_nearest_index_inputs(data, val, passed):
+def test_check_find_nearest_index_inputs(data, val, passed, error):
     if passed:
-        assert check_find_nearest_index_inputs(data, val)
+        check_find_nearest_index_inputs(data, val)
     else:
-        with pytest.raises((TypeError, ValueError)):
+        with pytest.raises(error):
             check_find_nearest_index_inputs(data, val)
 
 
@@ -180,15 +202,16 @@ def test_find_nearest_index(data, val, expected):
 
 
 @pytest.mark.parametrize(
-    "x,y,x_obs,y_obs,passed",
+    "x,y,x_obs,y_obs,passed,error",
     [
-        ("x", 1, 2, 3, False),
+        ("x", 1, 2, 3, False, TypeError),
         (
             np.linspace(-10, 10, 10),
             np.linspace(-10, 10, 9),
             np.linspace(-10, 10, 10),
             np.linspace(-10, 10, 10),
             False,
+            ValueError,
         ),
         (
             np.linspace(-10, 10, 10),
@@ -196,6 +219,7 @@ def test_find_nearest_index(data, val, expected):
             np.linspace(-10, 10, 10),
             np.linspace(-10, 10, 9),
             False,
+            ValueError,
         ),
         (
             np.linspace(-10, 10, 10),
@@ -203,16 +227,17 @@ def test_find_nearest_index(data, val, expected):
             np.linspace(-10, 10, 10),
             np.linspace(-10, 10, 10),
             True,
+            None,
         ),
     ],
 )
 def test_check_find_element_wise_nearest_pos_inputs(
-    x, y, x_obs, y_obs, passed
+    x, y, x_obs, y_obs, passed, error
 ):
     if passed:
-        assert check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs)
+        check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs)
     else:
-        with pytest.raises((TypeError, ValueError)):
+        with pytest.raises(error):
             check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs)
 
 
@@ -254,22 +279,24 @@ bad_idx = np.array([10, 12, 200])
 
 
 @pytest.mark.parametrize(
-    "x,y,x_i,y_i,field,mask,passed",
+    "x,y,x_i,y_i,field,mask,passed,error",
     [
-        (x, y, idx, idx, good_field, mask, True),
-        (x, y, "x", "y", good_field, mask, False),
-        (idx, idx, x, y, good_field, bad_mask, False),
-        (x, y, idx, idx, bad_field, mask, False),
-        (x, y, idx, idx, good_field, bad_mask, False),
-        (x, y, bad_idx, bad_idx, good_field, bad_mask, False),
-        (x, y, idx, idx, good_field_nan, mask, True),
+        (x, y, idx, idx, good_field, mask, True, None),
+        (x, y, "x", "y", good_field, mask, False, TypeError),
+        (idx, idx, x, y, good_field, bad_mask, False, ValueError),
+        (x, y, idx, idx, bad_field, mask, False, ValueError),
+        (x, y, idx, idx, good_field, bad_mask, False, ValueError),
+        (x, y, bad_idx, bad_idx, good_field, bad_mask, False, ValueError),
+        (x, y, idx, idx, good_field_nan, mask, True, None),
     ],
 )
-def test_check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask, passed):
+def test_check_find_nearest_value_inputs(
+    x, y, x_i, y_i, field, mask, passed, error
+):
     if passed:
-        assert check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
+        check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
     else:
-        with pytest.raises((ValueError, KeyError, TypeError)):
+        with pytest.raises(error):
             check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
 
 
