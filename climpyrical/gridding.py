@@ -89,8 +89,8 @@ def check_coords_are_flattened(x, y, xext, yext):
             TypeError:
                 If input coords are not numpy arrays
             ValueError:
-                If xext and yexy are not the same shape
-                If extended flattened shape is not expected
+                If xext and yexy are not the same size
+                If extended flattened size is not expected
                 If flattened longitude is not increasing
                     numpy tile-wise
                 If flattened latitude is not increasing
@@ -103,12 +103,12 @@ def check_coords_are_flattened(x, y, xext, yext):
         # bad shape
         raise ValueError(
             "xext, and yexy must have the same size, \
-            received x shape {} and y shape {}."
-            .format(x.shape, y.shape)
+            received x size {} and y size {}."
+            .format(x.size, y.size)
         )
 
     if xext.size != x.size * y.size:
-        # bad shape
+        # bad size
         raise ValueError(
             "Extended arrays must be equivalent to the product of the "
             "coordinate grid original axis. Received size {}, based on "
@@ -149,23 +149,23 @@ def flatten_coords(x, y):
         xext, yext (tuple of np.ndarrays):
             array containing tuples of rlat and
             rlon for each grid cell in the
-            ensemble shape.
+            ensemble size.
     Raises:
         ValueError, TypError in check_coords_are_flattened and
             check)input_coords
         ITypeError:
             If input coords are not numpy arrays
         ValueError:
-            If xext and yexy are not the same shape
-            If extended flattened shape is not expected
+            If xext and yexy are not the same size
+            If extended flattened size is not expected
             If flattened longitude is not increasing
                 numpy tile-wise
             If flattened latitude is not increasing
                 numpy repeat-wise
     """
     check_input_coords(x, y)
-    xext = np.tile(x, y.shape[0])
-    yext = np.repeat(y, x.shape[0])
+    xext = np.tile(x, y.size)
+    yext = np.repeat(y, x.size)
     check_coords_are_flattened(x, y, xext, yext)
 
     return xext, yext
@@ -185,7 +185,7 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
                 If input coords are not numpy arrays
                 If crs provided are not dict
         ValueError:
-                If x and y are not the same shape
+                If x and y are not the same size
                 If x and y ranges are outside of the CanRCM4 grid cell
                     in WGS84
     """
