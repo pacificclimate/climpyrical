@@ -1,0 +1,4 @@
+[run]
+    source = climpyrical
+[report]
+    fail_under = 100

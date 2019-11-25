@@ -27,13 +27,14 @@ setup(
     author="Nic Annau",
     author_email="nannau@uvic.ca",
     zip_safe=True,
-    scripts=["climpyrical/datacube.py", "climpyrical/mask.py"],
+    scripts=["climpyrical/gridding.py"],
     install_requires=["numpy", "shapely", "geopandas", "xarray"],
     tests_require=["pytest"],
     cmdclass={"test": PyTest},
     package_dir={"climpyircal": "climpyrical"},
-    package_data={"climpyrical": ["tests/data/*", "climpyrical"]},
+    package_data={"climpyrical": ["tests/data/*", "climpyrical/"]},
     classifiers="""
+
 Intended Audience :: Science/Research
 License :: GNU General Public License v3 (GPLv3)
 Operating System :: OS Independent
