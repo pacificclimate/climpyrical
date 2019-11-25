@@ -46,7 +46,7 @@ def check_input_coords(x, y):
 
     if (not isinstance(x, np.ndarray)) or (not isinstance(y, np.ndarray)):
         raise TypeError(
-            "Please provide an object of type {}".format(np.ndarray)
+            "Please provide coordinate objects of type {}".format(np.ndarray)
         )
 
     check_ndims(x, 1)
@@ -103,7 +103,11 @@ def check_coords_are_flattened(x, y, xext, yext):
 
     if xext.size != yext.size:
         # bad shape
-        raise ValueError("xext, and yexy must have the same size")
+        raise ValueError(
+            "xext, and yexy must have the same size, \
+            received x shape {} and y shape {}."
+            .format(x.shape, y.shape)
+        )
 
     if xext.size != x.size * y.size:
         # bad shape
@@ -114,7 +118,7 @@ def check_coords_are_flattened(x, y, xext, yext):
             .format(xext.size, x.size * y.size)
         )
 
-    if not np.array_equal(xext[: x.size], xext[x.size: 2 * x.size]):
+    if not np.array_equal(xext[: x.size], xext[x.size: 2*x.size]):
         # they should all be increasing tile wise
         raise ValueError(
             "Flat coords should increase np.tile-wise, i.e: 1, 2, 3, 1, 2, 3,\
@@ -202,8 +206,10 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
     ):
         raise TypeError("Please provide an object of type {}".format(dict))
 
-    if x.shape != y.shape:
-        raise ValueError("x and y must be pairwise station coordinates")
+    if x.size != y.size:
+        raise ValueError(
+            "x and y must be pairwise station coordinates \
+            and have the same size.")
 
     if (
         isinstance(x, np.ndarray)
@@ -211,7 +217,9 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
         or (np.any(x >= -53.006653))
     ):
         raise ValueError(
-            "A station location is outside of expected bounds in x dim"
+            "A station location is outside of expected bounds in x dim. \
+            Longitude must be between -139.023025 deg and -53.006653 \
+            deg in WGS84."
         )
 
     if (
@@ -220,7 +228,9 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
         or (np.any(y <= 41.631742))
     ):
         raise ValueError(
-            "A station location is outside of expected bounds in y dim"
+            "A station location is outside of expected bounds in y dim. \
+            Latitude must be between 41.631742 deg and 82.511053 deg North \
+            in WGS84"
         )
 
 
@@ -301,7 +311,10 @@ def check_find_nearest_index_inputs(data, val):
         raise TypeError("Please provide a value of type {}".format(float))
 
     if val > data.max() or val < data.min():
-        raise ValueError("Value is not within supplied array's range.")
+        raise ValueError(
+            "Value is not within supplied array's range with domain between \
+            {} and {}.".format(data.min(), data.max())
+        )
 
 
 def find_nearest_index(data, val):
@@ -366,11 +379,12 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
     if x.size != y.size:
         raise ValueError(
             "To find the values in the supplied arrays, the arrays must be \
-            same shape."
+            same shape. Received {} and {}.".format(x.size, y.size)
         )
     if x_obs.size != y_obs.size:
         raise ValueError(
-            "Array of values to find in arrays must be the same shape."
+            "Array of values to find in arrays must be the same shape. \
+            Received arrays of shape {} and {}".format(x_obs.size, y_obs.size)
         )
 
 
@@ -429,24 +443,34 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
     """
     if (not isinstance(x_i, np.ndarray)) or (not isinstance(y_i, np.ndarray)):
         raise TypeError(
-            "Please provide index array of type {}".format(np.ndarray)
+            "Please provide index array of type {}.".format(np.ndarray)
         )
     if (not x_i.dtype == np.dtype("int")) or (
         not y_i.dtype == np.dtype("int")
     ):
-        raise ValueError("Index array must contain integers")
+        raise ValueError(
+            "Both index array must contain integers. Received \
+            {} and {}".format(x_i.dtype, y_i.dtype)
+        )
     if (x_i.max() > x.size) or (y_i.max() > y.size):
         raise ValueError(
-            "Indices in index arrays are larger than coordinate array size"
+            "Indices in index arrays are larger than coordinate array size. \
+            Received x, y {},{} with sizes {}, {}."
+            .format(x_i.max(), y_i.max(), x.size, y.size)
         )
     # field same shape as xiyi
     if field.shape != (y.size, x.size):
         raise ValueError(
-            "Field provided is not consistent with coordinates provided."
+            "Field provided is not consistent with coordinates provided. \
+            Recevied field shape {}, expected shape ({},{})"
+            .format(field.shape, y.size, x.size)
         )
     # mask same shape as field
     if field.shape != mask.shape:
-        raise ValueError("Field and mask are not the same shape.")
+        raise ValueError(
+            "Field and mask are not the same shape. Received field shape \
+            {} and mask shape {}.".format(field.shape, mask.shape)
+        )
 
 
 def find_nearest_index_value(x, y, x_i, y_i, field, mask):
