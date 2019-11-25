@@ -302,7 +302,6 @@ def test_check_find_nearest_value_inputs(
             check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
 
 
-good_final = np.ones((20)) * np.pi
 x_i = np.arange(20)
 y_i = np.arange(20)
 idx = np.array([10, 12, 14])
