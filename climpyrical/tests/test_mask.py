@@ -1,4 +1,3 @@
-import os
 import pytest
 import geopandas as gpd
 import numpy as np
@@ -10,10 +9,15 @@ from climpyrical.mask import (
     rotate_shapefile,
     gen_raster_mask_from_vector,
 )
+from pkg_resources import resource_filename
 
-THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-canada = gpd.read_file(os.path.join(THIS_DIR, "data/canada.geojson")).geometry
+canada = gpd.read_file(
+            resource_filename(
+                "climpyrical",
+                "tests/data/canada.geojson"
+            )
+        ).geometry
 
 # rotate the vectors using the to_crs method. GeoPandas does
 # not preserve the crs that's defined, otherwise a standalone
@@ -31,15 +35,24 @@ rotated_crs = {
 rotated_canada = canada.to_crs(rotated_crs)
 
 transformed_world = gpd.read_file(
-    os.path.join(THIS_DIR, "./data/transformed_world.geojson")
+            resource_filename(
+                "climpyrical",
+                "tests/data/transformed_world.geojson"
+            )
 ).geometry
 
 bad_polygon = gpd.read_file(
-    os.path.join(THIS_DIR, "./data/bad_polygon.geojson")
+            resource_filename(
+                "climpyrical",
+                "tests/data/bad_polygon.geojson"
+            )
 ).geometry
 
 good_polygon = gpd.read_file(
-    os.path.join(THIS_DIR, "./data/good_polygon.geojson")
+            resource_filename(
+                "climpyrical",
+                "tests/data/good_polygon.geojson"
+            )
 ).geometry
 
 
@@ -137,7 +150,12 @@ def test_rotate_shapefile(p, crs, expected):
     assert rotate_shapefile(p, crs).geom_almost_equals(expected).values[0]
 
 
-maskarray = np.load(os.path.join(THIS_DIR, "./data/maskarray.npy"))
+maskarray = np.load(
+                resource_filename(
+                    "climpyrical",
+                    "tests/data/maskarray.npy"
+                )
+            )
 
 
 @pytest.mark.parametrize(
