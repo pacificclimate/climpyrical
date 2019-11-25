@@ -84,8 +84,6 @@ def check_coords_are_flattened(x, y, xext, yext):
             of CanRCM4 grids
         xext, yext (np.ndarray): numpy arrays of flattened
             rlon, rlat respectively of CanRCM4 grids
-        Returns:
-            bool True if passed
         Raises:
             TypeError, ValueError in check_input_coords
             TypeError:
@@ -182,8 +180,6 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
             stations in source_crs projection
         source_crs (dict): source proj4 crs
         target_crs(dict): destination proj4 crs
-    Returns:
-        bool True if passed
     Raises:
         TypeError:
                 If input coords are not numpy arrays
@@ -287,8 +283,6 @@ def check_find_nearest_index_inputs(data, val):
         data (np.ndarray): monotonically increasing array of column or
             rowcoordinates
         val (float): location of grid cell in x (rlon) or y (rlat) coords
-    Returns:
-        bool True if passed
     Raises:
         TypeError:
                 If data or val are not the correct type
@@ -360,8 +354,6 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
             or rowcoordinates
         x_obs, y_obs (np.ndarray): observations full of values to find
             in x and y
-    Returns:
-        bool True if passed
     Raises:
         TypeError:
                 If any arrays provided are not np.ndarray
@@ -434,8 +426,6 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
             the CanRCM4 field
         mask (np.ndarray of bool): 2 dimensional mask array matching field
             with a boolean mask of accepted values for analyses
-    Returns:
-        bool True if passed
     Raises:
         ValueError:
                 If field provided is not made of x and y coordinates
@@ -485,9 +475,6 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask):
             the CanRCM4 field
         mask (np.ndarray of bool): 2 dimensional mask array matching field
             with a boolean mask of accepted values for analyses
-
-    Returns:
-        bool True if passed
     Raises:
         TypeError, ValueError in check_find_nearest_value_inputs
         TypeError:
