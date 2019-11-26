@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 from scipy.interpolate import NearestNDInterpolator
 from pyproj import Transformer, Proj
@@ -209,8 +210,8 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
 
     if (
         isinstance(x, np.ndarray)
-        and (np.any(x <= -139.024025))
-        or (np.any(x >= -53.006653))
+        and (np.any(x < -140))
+        or (np.any(x > -52))
     ):
         raise ValueError(
             "A station location is outside of expected bounds in x dim. \
@@ -220,8 +221,8 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
 
     if (
         isinstance(y, np.ndarray)
-        and (np.any(y >= 82.511053))
-        or (np.any(y <= 41.631742))
+        and (np.any(y > 83))
+        or (np.any(y < 41))
     ):
         raise ValueError(
             "A station location is outside of expected bounds in y dim. \
@@ -305,9 +306,10 @@ def check_find_nearest_index_inputs(data, val):
         raise TypeError("Please provide a value of type {}".format(float))
 
     if val > data.max() or val < data.min():
-        raise ValueError(
-            "Value is not within supplied array's range with domain between \
-            {} and {}.".format(data.min(), data.max())
+        warnings.warn(
+            "Value outside of array's range with domain between \
+            {} and {}. A station is outside of the CanRCM4 model grid space."
+            .format(data.min(), data.max())
         )
 
 
@@ -368,10 +370,11 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
         raise TypeError(
             "Please provide data arrays of type {}".format(np.ndarray)
         )
-    if x.size != y.size:
+    if x.size != 155 or y.size != 130:
         raise ValueError(
-            "To find the values in the supplied arrays, the arrays must be \
-            same shape. Received {} and {}.".format(x.size, y.size)
+            "To find the values in the supplied arrays, x and y must have a \
+            size of 155 and 130 respectively. Received {} and {}."
+            .format(x.size, y.size)
         )
     if x_obs.size != y_obs.size:
         raise ValueError(

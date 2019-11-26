@@ -184,12 +184,15 @@ bad_data_a = np.linspace(30, 1, 30)
         (data, "2", False, TypeError),
         (bad_data, 1.0, False, ValueError),
         (bad_data_a, 1.0, False, ValueError),
-        (data, 30.0, False, ValueError),
+        (data, 30.0, "warning", None),
     ],
 )
 def test_check_find_nearest_index_inputs(data, val, passed, error):
     if passed:
         check_find_nearest_index_inputs(data, val)
+    elif passed == "warning":
+        with self.assertWarns(UserWarning):
+            check_find_nearest_index_inputs(data, val)
     else:
         with pytest.raises(error):
             check_find_nearest_index_inputs(data, val)
