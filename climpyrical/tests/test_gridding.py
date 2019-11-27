@@ -221,14 +221,6 @@ def test_find_nearest_index(data, val, expected):
     [
         ("x", 1, 2, 3, False, TypeError),
         (
-            np.linspace(-10, 10, 155),
-            np.linspace(-10, 10, 130),
-            np.linspace(-10, 10, 10),
-            np.linspace(-10, 10, 9),
-            False,
-            ValueError,
-        ),
-        (
             np.linspace(-10, 10, 1),
             np.linspace(-10, 10, 130),
             np.linspace(-10, 10, 10),
