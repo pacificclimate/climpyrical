@@ -293,9 +293,9 @@ def check_find_nearest_index_inputs(data, val):
 
     if val > data.max() or val < data.min():
         warnings.warn(
-            "Value outside of array's range with domain between \
+            "{} is outside of array's domain between \
             {} and {}. A station is outside of the CanRCM4 model grid space."
-            .format(data.min(), data.max())
+            .format(val, data.min(), data.max())
         )
 
 
@@ -360,11 +360,6 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
         raise ValueError(
             "Must have x and y arrays with a size greater than 1. \
             Received {} and {} respectively.".format(x.size, y.size)
-        )
-    if x_obs.size != y_obs.size:
-        raise ValueError(
-            "Array of values to find in arrays must be the same shape. \
-            Received arrays of shape {} and {}".format(x_obs.size, y_obs.size)
         )
 
 

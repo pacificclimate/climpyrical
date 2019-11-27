@@ -177,7 +177,7 @@ bad_data_a = np.linspace(30, 1, 30)
 
 
 @pytest.mark.parametrize(
-    "data,val,passed,error",
+    "data,val,passed,raises",
     [
         ("data", 1.0, False, TypeError),
         (data, 1.0, True, None),
@@ -186,11 +186,11 @@ bad_data_a = np.linspace(30, 1, 30)
         (bad_data_a, 1.0, False, ValueError),
     ],
 )
-def test_check_find_nearest_index_inputs(data, val, passed, error):
+def test_check_find_nearest_index_inputs(data, val, passed, raises):
     if passed:
         check_find_nearest_index_inputs(data, val)
     else:
-        with pytest.raises(error):
+        with pytest.raises(raises):
             check_find_nearest_index_inputs(data, val)
 
 
@@ -257,7 +257,7 @@ def test_check_find_element_wise_nearest_pos_inputs(
 
 
 @pytest.mark.parametrize(
-    "x,y,x_obs,y_obs,expected",
+    "x,y,x_obs,y_obs,expected_x,expected_y",
     [
         (
             np.linspace(-10, 10, 20),
@@ -265,13 +265,16 @@ def test_check_find_element_wise_nearest_pos_inputs(
             np.linspace(-10, 10, 20),
             np.linspace(-10, 10, 20),
             np.array(range(20)),
+            np.array(range(20))
         )
     ],
 )
-def test_find_element_wise_nearest_pos(x, y, x_obs, y_obs, expected):
+def test_find_element_wise_nearest_pos(
+        x, y, x_obs, y_obs, expected_x, expected_y
+):
     xclose, yclose = find_element_wise_nearest_pos(x, y, x_obs, y_obs)
-    xclose_truth = np.allclose(xclose, expected)
-    yclose_truth = np.allclose(yclose, expected)
+    xclose_truth = np.allclose(xclose, expected_x)
+    yclose_truth = np.allclose(yclose, expected_y)
     assert xclose_truth and yclose_truth
 
 
