@@ -32,6 +32,34 @@ def check_ndims(data, n):
         )
 
 
+def close_range(x, ds, key):
+    """Checks that the input coordinates defining the CanRCM4 grid
+    are the expected type, size, and range of values.
+    Args:
+        x (np.ndarray): numpy array of CanRCM4 coordinates
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
+        key (str): 'rlon' or 'rlat' key in ds we wish to check
+    Raises:
+        ValueError:
+            If x or y are not in expected range of values
+    """
+    if (not np.isclose(x.max(), ds[key].max())) or (
+        not np.isclose(x.min(), ds[key].min())
+    ):
+        raise ValueError(
+            "{} dimension array must have min/max values between \
+            {} and {}. Array \
+            provided has values between {} \
+            and {}".format(
+                key,
+                ds[key].min(),
+                ds[key].max(),
+                x.min(),
+                x.max()
+            )
+        )
+
 def check_input_coords(x, y, ds):
     """Checks that the input coordinates defining the CanRCM4 grid
     are the expected type, size, and range of values.
@@ -55,32 +83,8 @@ def check_input_coords(x, y, ds):
     check_ndims(x, 1)
     check_ndims(y, 1)
 
-    if (not np.isclose(x.max(), ds.rlon.max())) or (
-        not np.isclose(x.min(), ds.rlon.min())
-    ):
-        raise ValueError(
-            "x dimension array must have min/max values between \
-            {} and {}. Array \
-            provided has values between {} \
-            and {}".format(
-                        ds.rlon.min(),
-                        ds.rlon.max(),
-                        x.min(),
-                        x.max()
-                    )
-        )
-
-    if (not np.isclose(y.max(), ds.rlat.max())) or (
-        not np.isclose(y.min(), ds.rlat.min())
-    ):
-        raise ValueError(
-            "y dimension array must have min/max values between \
-            {} and {}. Array \
-            provided has values between {} \
-            and {}".format(
-                ds.rlat.min(), ds.rlat.max(), y.min(), y.max()
-            )
-        )
+    close_range(x, ds, 'rlon')
+    close_range(y, ds, 'rlat')
 
 
 def check_coords_are_flattened(x, y, xext, yext, ds):
