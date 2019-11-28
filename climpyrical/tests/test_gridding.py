@@ -317,13 +317,13 @@ good_field_nan[idx, idx] = np.nan
 
 
 @pytest.mark.parametrize(
-    "x,y,x_i,y_i,field,mask,ds,expected",
+    "x,y,x_i,y_i,field,mask,expected",
     [
-        (x, y, idx, idx, good_field, mask, ds, np.ones(idx.size) * np.pi),
-        (x, y, idx, idx, good_field_nan, mask, ds, np.ones(idx.size) * np.pi),
+        (x, y, idx, idx, good_field, mask, np.ones(idx.size) * np.pi),
+        (x, y, idx, idx, good_field_nan, mask, np.ones(idx.size) * np.pi),
     ],
 )
-def test_find_nearest_index_value(x, y, x_i, y_i, field, mask, ds, expected):
+def test_find_nearest_index_value(x, y, x_i, y_i, field, mask, expected):
     final = find_nearest_index_value(x, y, x_i, y_i, field, mask, ds)
     truth = (
         np.any(np.isnan(final))
