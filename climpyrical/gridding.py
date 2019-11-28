@@ -60,6 +60,7 @@ def close_range(x, ds, key):
             )
         )
 
+
 def check_input_coords(x, y, ds):
     """Checks that the input coordinates defining the CanRCM4 grid
     are the expected type, size, and range of values.
