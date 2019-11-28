@@ -32,13 +32,48 @@ def check_ndims(data, n):
         )
 
 
-def check_input_coords(x, y):
+def close_range(x, ds, key):
     """Checks that the input coordinates defining the CanRCM4 grid
-    are the expected type, size, and range of values.
+    are the expected type,and range of values. Some input coordinates
+    may be interpolated, and so only the extremes of the provided arrays
+    are compared to the original dataset.
+    Args:
+        x (np.ndarray): numpy array of CanRCM4 coordinates
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
+        key (str): 'rlon' or 'rlat' key in ds we wish to check
+    Raises:
+        ValueError:
+            If x or y are not in expected range of values
+    """
+    if (not np.isclose(x.max(), ds[key].max())) or (
+        not np.isclose(x.min(), ds[key].min())
+    ):
+        raise ValueError(
+            "{} dimension array must have min/max values between \
+            {} and {}. Array \
+            provided has values between {} \
+            and {}".format(
+                key,
+                ds[key].min(),
+                ds[key].max(),
+                x.min(),
+                x.max()
+            )
+        )
+
+
+def check_input_coords(x, y, ds):
+    """Checks that the input coordinates defining the CanRCM4 grid
+    are the expected type, dimensions, and range of values.
     Args:
         x, y (np.ndarray): numpy arrays of rlon, rlat respectively
             of CanRCM4 grids
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
     Raises:
+        ValueError:
+            If dimensions are unexpected
         TypeError:
             If numpy array not provided
         ValueError:
@@ -53,40 +88,21 @@ def check_input_coords(x, y):
     check_ndims(x, 1)
     check_ndims(y, 1)
 
-    if (not np.isclose(x.max(), 33.8800048828125)) or (
-        not np.isclose(x.min(), -33.8800048828125)
-    ):
-        raise ValueError(
-            "x dimension array must have min/max values between \
-            -33.8800048828125 and 33.8800048828125. Array \
-            provided has values between {} \
-            and {}".format(
-                x.min(), x.max()
-            )
-        )
-
-    if (not np.isclose(y.max(), 28.15999984741211)) or (
-        not np.isclose(y.min(), -28.59999656677246)
-    ):
-        raise ValueError(
-            "y dimension array must have min/max values between \
-            -28.59999656677246 and 28.15999984741211. Array \
-            provided has values between {} \
-            and {}".format(
-                y.min(), y.max()
-            )
-        )
+    close_range(x, ds, 'rlon')
+    close_range(y, ds, 'rlat')
 
 
-def check_coords_are_flattened(x, y, xext, yext):
+def check_coords_are_flattened(x, y, xext, yext, ds):
     """Checks that the coordinates provided are flattened correctly
     Args:
         x, y (np.ndarray): numpy arrays of rlon, rlat respectively
             of CanRCM4 grids
         xext, yext (np.ndarray): numpy arrays of flattened
             rlon, rlat respectively of CanRCM4 grids
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
         Raises:
-            TypeError, ValueError in check_input_coords
+            ValueError, TypeError in check_input_coords
             TypeError:
                 If input coords are not numpy arrays
             ValueError:
@@ -97,8 +113,8 @@ def check_coords_are_flattened(x, y, xext, yext):
                 If flattened latitude is not increasing
                     numpy repeat-wise
     """
-    check_input_coords(x, y)
-    check_input_coords(xext, yext)
+    check_input_coords(x, y, ds)
+    check_input_coords(xext, yext, ds)
 
     if xext.size != yext.size:
         # bad shape
@@ -132,7 +148,7 @@ def check_coords_are_flattened(x, y, xext, yext):
         )
 
 
-def flatten_coords(x, y):
+def flatten_coords(x, y, ds):
     """Takes the rlat and rlon 1D arrays from the
     NetCDF files for each ensemble member, and creates
     an ordered pairing of each grid cell coordinate in
@@ -145,16 +161,17 @@ def flatten_coords(x, y):
         y (numpy.ndarray): 1D array containing
             the locations of the rotated longitude
             grid cells
-
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
     Return:
         xext, yext (tuple of np.ndarrays):
             array containing tuples of rlat and
             rlon for each grid cell in the
             ensemble size.
     Raises:
-        ValueError, TypError in check_coords_are_flattened and
+        ValueError, TypeError in check_coords_are_flattened and
             check)input_coords
-        ITypeError:
+        TypeError:
             If input coords are not numpy arrays
         ValueError:
             If xext and yexy are not the same size
@@ -164,10 +181,10 @@ def flatten_coords(x, y):
             If flattened latitude is not increasing
                 numpy repeat-wise
     """
-    check_input_coords(x, y)
+    check_input_coords(x, y, ds)
     xext = np.tile(x, y.size)
     yext = np.repeat(y, x.size)
-    check_coords_are_flattened(x, y, xext, yext)
+    check_coords_are_flattened(x, y, xext, yext, ds)
 
     return xext, yext
 
@@ -207,28 +224,6 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
         raise ValueError(
             "x and y must be pairwise station coordinates \
             and have the same size.")
-
-    if (
-        isinstance(x, np.ndarray)
-        and (np.any(x < -140))
-        or (np.any(x > -52))
-    ):
-        raise ValueError(
-            "A station location is outside of expected bounds in x dim. \
-            Longitude must be between -139.023025 deg and -53.006653 \
-            deg in WGS84."
-        )
-
-    if (
-        isinstance(y, np.ndarray)
-        and (np.any(y > 83))
-        or (np.any(y < 41))
-    ):
-        raise ValueError(
-            "A station location is outside of expected bounds in y dim. \
-            Latitude must be between 41.631742 deg and 82.511053 deg North \
-            in WGS84"
-        )
 
 
 def transform_coords(
@@ -370,10 +365,10 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
         raise TypeError(
             "Please provide data arrays of type {}".format(np.ndarray)
         )
-    if x_obs.size != y_obs.size:
+    if x.size < 2 or y.size < 2:
         raise ValueError(
-            "Array of values to find in arrays must be the same shape. \
-            Received arrays of shape {} and {}".format(x_obs.size, y_obs.size)
+            "Must have x and y arrays with a size greater than 1. \
+            Received {} and {} respectively.".format(x.size, y.size)
         )
 
 
@@ -460,7 +455,7 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
         )
 
 
-def find_nearest_index_value(x, y, x_i, y_i, field, mask):
+def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
     """Finds the nearest model value to a station location in the CanRCM4
     grid space
     Args:
@@ -472,6 +467,8 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask):
             the CanRCM4 field
         mask (np.ndarray of bool): 2 dimensional mask array matching field
             with a boolean mask of accepted values for analyses
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
     Raises:
         TypeError, ValueError in check_find_nearest_value_inputs
         TypeError:
@@ -503,7 +500,7 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask):
         xarr, yarr = np.meshgrid(x, y)
 
         # flatten coordinates
-        xext, yext = flatten_coords(x, y)
+        xext, yext = flatten_coords(x, y, ds)
 
         # arrange the pairs
         pairs = np.array(list(zip(xext, yext)))
