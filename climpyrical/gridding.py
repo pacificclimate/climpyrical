@@ -34,7 +34,9 @@ def check_ndims(data, n):
 
 def close_range(x, ds, key):
     """Checks that the input coordinates defining the CanRCM4 grid
-    are the expected type, size, and range of values.
+    are the expected type,and range of values. Some input coordinates
+    may be interpolated, and so only the extremes of the provided arrays
+    are compared to the original dataset.
     Args:
         x (np.ndarray): numpy array of CanRCM4 coordinates
         ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
@@ -63,13 +65,15 @@ def close_range(x, ds, key):
 
 def check_input_coords(x, y, ds):
     """Checks that the input coordinates defining the CanRCM4 grid
-    are the expected type, size, and range of values.
+    are the expected type, dimensions, and range of values.
     Args:
         x, y (np.ndarray): numpy arrays of rlon, rlat respectively
             of CanRCM4 grids
         ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
             checking consistency with ensemble
     Raises:
+        ValueError:
+            If dimensions are unexpected
         TypeError:
             If numpy array not provided
         ValueError:
@@ -167,7 +171,7 @@ def flatten_coords(x, y, ds):
     Raises:
         ValueError, TypeError in check_coords_are_flattened and
             check)input_coords
-        ITypeError:
+        TypeError:
             If input coords are not numpy arrays
         ValueError:
             If xext and yexy are not the same size
