@@ -98,11 +98,10 @@ def test_flatten_coords(xi, yi, xext_ex, yext_ex):
     assert np.array_equal(xext_ex, xext) and np.array_equal(yext_ex, yext)
 
 
-x_station, y_station = np.linspace(-100, -80, 10), np.linspace(45, 70, 10)
-x_station_bad, y_station_bad = (
-    np.linspace(-10, 10, 10),
-    np.linspace(-10, 10, 10)
-)
+x_station = np.linspace(-100, -80, 10)
+y_station = np.linspace(45, 70, 10)
+x_station_bad = np.linspace(-10, 10, 10)
+y_station_bad = np.linspace(-10, 10, 10)
 
 source_crs = {
     "init": "epsg:4326",
