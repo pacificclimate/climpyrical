@@ -1,0 +1,4 @@
+pandoc
+texlive-xetex
+texlive-fonts-recommended
+texlive-generic-recommended
