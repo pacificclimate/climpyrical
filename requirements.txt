@@ -13,6 +13,7 @@ joblib==0.13.2
 kiwisolver==1.1.0
 more-itertools==7.2.0
 munch==2.5.0
+nbconvert==5.4.1
 netCDF4==1.5.3
 numpy==1.17.3
 packaging==19.2
