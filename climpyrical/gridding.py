@@ -1,5 +1,7 @@
+from climpyrical.datacube import check_valid_keys
 import warnings
 import numpy as np
+import xarray as xr
 from scipy.interpolate import NearestNDInterpolator
 from pyproj import Transformer, Proj
 
@@ -17,18 +19,15 @@ def check_ndims(data, n):
     """
     if not isinstance(data, np.ndarray):
         raise TypeError(
-            "Provide an array of type {}, received {}"
-            .format(np.ndarray, type(data))
+            "Provide an array of type {}, received {}".format(np.ndarray, type(data))
         )
     if not isinstance(n, int):
         raise TypeError(
-            "Provide a dimension of type {}, received {}"
-            .format(int, type(n))
+            "Provide a dimension of type {}, received {}".format(int, type(n))
         )
     if data.ndim != n:
         raise ValueError(
-            "Array has dimensions {}, expected {} dimensions."
-            .format(data.ndim, n)
+            "Array has dimensions {}, expected {} dimensions.".format(data.ndim, n)
         )
 
 
@@ -54,11 +53,7 @@ def close_range(x, ds, key):
             {} and {}. Array \
             provided has values between {} \
             and {}".format(
-                key,
-                ds[key].min(),
-                ds[key].max(),
-                x.min(),
-                x.max()
+                key, ds[key].min(), ds[key].max(), x.min(), x.max()
             )
         )
 
@@ -88,8 +83,80 @@ def check_input_coords(x, y, ds):
     check_ndims(x, 1)
     check_ndims(y, 1)
 
-    close_range(x, ds, 'rlon')
-    close_range(y, ds, 'rlat')
+    close_range(x, ds, "rlon")
+    close_range(y, ds, "rlat")
+
+
+def check_regrid_ensemble_inputs(ds, dv, n, keys):
+    if not isinstance(ds, xr.Dataset):
+        raise TypeError(
+            "Provide an ensemble object of type {}, received {}".format(
+                xr.Dataset, type(ds)
+            )
+        )
+    if not isinstance(dv, str):
+        raise TypeError(
+            "Provide design value key of type {}, received {}".format(str, type(dv))
+        )
+    if not isinstance(n, int):
+        raise TypeError("Provide a scaling of {}, received {}".format(int, type(n)))
+
+    actual_keys = set(ds.variables).union(set(ds.dims))
+    check_valid_keys(actual_keys, keys)
+    check_input_coords(ds.rlon.values, ds.rlat.values, ds)
+
+
+def regrid_ensemble(
+    ds: xr.Dataset,
+    dv: str,
+    n: int,
+    keys: dict = {"rlat", "rlon", "lat", "lon", "level"},
+) -> xr.Dataset:
+    """Re-grids a regional model to have n times the
+    native number of grid cells. This subdivides each grid cell
+    into n equal components in both the x and y dimensions.
+    Args:
+        ds: Dataset to regrid
+        dv: Name of design value key in Dataset
+        n: Number of splits in each dimension (symmetric re-gridding is
+            only supported)
+        keys: Expected keys in dataset
+    Returns:
+        xarray.Dataset similar to original, but regridded n-fold.
+    Raises:
+        TypeError: incorrect input types
+        KeyError: incorrect or unexpected keys in dataset
+        ValueError: if number of dimensions are unexpected, or coordinates
+            are not of expected range
+    """
+    check_regrid_ensemble_inputs(ds, dv, n, keys)
+    # calculate the size of each grid cell
+    dx = np.diff(ds.rlon.values).mean() / n
+    dy = np.diff(ds.rlat.values).mean() / n
+
+    # define new boundaries
+    x1 = ds.rlon.min() - dx
+    x2 = ds.rlon.max() + dx
+    y1 = ds.rlon.min() - dy
+    y2 = ds.rlat.max() + dy
+
+    # define new coordinate arrays
+    new_x = np.linspace(x1, x2, ds.rlon.size * n)
+    new_y = np.linspace(y1, y2, ds.rlat.size * n)
+
+    # re-create design value field on newly gridded size
+    new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
+
+    regridded_ds = xr.Dataset(
+        {dv: (["level", "y", "x"], new_ds), "lon": ds.lon, "lat": ds.lat},
+        coords={
+            "rlon": ("x", new_x),
+            "rlat": ("y", new_y),
+            "level": ("level", ds.level.values.astype(int)),
+        },
+    )
+
+    return regridded_ds
 
 
 def check_coords_are_flattened(x, y, xext, yext, ds):
@@ -120,8 +187,9 @@ def check_coords_are_flattened(x, y, xext, yext, ds):
         # bad shape
         raise ValueError(
             "xext, and yexy must have the same size, \
-            received x size {} and y size {}."
-            .format(x.size, y.size)
+            received x size {} and y size {}.".format(
+                x.size, y.size
+            )
         )
 
     if xext.size != x.size * y.size:
@@ -129,8 +197,7 @@ def check_coords_are_flattened(x, y, xext, yext, ds):
         raise ValueError(
             "Extended arrays must be equivalent to the product of the "
             "coordinate grid original axis. Received size {}, based on "
-            "provided coordinates, expected size {}."
-            .format(xext.size, x.size * y.size)
+            "provided coordinates, expected size {}.".format(xext.size, x.size * y.size)
         )
 
     if not np.array_equal(xext[: x.size], xext[x.size: 2*x.size]):
@@ -208,22 +275,19 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
                     in WGS84
     """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
-        raise TypeError(
-            "Please provide an object of type {}".format(np.ndarray)
-        )
+        raise TypeError("Please provide an object of type {}".format(np.ndarray))
 
     check_ndims(x, 1)
     check_ndims(y, 1)
 
-    if (not isinstance(source_crs, dict)) or (
-        not isinstance(target_crs, dict)
-    ):
+    if (not isinstance(source_crs, dict)) or (not isinstance(target_crs, dict)):
         raise TypeError("Please provide an object of type {}".format(dict))
 
     if x.size != y.size:
         raise ValueError(
             "x and y must be pairwise station coordinates \
-            and have the same size.")
+            and have the same size."
+        )
 
 
 def transform_coords(
@@ -288,9 +352,7 @@ def check_find_nearest_index_inputs(data, val):
                 If val is not within data's range of values
     """
     if not isinstance(data, np.ndarray):
-        raise TypeError(
-            "Please provide a data array of type {}".format(np.ndarray)
-        )
+        raise TypeError("Please provide a data array of type {}".format(np.ndarray))
     check_ndims(data, 1)
     if np.any(np.diff(data) < 0):
         raise ValueError("Array must be monotonically increasing.")
@@ -303,8 +365,9 @@ def check_find_nearest_index_inputs(data, val):
     if val > data.max() or val < data.min():
         warnings.warn(
             "{} is outside of array's domain between \
-            {} and {}. A station is outside of the CanRCM4 model grid space."
-            .format(val, data.min(), data.max())
+            {} and {}. A station is outside of the CanRCM4 model grid space.".format(
+                val, data.min(), data.max()
+            )
         )
 
 
@@ -358,17 +421,15 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
                 If sizes of x and y or x_obs and y_obs are not the same
     """
 
-    is_ndarray = [
-        isinstance(array, np.ndarray) for array in [x, y, x_obs, y_obs]
-    ]
+    is_ndarray = [isinstance(array, np.ndarray) for array in [x, y, x_obs, y_obs]]
     if not np.any(is_ndarray):
-        raise TypeError(
-            "Please provide data arrays of type {}".format(np.ndarray)
-        )
+        raise TypeError("Please provide data arrays of type {}".format(np.ndarray))
     if x.size < 2 or y.size < 2:
         raise ValueError(
             "Must have x and y arrays with a size greater than 1. \
-            Received {} and {} respectively.".format(x.size, y.size)
+            Received {} and {} respectively.".format(
+                x.size, y.size
+            )
         )
 
 
@@ -424,34 +485,36 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
                 If field shape and mask shapes are different
     """
     if (not isinstance(x_i, np.ndarray)) or (not isinstance(y_i, np.ndarray)):
-        raise TypeError(
-            "Please provide index array of type {}.".format(np.ndarray)
-        )
-    if (not x_i.dtype == np.dtype("int")) or (
-        not y_i.dtype == np.dtype("int")
-    ):
+        raise TypeError("Please provide index array of type {}.".format(np.ndarray))
+    if (not x_i.dtype == np.dtype("int")) or (not y_i.dtype == np.dtype("int")):
         raise ValueError(
             "Both index array must contain integers. Received \
-            {} and {}".format(x_i.dtype, y_i.dtype)
+            {} and {}".format(
+                x_i.dtype, y_i.dtype
+            )
         )
     if (x_i.max() > x.size) or (y_i.max() > y.size):
         raise ValueError(
             "Indices in index arrays are larger than coordinate array size. \
-            Received x, y {},{} with sizes {}, {}."
-            .format(x_i.max(), y_i.max(), x.size, y.size)
+            Received x, y {},{} with sizes {}, {}.".format(
+                x_i.max(), y_i.max(), x.size, y.size
+            )
         )
     # field same shape as xiyi
     if field.shape != (y.size, x.size):
         raise ValueError(
             "Field provided is not consistent with coordinates provided. \
-            Recevied field shape {}, expected shape ({},{})"
-            .format(field.shape, y.size, x.size)
+            Recevied field shape {}, expected shape ({},{})".format(
+                field.shape, y.size, x.size
+            )
         )
     # mask same shape as field
     if field.shape != mask.shape:
         raise ValueError(
             "Field and mask are not the same shape. Received field shape \
-            {} and mask shape {}.".format(field.shape, mask.shape)
+            {} and mask shape {}.".format(
+                field.shape, mask.shape
+            )
         )
 
 
@@ -507,9 +570,7 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
 
         # create interpolation function for every point
         # except the locations of the NaN values
-        f = NearestNDInterpolator(
-            pairs[master_mask.flatten()], field[master_mask]
-        )
+        f = NearestNDInterpolator(pairs[master_mask.flatten()], field[master_mask])
 
         # get the rlon and rlat locations of the NaN values
         x_nan = xarr[y_i, x_i][nanloc]
