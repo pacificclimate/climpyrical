@@ -11,6 +11,8 @@ from climpyrical.gridding import (
     find_nearest_index,
     find_element_wise_nearest_pos,
     find_nearest_index_value,
+    check_regrid_ensemble_inputs,
+    regrid_ensemble,
 )
 from climpyrical.datacube import read_data
 import pytest
@@ -24,8 +26,8 @@ import numpy as np
         (np.linspace(0, 10), 1, None),
         (np.ones((10, 10)), 2, None),
         ("array", 3, TypeError),
-        (np.ones((10, 10)), 'int', TypeError),
-        (np.ones((10, 10, 10)), 4, ValueError)
+        (np.ones((10, 10)), "int", TypeError),
+        (np.ones((10, 10, 10)), 4, ValueError),
     ],
 )
 def test_check_ndims(data, n, error):
@@ -37,17 +39,43 @@ def test_check_ndims(data, n, error):
 
 
 # load example ensemble dataset for testing
-ds = read_data(
-        resource_filename("climpyrical", "tests/data/snw_test_ensemble.nc"),
-        "Rain-RL50"
-    )
-
+dv = "Rain-RL50"
+ds = read_data(resource_filename("climpyrical", "tests/data/snw_test_ensemble.nc"), dv)
+ds_regridded_proper = read_data(
+    resource_filename("climpyrical", "tests/data/snw_regridded_test_ensemble.nc"), dv
+)
 # read grids with expected dimension and ranges
 xi, yi = ds.rlon.values, ds.rlat.values
 
 # extend coordinates in expected way
 xext_ex, yext_ex = np.tile(xi, yi.size), np.repeat(yi, xi.size)
 xext_bad, yext_bad = np.repeat(xi, yi.size), np.tile(yi, xi.size)
+
+
+@pytest.mark.parametrize(
+    "ds,dv,n,keys,error",
+    [
+        (ds, dv, 3, {"p"}, KeyError),
+        (3, dv, 3, {"rlat", "rlon", "lon", "lat", "level"}, TypeError),
+        (ds, 3, 3, {"rlat", "rlon", "lon", "lat", "level"}, TypeError),
+        (ds, dv, "4", {"rlat", "rlon", "lon", "lat", "level"}, TypeError),
+        (ds, dv, 3, {"rlat", "rlon", "lon", "lat", "level"}, None),
+    ],
+)
+def test_check_regrid_ensemble_inputs(ds, dv, n, keys, error):
+    if error is None:
+        check_regrid_ensemble_inputs(ds, dv, n, keys)
+    else:
+        with pytest.raises(error):
+            check_regrid_ensemble_inputs(ds, dv, n, keys)
+
+
+@pytest.mark.parametrize(
+    "ds,dv,n,keys", [(ds, dv, 3, {"rlat", "rlon", "lat", "lon", "level"})]
+)
+def test_regrid_ensemble(ds, dv, n, keys):
+    ds = regrid_ensemble(ds, dv, n, keys)
+    assert ds.equals(ds_regridded_proper)
 
 
 @pytest.mark.parametrize(
@@ -89,10 +117,7 @@ def test_check_coords_are_flattened(x, y, xext_ex, yext_ex, error):
             check_coords_are_flattened(x, y, xext_ex, yext_ex, ds)
 
 
-@pytest.mark.parametrize(
-    "xi,yi,xext_ex,yext_ex",
-    [(xi, yi, xext_ex, yext_ex)]
-)
+@pytest.mark.parametrize("xi,yi,xext_ex,yext_ex", [(xi, yi, xext_ex, yext_ex)])
 def test_flatten_coords(xi, yi, xext_ex, yext_ex):
     xext, yext = flatten_coords(xi, yi, ds)
     assert np.array_equal(xext_ex, xext) and np.array_equal(yext_ex, yext)
@@ -135,9 +160,7 @@ target_crs = {
         (x_station, y_station[:-1], source_crs, target_crs, ValueError),
     ],
 )
-def test_check_transform_coords_inputs(
-    x, y, source_crs, target_crs, error
-):
+def test_check_transform_coords_inputs(x, y, source_crs, target_crs, error):
     if error is None:
         check_transform_coords_inputs(x, y, source_crs, target_crs)
     else:
@@ -194,11 +217,7 @@ def test_check_find_nearest_index_inputs(data, val, error):
 
 
 @pytest.mark.parametrize(
-    "data,val,warning",
-    [
-        (data, 25.0, None),
-        (data, 35.0, UserWarning)
-    ],
+    "data,val,warning", [(data, 25.0, None), (data, 35.0, UserWarning)],
 )
 def test_check_find_nearest_index_inputs_warnings(data, val, warning):
     if warning is None:
@@ -235,9 +254,7 @@ def test_find_nearest_index(data, val, expected):
         ),
     ],
 )
-def test_check_find_element_wise_nearest_pos_inputs(
-    x, y, x_obs, y_obs, error
-):
+def test_check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs, error):
     if error is None:
         check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs)
     else:
@@ -254,13 +271,11 @@ def test_check_find_element_wise_nearest_pos_inputs(
             np.linspace(-10, 10, 20),
             np.linspace(-10, 10, 20),
             np.array(range(20)),
-            np.array(range(20))
+            np.array(range(20)),
         )
     ],
 )
-def test_find_element_wise_nearest_pos(
-        x, y, x_obs, y_obs, expected_x, expected_y
-):
+def test_find_element_wise_nearest_pos(x, y, x_obs, y_obs, expected_x, expected_y):
     xclose, yclose = find_element_wise_nearest_pos(x, y, x_obs, y_obs)
     xclose_truth = np.allclose(xclose, expected_x)
     yclose_truth = np.allclose(yclose, expected_y)
@@ -297,9 +312,7 @@ bad_idx = np.array([10, 12, 200])
         (x, y, idx, idx, good_field_nan, mask, None),
     ],
 )
-def test_check_find_nearest_value_inputs(
-    x, y, x_i, y_i, field, mask, error
-):
+def test_check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask, error):
     if error is None:
         check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
     else:
