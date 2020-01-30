@@ -32,7 +32,9 @@ def check_polygon_before_projection(p):
     crs = {"init": "epsg:4326"}
     if p.crs != crs:
         raise ValueError(
-            "Polygon provided is in projection {}, expected {}".format(p.crs, crs)
+            "Polygon provided is in projection {}, expected {}".format(
+                p.crs, crs
+            )
         )
     return True
 
@@ -72,7 +74,9 @@ def check_input_grid_coords(x, y):
         bool True if passed
     """
     if (not isinstance(x, np.ndarray)) or (not isinstance(y, np.ndarray)):
-        raise TypeError("Please provide an object of type {}".format(np.ndarray))
+        raise TypeError(
+            "Please provide an object of type {}".format(np.ndarray)
+        )
 
     # set tolerances loosely so coordinates within an absolute
     # tolerance of the len/width of one grid cell are still
@@ -89,7 +93,9 @@ def check_input_grid_coords(x, y):
         not np.isclose(y.min(), -28.59999656677246, atol=ytol)
     ):
         raise ValueError("Unexpected range of values in y dimension")
-    if (x.size != 155 or y.size != 130) and (x.size % 155 != 0 or y.size % 130 != 0):
+    if (x.size != 155 or y.size != 130) and (
+        x.size % 155 != 0 or y.size % 130 != 0
+    ):
         raise ValueError(
             "Longitude and latitude expected size 155 and 130 respectively."
         )
