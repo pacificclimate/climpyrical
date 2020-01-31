@@ -210,7 +210,7 @@ def check_coords_are_flattened(x, y, xext, yext, ds):
             )
         )
 
-    if not np.array_equal(xext[: x.size], xext[x.size: 2*x.size]):
+    if not np.array_equal(xext[: x.size], xext[x.size: 2 * x.size]):
         # they should all be increasing tile wise
         raise ValueError(
             "Flat coords should increase np.tile-wise, i.e: 1, 2, 3, 1, 2, 3,\
@@ -380,8 +380,8 @@ def check_find_nearest_index_inputs(data, val):
 
     if val > data.max() or val < data.min():
         warnings.warn(
-            "{} is outside of array's domain between \
-            {} and {}. A station is outside of the CanRCM4 model grid space.".format(
+            "{} is outside of array's domain between {} and {}. \
+            A station is outside of the CanRCM4 model grid space.".format(
                 val, data.min(), data.max()
             )
         )
