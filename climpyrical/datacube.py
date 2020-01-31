@@ -93,10 +93,10 @@ def read_data(
         TypeError if path provided is invalid
     """
     check_valid_data_path(data_path)
-    ds = xr.open_dataset(data_path)
-    actual_keys = set(ds.variables).union(set(ds.dims))
-    keys.add(design_value_name)
-    check_valid_keys(actual_keys, keys)
-    check_valid_data(ds, design_value_name)
+    with xr.open_dataset(data_path) as ds:
+        actual_keys = set(ds.variables).union(set(ds.dims))
+        keys.add(design_value_name)
+        check_valid_keys(actual_keys, keys)
+        check_valid_data(ds, design_value_name)
 
-    return ds
+        return ds
