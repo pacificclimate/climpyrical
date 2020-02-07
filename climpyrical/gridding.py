@@ -120,9 +120,10 @@ def regrid_ensemble(
     n: int,
     keys: dict = {"rlat", "rlon", "lat", "lon", "level"},
 ) -> xr.Dataset:
-    """Re-grids a regional model to have n times the
-    native number of grid cells. This subdivides each grid cell
-    into n equal components in both the x and y dimensions.
+    """Re-grids a regional model to have n^2 times the
+    native number of grid cells (n times in each axis).
+    This subdivides each grid cell into n equal components
+    in both the x and y dimensions.
     Args:
         ds: Dataset to regrid
         dv: Name of design value key in Dataset
@@ -210,7 +211,7 @@ def check_coords_are_flattened(x, y, xext, yext, ds):
             )
         )
 
-    if not np.array_equal(xext[: x.size], xext[x.size: 2 * x.size]):
+    if not np.array_equal(xext[: x.size], xext[x.size : 2 * x.size]):
         # they should all be increasing tile wise
         raise ValueError(
             "Flat coords should increase np.tile-wise, i.e: 1, 2, 3, 1, 2, 3,\
