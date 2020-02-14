@@ -140,6 +140,7 @@ def regrid_ensemble(
     """
     check_regrid_ensemble_inputs(ds, dv, n, keys)
     # calculate the size of each grid cell
+    # see #20 for more info
     dx = np.diff(ds.rlon.values).mean() / n
     dy = np.diff(ds.rlat.values).mean() / n
 
@@ -195,20 +196,16 @@ def check_coords_are_flattened(x, y, xext, yext, ds):
     if xext.size != yext.size:
         # bad shape
         raise ValueError(
-            "xext, and yexy must have the same size, \
-            received x size {} and y size {}.".format(
-                x.size, y.size
-            )
+            f"xext, and yexy must have the same size, \
+            received x size {x.size} and y size {y.size}."
         )
 
     if xext.size != x.size * y.size:
         # bad size
         raise ValueError(
-            "Extended arrays must be equivalent to the product of the "
-            "coordinate grid original axis. Received size {}, based on "
-            "provided coordinates, expected size {}.".format(
-                xext.size, x.size * y.size
-            )
+            f"Extended arrays must be equivalent to the product of the \
+            coordinate grid original axis. Received size {xext.size}, based on \
+            provided coordinates, expected size {x.size*y.size}."
         )
 
     if not np.array_equal(xext[: x.size], xext[x.size : 2 * x.size]):
@@ -287,7 +284,7 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
     """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
         raise TypeError(
-            "Please provide an object of type {}".format(np.ndarray)
+            f"Please provide an object of type {np.ndarray}"
         )
 
     check_ndims(x, 1)
@@ -296,7 +293,7 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
     if (not isinstance(source_crs, dict)) or (
         not isinstance(target_crs, dict)
     ):
-        raise TypeError("Please provide an object of type {}".format(dict))
+        raise TypeError(f"Please provide an object of type {dict}")
 
     if x.size != y.size:
         raise ValueError(
@@ -368,7 +365,7 @@ def check_find_nearest_index_inputs(data, val):
     """
     if not isinstance(data, np.ndarray):
         raise TypeError(
-            "Please provide a data array of type {}".format(np.ndarray)
+            f"Please provide a data array of type {np.ndarray}"
         )
     check_ndims(data, 1)
     if np.any(np.diff(data) < 0):
@@ -377,14 +374,12 @@ def check_find_nearest_index_inputs(data, val):
         raise ValueError("Array size must be greater than 1")
 
     if not isinstance(val, float):
-        raise TypeError("Please provide a value of type {}".format(float))
+        raise TypeError(f"Please provide a value of type {float}")
 
     if val > data.max() or val < data.min():
         warnings.warn(
-            "{} is outside of array's domain between {} and {}. \
-            A station is outside of the CanRCM4 model grid space.".format(
-                val, data.min(), data.max()
-            )
+            f"{val} is outside of array's domain between {data.min()} and {data.max()}. \
+            A station is outside of the CanRCM4 model grid space."
         )
 
 
@@ -443,14 +438,12 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
     ]
     if not np.any(is_ndarray):
         raise TypeError(
-            "Please provide data arrays of type {}".format(np.ndarray)
+            f"Please provide data arrays of type {np.ndarray}"
         )
     if x.size < 2 or y.size < 2:
         raise ValueError(
-            "Must have x and y arrays with a size greater than 1. \
-            Received {} and {} respectively.".format(
-                x.size, y.size
-            )
+            f"Must have x and y arrays with a size greater than 1. \
+            Received {x.size} and {y.size} respectively."
         )
 
 
@@ -507,39 +500,31 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
     """
     if (not isinstance(x_i, np.ndarray)) or (not isinstance(y_i, np.ndarray)):
         raise TypeError(
-            "Please provide index array of type {}.".format(np.ndarray)
+            f"Please provide index array of type {np.ndarray}."
         )
     if (not x_i.dtype == np.dtype("int")) or (
         not y_i.dtype == np.dtype("int")
     ):
         raise ValueError(
-            "Both index array must contain integers. Received \
-            {} and {}".format(
-                x_i.dtype, y_i.dtype
-            )
+            f"Both index array must contain integers. Received \
+            {x_i.dtype} and {y_i.dtype}"
         )
     if (x_i.max() > x.size) or (y_i.max() > y.size):
         raise ValueError(
             "Indices in index arrays are larger than coordinate array size. \
-            Received x, y {},{} with sizes {}, {}.".format(
-                x_i.max(), y_i.max(), x.size, y.size
-            )
+            Received x, y {x_i.max()},{y_i.max()} with sizes {x.size}, {y.size}."
         )
     # field same shape as xiyi
     if field.shape != (y.size, x.size):
         raise ValueError(
             "Field provided is not consistent with coordinates provided. \
-            Recevied field shape {}, expected shape ({},{})".format(
-                field.shape, y.size, x.size
-            )
+            Recevied field shape {field.shape}, expected shape ({y.size},{x.size}})"
         )
     # mask same shape as field
     if field.shape != mask.shape:
         raise ValueError(
             "Field and mask are not the same shape. Received field shape \
-            {} and mask shape {}.".format(
-                field.shape, mask.shape
-            )
+            {field.shape} and mask shape {mask.shape}."
         )
 
 
