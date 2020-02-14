@@ -77,15 +77,25 @@ def check_input_grid_coords(x, y):
         raise TypeError(
             "Please provide an object of type {}".format(np.ndarray)
         )
-    if (not np.isclose(x.max(), 33.8800048828125)) or (
-        not np.isclose(x.min(), -33.8800048828125)
+
+    # set tolerances loosely so coordinates within an absolute
+    # tolerance of the len/width of one grid cell are still
+    # permitted. This is done so re-gridding can occur without
+    # raising an error here.
+    xtol = np.mean(np.diff(x))
+    ytol = np.mean(np.diff(y))
+
+    if (not np.isclose(x.max(), 33.8800048828125, atol=xtol)) or (
+        not np.isclose(x.min(), -33.8800048828125, atol=xtol)
     ):
         raise ValueError("Unexpected range of values in x dimension")
-    if (not np.isclose(y.max(), 28.15999984741211)) or (
-        not np.isclose(y.min(), -28.59999656677246)
+    if (not np.isclose(y.max(), 28.15999984741211, atol=ytol)) or (
+        not np.isclose(y.min(), -28.59999656677246, atol=ytol)
     ):
         raise ValueError("Unexpected range of values in y dimension")
-    if x.size != 155 or y.size != 130:
+    if (x.size != 155 or y.size != 130) and (
+        x.size % 155 != 0 or y.size % 130 != 0
+    ):
         raise ValueError(
             "Longitude and latitude expected size 155 and 130 respectively."
         )
