@@ -345,11 +345,10 @@ good_field_nan[idx, idx] = np.nan
 def test_find_nearest_index_value(x, y, x_i, y_i, field, mask, expected):
     final = find_nearest_index_value(x, y, x_i, y_i, field, mask, ds)
     truth = (
-            np.any(np.isnan(final))
-            or final.size != x_i.size
-            or final.size != y_i.size
-            or np.allclose(expected, final)
-            is False
+        np.any(np.isnan(final))
+        or final.size != x_i.size
+        or final.size != y_i.size
+        or np.allclose(expected, final) is False
     )
 
     assert truth is False
