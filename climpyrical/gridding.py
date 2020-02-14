@@ -204,8 +204,9 @@ def check_coords_are_flattened(x, y, xext, yext, ds):
         # bad size
         raise ValueError(
             f"Extended arrays must be equivalent to the product of the \
-            coordinate grid original axis. Received size {xext.size}, based on \
-            provided coordinates, expected size {x.size*y.size}."
+            coordinate grid original axis. Received size \
+            {xext.size}, based on provided coordinates, expected size \
+            {x.size*y.size}."
         )
 
     if not np.array_equal(xext[: x.size], xext[x.size : 2 * x.size]):
@@ -283,9 +284,7 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
                     in WGS84
     """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
-        raise TypeError(
-            f"Please provide an object of type {np.ndarray}"
-        )
+        raise TypeError(f"Please provide an object of type {np.ndarray}")
 
     check_ndims(x, 1)
     check_ndims(y, 1)
@@ -364,9 +363,7 @@ def check_find_nearest_index_inputs(data, val):
                 If val is not within data's range of values
     """
     if not isinstance(data, np.ndarray):
-        raise TypeError(
-            f"Please provide a data array of type {np.ndarray}"
-        )
+        raise TypeError(f"Please provide a data array of type {np.ndarray}")
     check_ndims(data, 1)
     if np.any(np.diff(data) < 0):
         raise ValueError("Array must be monotonically increasing.")
@@ -437,9 +434,7 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
         isinstance(array, np.ndarray) for array in [x, y, x_obs, y_obs]
     ]
     if not np.any(is_ndarray):
-        raise TypeError(
-            f"Please provide data arrays of type {np.ndarray}"
-        )
+        raise TypeError(f"Please provide data arrays of type {np.ndarray}")
     if x.size < 2 or y.size < 2:
         raise ValueError(
             f"Must have x and y arrays with a size greater than 1. \
@@ -499,9 +494,7 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
                 If field shape and mask shapes are different
     """
     if (not isinstance(x_i, np.ndarray)) or (not isinstance(y_i, np.ndarray)):
-        raise TypeError(
-            f"Please provide index array of type {np.ndarray}."
-        )
+        raise TypeError(f"Please provide index array of type {np.ndarray}.")
     if (not x_i.dtype == np.dtype("int")) or (
         not y_i.dtype == np.dtype("int")
     ):
@@ -512,13 +505,15 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
     if (x_i.max() > x.size) or (y_i.max() > y.size):
         raise ValueError(
             "Indices in index arrays are larger than coordinate array size. \
-            Received x, y {x_i.max()},{y_i.max()} with sizes {x.size}, {y.size}."
+            Received x, y {x_i.max()},{y_i.max()} with sizes \
+            {x.size}, {y.size}."
         )
     # field same shape as xiyi
     if field.shape != (y.size, x.size):
         raise ValueError(
             "Field provided is not consistent with coordinates provided. \
-            Recevied field shape {field.shape}, expected shape ({y.size},{x.size}})"
+            Recevied field shape {field.shape}, expected shape \
+            ({y.size},{x.size}})"
         )
     # mask same shape as field
     if field.shape != mask.shape:
