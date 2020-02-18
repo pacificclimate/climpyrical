@@ -158,10 +158,10 @@ def regrid_ensemble(
     new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
 
     regridded_ds = xr.Dataset(
-        {dv: (["level", "y", "x"], new_ds), "lon": ds.lon, "lat": ds.lat},
+        {dv: (["level", "rlat", "rlon"], new_ds), "lon": ds.lon, "lat": ds.lat},
         coords={
-            "rlon": ("x", new_x),
-            "rlat": ("y", new_y),
+            "rlon": ("rlon", new_x),
+            "rlat": ("rlat", new_y),
             "level": ("level", ds.level.values.astype(int)),
         },
     )
