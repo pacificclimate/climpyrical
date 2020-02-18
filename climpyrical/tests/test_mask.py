@@ -70,7 +70,7 @@ def test_check_polygon_validity(p, error):
     [
         (canada, None),
         (rotated_canada, ValueError),
-        (transformed_world, ValueError)
+        (transformed_world, ValueError),
     ],
 )
 def test_check_polygon_before_projection(p, error):
@@ -107,7 +107,7 @@ def test_check_polygon_after_projection(p, error):
         (np.linspace(-24, 24, 155), "y", TypeError),
         (np.ones((2, 2)), np.linspace(-24, 24, 155), ValueError),
         (np.linspace(-24, 24, 155), np.ones((2, 2)), ValueError),
-        (np.linspace(-24, 24, 155), np.linspace(-24, 24, 155), None)
+        (np.linspace(-24, 24, 155), np.linspace(-24, 24, 155), None),
     ],
 )
 def test_check_input_grid_coords(x, y, error):
