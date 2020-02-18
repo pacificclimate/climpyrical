@@ -45,89 +45,76 @@ good_polygon = gpd.read_file(
 
 
 @pytest.mark.parametrize(
-    "p,passed",
+    "p,error",
     [
-        ({"string"}, False),
-        ({5}, False),
-        (canada, True),
-        (rotated_canada, True),
-        (transformed_world, True),
-        (good_polygon, True),
-        (bad_polygon, False),
-        (gpd.GeoSeries(), False),
+        ({"string"}, TypeError),
+        ({5}, TypeError),
+        (canada, None),
+        (rotated_canada, None),
+        (transformed_world, None),
+        (good_polygon, None),
+        (bad_polygon, ValueError),
+        (gpd.GeoSeries(), ValueError),
     ],
 )
-def test_check_polygon_validity(p, passed):
-    if passed:
-        assert check_polygon_validity(p)
+def test_check_polygon_validity(p, error):
+    if error is None:
+        check_polygon_validity(p)
     else:
-        with pytest.raises((TypeError, ValueError)):
+        with pytest.raises(error):
             check_polygon_validity(p)
 
 
 @pytest.mark.parametrize(
-    "p,passed",
-    [(canada, True), (rotated_canada, False), (transformed_world, False)],
+    "p,error",
+    [
+        (canada, None),
+        (rotated_canada, ValueError),
+        (transformed_world, ValueError)
+    ],
 )
-def test_check_polygon_before_projection(p, passed):
-    if passed:
-        assert check_polygon_before_projection(p)
+def test_check_polygon_before_projection(p, error):
+    if error is None:
+        check_polygon_before_projection(p)
     else:
-        with pytest.raises((TypeError, ValueError)):
+        with pytest.raises(error):
             check_polygon_before_projection(p)
 
 
 @pytest.mark.parametrize(
-    "p,passed",
+    "p,error",
     [
-        ({"string"}, False),
-        ({5}, False),
-        (canada, False),
-        (rotated_canada, True),
-        (transformed_world, False),
-        (gpd.GeoSeries(), False),
+        ({"string"}, TypeError),
+        ({5}, TypeError),
+        (canada, ValueError),
+        (rotated_canada, None),
+        (transformed_world, ValueError),
+        (gpd.GeoSeries(), ValueError),
     ],
 )
-def test_check_polygon_after_projection(p, passed):
-    if passed:
-        assert check_polygon_after_projection(p)
+def test_check_polygon_after_projection(p, error):
+    if error is None:
+        check_polygon_after_projection(p)
     else:
-        with pytest.raises((TypeError, ValueError)):
+        with pytest.raises(error):
             check_polygon_after_projection(p)
 
 
 @pytest.mark.parametrize(
-    "x,y,passed",
+    "x,y,error",
     [
-        ("x", np.linspace(-24, 24, 155), False),
-        (np.linspace(-24, 24, 155), "y", False),
-        (
-            np.linspace(0, 10, 30),
-            np.linspace(-28.59999656677246, 28.15999984741211, 130),
-            False,
-        ),
-        (
-            np.linspace(-33.8800048828125, 33.8800048828125, 155),
-            np.linspace(0, 10, 130),
-            False,
-        ),
-        (
-            np.linspace(-33.8800048828125, 33.8800048828125, 155),
-            np.linspace(-28.59999656677246, 28.15999984741211, 130),
-            True,
-        ),
-        (
-            np.linspace(-33.8800048828125, 33.8800048828125, 15),
-            np.linspace(-28.59999656677246, 28.15999984741211, 10),
-            False,
-        ),
+        ("x", np.linspace(-24, 24, 155), TypeError),
+        (np.linspace(-24, 24, 155), "y", TypeError),
+        (np.ones((2, 2)), np.linspace(-24, 24, 155), ValueError),
+        (np.linspace(-24, 24, 155), np.ones((2, 2)), ValueError),
+        (np.linspace(-24, 24, 155), np.linspace(-24, 24, 155), None)
     ],
 )
-def test_check_input_grid_coords(x, y, passed):
-    if passed:
-        assert check_input_grid_coords(x, y)
+def test_check_input_grid_coords(x, y, error):
+    if error is None:
+        check_input_grid_coords(x, y)
     else:
-        with pytest.raises((ValueError, TypeError)):
+        with pytest.raises(error):
             check_input_grid_coords(x, y)
 
 

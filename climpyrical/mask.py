@@ -1,3 +1,4 @@
+from climpyrical.gridding import check_ndims
 import numpy as np
 from shapely.geometry import Point
 import geopandas as gpd
@@ -7,8 +8,9 @@ def check_polygon_validity(p):
     """Checks that the polygon provided is valid
     Args:
         p: polygon of type geopandas.GeoSeries
-    Returns:
-        bool for passing the checker
+    Raises:
+        TypeError: for wrong type
+        ValueError: for GeoDataFrame that is empty or invalid values
     """
     if not isinstance(p, gpd.GeoSeries):
         raise TypeError("Must be gpd.GeoSeries, not {}".format(type(p)))
@@ -78,29 +80,10 @@ def check_input_grid_coords(x, y):
             "Please provide an object of type {}".format(np.ndarray)
         )
 
-    # set tolerances loosely so coordinates within an absolute
-    # tolerance of the len/width of one grid cell are still
-    # permitted. This is done so re-gridding can occur without
-    # raising an error here.
-    xtol = np.mean(np.diff(x))
-    ytol = np.mean(np.diff(y))
+    check_ndims(x, 1)
+    check_ndims(y, 1)
 
-    if (not np.isclose(x.max(), 33.8800048828125, atol=xtol)) or (
-        not np.isclose(x.min(), -33.8800048828125, atol=xtol)
-    ):
-        raise ValueError("Unexpected range of values in x dimension")
-    if (not np.isclose(y.max(), 28.15999984741211, atol=ytol)) or (
-        not np.isclose(y.min(), -28.59999656677246, atol=ytol)
-    ):
-        raise ValueError("Unexpected range of values in y dimension")
-    if (x.size != 155 or y.size != 130) and (
-        x.size % 155 != 0 or y.size % 130 != 0
-    ):
-        raise ValueError(
-            "Longitude and latitude expected size 155 and 130 respectively."
-        )
     return True
-
 
 def rotate_shapefile(
     p,
