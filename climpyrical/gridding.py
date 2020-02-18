@@ -147,7 +147,7 @@ def regrid_ensemble(
     # define new boundaries
     x1 = ds.rlon.min() - dx
     x2 = ds.rlon.max() + dx
-    y1 = ds.rlon.min() - dy
+    y1 = ds.rlat.min() - dy
     y2 = ds.rlat.max() + dy
 
     # define new coordinate arrays
@@ -158,7 +158,11 @@ def regrid_ensemble(
     new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
 
     regridded_ds = xr.Dataset(
-        {dv: (["level", "rlat", "rlon"], new_ds), "lon": ds.lon, "lat": ds.lat},
+        {
+            dv: (["level", "rlat", "rlon"], new_ds),
+            "lon": ds.lon,
+            "lat": ds.lat,
+        },
         coords={
             "rlon": ("rlon", new_x),
             "rlat": ("rlat", new_y),
