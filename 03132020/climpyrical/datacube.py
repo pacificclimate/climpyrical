@@ -81,7 +81,7 @@ def read_data(
             containing CanRCM4 ensemble
         design_value_name (str): name of design value exactly as appears
             in the NetCDF4 file
-        keys (dict, optional): dictionary of required keys in NetCDF4
+        keys (list, optional): dictionary of required keys in NetCDF4
             file
     Returns:
         ds (xarray Dataset): data cube of assembled ensemble models
