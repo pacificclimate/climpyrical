@@ -33,10 +33,10 @@ def check_valid_keys(actual_keys, required_keys):
     Raises:
         KeyError if required_keys are not a subset of the actual keys
     """
-    if not set(required_keys).issubset(actual_keys):
+    if not set(required_keys).issubset(set(actual_keys)):
         raise KeyError(
             "CanRCM4 ensemble is missing keys {}".format(
-                list(set(required_keys) - set(actual_keys))
+                list(set(dict(required_keys)) - set(dict(actual_keys)))
             )
         )
 
