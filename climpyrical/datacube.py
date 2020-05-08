@@ -36,7 +36,7 @@ def check_valid_keys(actual_keys, required_keys):
     if not set(required_keys).issubset(actual_keys):
         raise KeyError(
             "CanRCM4 ensemble is missing keys {}".format(
-                required_keys - actual_keys
+                list(set(required_keys) - set(actual_keys))
             )
         )
 
@@ -71,7 +71,7 @@ def check_valid_data(ds, design_value_name):
 
 
 def read_data(
-    data_path, design_value_name, keys={"rlat", "rlon", "lat", "lon", "level"}
+    data_path, design_value_name, keys=None
 ):
     """Load an ensemble of CanRCM4
     models into a single datacube.
@@ -81,7 +81,7 @@ def read_data(
             containing CanRCM4 ensemble
         design_value_name (str): name of design value exactly as appears
             in the NetCDF4 file
-        keys (dict, optional): dictionary of required keys in NetCDF4
+        keys (list, optional): dictionary of required keys in NetCDF4
             file
     Returns:
         ds (xarray Dataset): data cube of assembled ensemble models
@@ -93,9 +93,11 @@ def read_data(
         TypeError if path provided is invalid
     """
     check_valid_data_path(data_path)
+    if keys is None:
+        keys = ["rlat", "rlon", "lat", "lon", "level"]
+    keys.append(design_value_name)
     with xr.open_dataset(data_path) as ds:
-        actual_keys = set(ds.variables).union(set(ds.dims))
-        keys.add(design_value_name)
+        actual_keys = list(set(ds.variables).union(set(ds.dims)))
         check_valid_keys(actual_keys, keys)
         check_valid_data(ds, design_value_name)
 

@@ -31,14 +31,14 @@ def test_check_valid_data_path(data_path, passed):
     "actual_keys,required_keys,passed",
     [
         (
-            {"rlat", "rlon", "dv", 4, "lat", "lon"},
-            {"rlat", "rlon", "dv", 4},
+            ["rlat", "rlon", "dv", 4, "lat", "lon"],
+            ["rlat", "rlon", "dv", 4],
             True,
         ),
-        ({"rlat", "rlon", True, 99999}, {"rlat", "rlon", True, 99999}, True),
+        (["rlat", "rlon", True, 99999], ["rlat", "rlon", True, 99999], True),
         (
-            {"rlat", "rlon", 4.0, False},
-            {"hi", "nic", "was", "here", "lon"},
+            ["rlat", "rlon", 4.0, False],
+            ["hi", "nic", "was", "here", "lon"],
             False,
         ),
     ],
@@ -106,37 +106,37 @@ def test_valid_data(ds, design_value_name, passed):
         (
             resource_filename("climpyrical", "tests/data/snw.nc"),
             "snw",
-            {"rlat", "rlon", "lat", "lon"},
+            ["rlat", "rlon", "lat", "lon"],
             (66, 130, 155),
         ),
         (
             resource_filename("climpyrical", "tests/data/hdd.nc"),
             "heating_degree_days_per_time_period",
-            {"rlat", "rlon", "lat", "lon", "level"},
+            ["rlat", "rlon", "lat", "lon", "level"],
             (35, 130, 155),
         ),
         (
             resource_filename("climpyrical", "tests/data/example1.nc"),
             "hyai",
-            {"lon", "lat"},
+            ["lon", "lat"],
             (27,),
         ),
         (
             resource_filename("climpyrical", "tests/data/example2.nc"),
             "tas",
-            {"lat", "lon"},
+            ["lat", "lon"],
             (1, 130, 155),
         ),
         (
             resource_filename("climpyrical", "tests/data/example3.nc"),
             "tas",
-            {"lat", "lon"},
+            ["lat", "lon"],
             (1, 128, 256),
         ),
         (
             resource_filename("climpyrical", "tests/data/example4.nc"),
             "tos",
-            {"lat", "lon"},
+            ["lat", "lon"],
             (24, 170, 180),
         ),
     ],
@@ -155,7 +155,7 @@ def test_shape(data_path, design_value_name, keys, shape):
             read_data(
                 resource_filename("climpyrical", "tests/data/snw.nc"),
                 "snw",
-                {"rlat", "rlon", "lat", "lon"},
+                ["rlat", "rlon", "lat", "lon"],
             ),
             xr.open_dataset(
                 resource_filename("climpyrical", "tests/data/snw.nc")
@@ -165,7 +165,7 @@ def test_shape(data_path, design_value_name, keys, shape):
             read_data(
                 resource_filename("climpyrical", "tests/data/hdd.nc"),
                 "heating_degree_days_per_time_period",
-                {"rlat", "rlon", "lat", "lon", "level"},
+                ["rlat", "rlon", "lat", "lon", "level"],
             ),
             xr.open_dataset(
                 resource_filename("climpyrical", "tests/data/hdd.nc")
