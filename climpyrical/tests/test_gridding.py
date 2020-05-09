@@ -60,11 +60,11 @@ xext_bad, yext_bad = np.repeat(xi, yi.size), np.tile(yi, xi.size)
 @pytest.mark.parametrize(
     "ds,dv,n,keys,error",
     [
-        (ds, dv, 3, {"p"}, KeyError),
-        (3, dv, 3, {"rlat", "rlon", "lon", "lat", "level"}, TypeError),
-        (ds, 3, 3, {"rlat", "rlon", "lon", "lat", "level"}, TypeError),
-        (ds, dv, "4", {"rlat", "rlon", "lon", "lat", "level"}, TypeError),
-        (ds, dv, 3, {"rlat", "rlon", "lon", "lat", "level"}, None),
+        (ds, dv, 3, ["p"], KeyError),
+        (3, dv, 3, ["rlat", "rlon", "lon", "lat", "level"], TypeError),
+        (ds, 3, 3, ["rlat", "rlon", "lon", "lat", "level"], TypeError),
+        (ds, dv, "4", ["rlat", "rlon", "lon", "lat", "level"], TypeError),
+        (ds, dv, 3, ["rlat", "rlon", "lon", "lat", "level"], None),
     ],
 )
 def test_check_regrid_ensemble_inputs(ds, dv, n, keys, error):
@@ -76,7 +76,7 @@ def test_check_regrid_ensemble_inputs(ds, dv, n, keys, error):
 
 
 @pytest.mark.parametrize(
-    "ds,dv,n,keys", [(ds, dv, 3, {"rlat", "rlon", "lat", "lon", "level"})]
+    "ds,dv,n,keys", [(ds, dv, 3, ["rlat", "rlon", "lat", "lon", "level"])]
 )
 def test_regrid_ensemble(ds, dv, n, keys):
     ds = regrid_ensemble(ds, dv, n, keys)
