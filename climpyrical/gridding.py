@@ -121,7 +121,7 @@ def regrid_ensemble(
     ds: xr.Dataset,
     dv: str,
     n: int,
-    keys: dict = {"rlat", "rlon", "lat", "lon", "level"},
+    keys: list = ["rlat", "rlon", "lat", "lon", "level"],
 ) -> xr.Dataset:
     """Re-grids a regional model to have n^2 times the
     native number of grid cells (n times in each axis).
