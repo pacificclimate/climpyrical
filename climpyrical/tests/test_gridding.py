@@ -17,6 +17,8 @@ from climpyrical.datacube import read_data
 import pytest
 from pkg_resources import resource_filename
 import numpy as np
+from nptyping import NDArray
+from typing import Any
 
 
 @pytest.mark.parametrize(
@@ -42,6 +44,8 @@ dv = "Rain-RL50"
 ds = read_data(
     resource_filename("climpyrical", "tests/data/snw_test_ensemble.nc"), dv
 )
+
+ds_mean = ds.mean(dim="level")
 ds_regridded_proper = read_data(
     resource_filename(
         "climpyrical", "tests/data/snw_regridded_test_ensemble.nc"
@@ -75,11 +79,16 @@ def test_check_regrid_ensemble_inputs(ds, dv, n, keys, error):
 
 
 @pytest.mark.parametrize(
-    "ds,dv,n,keys", [(ds, dv, 3, ["rlat", "rlon", "lat", "lon", "level"])]
+    "ds,dv,n,keys",
+    [
+        (ds, dv, 3, ["rlat", "rlon", "lat", "lon", "level"]),
+        (ds_mean, dv, 3, ["rlat", "rlon", "lat", "lon"]),
+    ],
 )
 def test_regrid_ensemble(ds, dv, n, keys):
-    ds = regrid_ensemble(ds, dv, n, keys)
-    assert ds.equals(ds_regridded_proper)
+    ndim = np.ndim(ds[dv].values)
+    nds = regrid_ensemble(ds, dv, n, keys)
+    assert isinstance(nds[dv].values, NDArray[(Any,) * ndim, np.float32])
 
 
 @pytest.mark.parametrize(
