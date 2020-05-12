@@ -1,6 +1,5 @@
 from climpyrical.gridding import (
     check_input_coords,
-    check_coords_are_flattened,
     check_transform_coords_inputs,
     flatten_coords,
     transform_coords,
@@ -102,29 +101,9 @@ def test_check_input_coords(x, y, error):
             check_input_coords(x, y, ds)
 
 
-@pytest.mark.parametrize(
-    "x,y,xext_ex,yext_ex,error",
-    [
-        (xi, yi, xext_ex, np.delete(yext_ex, xi.size), ValueError),
-        (xi, np.delete(yi, 2), xext_ex, yext_ex, ValueError),
-        (xi, yi, xext_ex, yext_ex, None),
-        (xi, yi, xext_bad, yext_ex, ValueError),
-        (xi, yi, xext_ex, yext_bad, ValueError),
-        (yi, xi, xext_ex, yext_ex, ValueError),
-        (yi, xi, yext_ex, xext_ex, ValueError),
-    ],
-)
-def test_check_coords_are_flattened(x, y, xext_ex, yext_ex, error):
-    if error is None:
-        check_coords_are_flattened(x, y, xext_ex, yext_ex, ds)
-    else:
-        with pytest.raises(error):
-            check_coords_are_flattened(x, y, xext_ex, yext_ex, ds)
-
-
 @pytest.mark.parametrize("xi,yi,xext_ex,yext_ex", [(xi, yi, xext_ex, yext_ex)])
 def test_flatten_coords(xi, yi, xext_ex, yext_ex):
-    xext, yext = flatten_coords(xi, yi, ds)
+    xext, yext = flatten_coords(xi, yi)
     assert np.array_equal(xext_ex, xext) and np.array_equal(yext_ex, yext)
 
 
