@@ -1,0 +1,31 @@
+name: Python CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        sudo apt-get install -y proj-bin libproj-dev
+        pip install -r requirements.txt -r test_requirements.txt
+        pip install .
+      env:
+        PIP_INDEX_URL: https://pypi.pacificclimate.org/simple
+    - name: Flake8 Check
+      run: |
+        flake8 climpyrical/
+    - name: Test with pytest
+      run: |
+        py.test -v --cov
