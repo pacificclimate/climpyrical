@@ -1,6 +1,5 @@
 atomicwrites==1.3.0
 attrs==19.3.0
-Cartopy==0.17.0
 cftime==1.0.3.4
 Click==7.0
 click-plugins==1.1.1
