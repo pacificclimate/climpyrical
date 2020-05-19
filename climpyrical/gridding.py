@@ -1,9 +1,12 @@
 from climpyrical.datacube import check_valid_keys
+
 import warnings
 import numpy as np
 import xarray as xr
 from scipy.interpolate import NearestNDInterpolator
 from pyproj import Transformer, Proj
+from nptyping import NDArray
+from typing import Any, Tuple
 
 
 def check_ndims(data, n):
@@ -118,7 +121,7 @@ def regrid_ensemble(
     ds: xr.Dataset,
     dv: str,
     n: int,
-    keys: dict = {"rlat", "rlon", "lat", "lon", "level"},
+    keys: list = ["rlat", "rlon", "lat", "lon", "level"],
 ) -> xr.Dataset:
     """Re-grids a regional model to have n^2 times the
     native number of grid cells (n times in each axis).
@@ -155,80 +158,33 @@ def regrid_ensemble(
     new_y = np.linspace(y1, y2, ds.rlat.size * n)
 
     # re-create design value field on newly gridded size
-    new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
-
-    regridded_ds = xr.Dataset(
-        {
-            dv: (["level", "rlat", "rlon"], new_ds),
-            "lon": ds.lon,
-            "lat": ds.lat,
-        },
-        coords={
-            "rlon": ("rlon", new_x),
-            "rlat": ("rlat", new_y),
-            "level": ("level", ds.level.values.astype(int)),
-        },
-    )
+    if "level" in keys:
+        new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
+        regridded_ds = xr.Dataset(
+            {
+                dv: (["level", "rlat", "rlon"], new_ds),
+                "lon": ds.lon,
+                "lat": ds.lat,
+            },
+            coords={
+                "rlon": ("rlon", new_x),
+                "rlat": ("rlat", new_y),
+                "level": ("level", ds.level.values.astype(int)),
+            },
+        )
+    else:
+        new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
+        regridded_ds = xr.Dataset(
+            {dv: (["rlat", "rlon"], new_ds), "lon": ds.lon, "lat": ds.lat},
+            coords={"rlon": ("rlon", new_x), "rlat": ("rlat", new_y)}
+        )
 
     return regridded_ds
 
 
-def check_coords_are_flattened(x, y, xext, yext, ds):
-    """Checks that the coordinates provided are flattened correctly
-    Args:
-        x, y (np.ndarray): numpy arrays of rlon, rlat respectively
-            of CanRCM4 grids
-        xext, yext (np.ndarray): numpy arrays of flattened
-            rlon, rlat respectively of CanRCM4 grids
-        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
-            checking consistency with ensemble
-        Raises:
-            ValueError, TypeError in check_input_coords
-            TypeError:
-                If input coords are not numpy arrays
-            ValueError:
-                If xext and yexy are not the same size
-                If extended flattened size is not expected
-                If flattened longitude is not increasing
-                    numpy tile-wise
-                If flattened latitude is not increasing
-                    numpy repeat-wise
-    """
-    check_input_coords(x, y, ds)
-    check_input_coords(xext, yext, ds)
-
-    if xext.size != yext.size:
-        # bad shape
-        raise ValueError(
-            f"xext, and yexy must have the same size, \
-            received x size {x.size} and y size {y.size}."
-        )
-
-    if xext.size != x.size * y.size:
-        # bad size
-        raise ValueError(
-            f"Extended arrays must be equivalent to the product of the \
-            coordinate grid original axis. Received size \
-            {xext.size}, based on provided coordinates, expected size \
-            {x.size*y.size}."
-        )
-
-    if not np.array_equal(xext[: x.size], xext[x.size : 2 * x.size]):
-        # they should all be increasing tile wise
-        raise ValueError(
-            "Flat coords should increase np.tile-wise, i.e: 1, 2, 3, 1, 2, 3,\
-            ..."
-        )
-
-    if not np.allclose(yext[: y.size], y[0]):
-        # they should all be increasing repeat wise
-        raise ValueError(
-            "Flat coords should increase np.repeat-wise, i.e: 1, 1, 2, 2, 3, 3,\
-            ..."
-        )
-
-
-def flatten_coords(x, y, ds):
+def flatten_coords(
+    x: NDArray[Any, float], y: NDArray[Any, float]
+) -> Tuple[NDArray[Any, float], NDArray[Any, float]]:
     """Takes the rlat and rlon 1D arrays from the
     NetCDF files for each ensemble member, and creates
     an ordered pairing of each grid cell coordinate in
@@ -241,30 +197,14 @@ def flatten_coords(x, y, ds):
         y (numpy.ndarray): 1D array containing
             the locations of the rotated longitude
             grid cells
-        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
-            checking consistency with ensemble
     Return:
         xext, yext (tuple of np.ndarrays):
             array containing tuples of rlat and
             rlon for each grid cell in the
             ensemble size.
-    Raises:
-        ValueError, TypeError in check_coords_are_flattened and
-            check)input_coords
-        TypeError:
-            If input coords are not numpy arrays
-        ValueError:
-            If xext and yexy are not the same size
-            If extended flattened size is not expected
-            If flattened longitude is not increasing
-                numpy tile-wise
-            If flattened latitude is not increasing
-                numpy repeat-wise
     """
-    check_input_coords(x, y, ds)
     xext = np.tile(x, y.size)
     yext = np.repeat(y, x.size)
-    check_coords_are_flattened(x, y, xext, yext, ds)
 
     return xext, yext
 
@@ -572,7 +512,7 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
         xarr, yarr = np.meshgrid(x, y)
 
         # flatten coordinates
-        xext, yext = flatten_coords(x, y, ds)
+        xext, yext = flatten_coords(x, y)
 
         # arrange the pairs
         pairs = np.array(list(zip(xext, yext)))
