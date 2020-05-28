@@ -25,4 +25,4 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.pcic_at_pypi_password }}
       run: |
         python setup.py sdist bdist_wheel
-        twine upload dist/*
+        twine upload --repository-url https://pypi.pacificclimate.org/simple --skip-existing -u $TWINE_USERNAME -p $TWINE_PASSWORD dist/*
