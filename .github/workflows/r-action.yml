@@ -11,7 +11,6 @@ jobs:
       - name: Install dependencies
         run: |
           install.packages("fields")
-          remotes::install_deps(dependencies = TRUE)
         shell: Rscript {0}
       - name: Check
         run: rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
