@@ -15,7 +15,7 @@ jobs:
       uses: r-lib/actions/setup-r@v1
       with:
         r-version: '3.5.3' # The R version to download (if necessary) and use.
-    - run: Rscript -e 'install.packages("fields")'
+    - run: Rscript -e 'install.packages(c("utils", "grDevices", "graphics", "stats", "methods", "fields"))'
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
