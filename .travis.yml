@@ -17,5 +17,5 @@ install:
   - pip install -r test_requirements.txt .
   - pip install .
 script:
-  - flake8 climpyrical/
+  - flake8 --max-line-length=88 climpyrical/
   - py.test -v --cov
