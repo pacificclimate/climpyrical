@@ -2,9 +2,19 @@ name: R CI
 
 on: push
 
-steps:
-- uses: actions/checkout@master
-- uses: r-lib/actions/setup-r@v1
-  with:
-    r-version: '3.5.3' # The R version to download (if necessary) and use.
-- run: Rscript -e 'install.packages("fields")'
+name: R-CMD-check
+
+jobs:
+  R-CMD-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: r-lib/actions/setup-r@master
+      - name: Install dependencies
+        run: |
+          install.packages("fields")
+          remotes::install_deps(dependencies = TRUE)
+        shell: Rscript {0}
+      - name: Check
+        run: rcmdcheck::rcmdcheck(args = "--no-manual", error_on = "error")
+        shell: Rscript {0}
