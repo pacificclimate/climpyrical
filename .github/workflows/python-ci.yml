@@ -9,9 +9,13 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6, 3.7]
-
     steps:
     - uses: actions/checkout@v2
+    - name: Install R Dependencies
+      uses: r-lib/actions/setup-r@v1
+      with:
+        r-version: '3.5.3' # The R version to download (if necessary) and use.
+    - run: Rscript -e 'install.packages("fields")'
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
@@ -21,14 +25,14 @@ jobs:
         sudo apt-get install -y proj-bin libproj-dev r-base
         pip install -r requirements.txt -r test_requirements.txt
         pip install .
-        wget https://cran.r-project.org/src/contrib/fields_10.3.tar.gz
-        wget https://cran.r-project.org/src/contrib/spam_2.5-1.tar.gz
-        wget https://cran.r-project.org/src/contrib/maps_3.3.0.tar.gz
-        wget https://cran.r-project.org/src/contrib/dotCall64_1.0-0.tar.gz
-        sudo R CMD INSTALL dotCall64_1.0-0.tar.gz
-        sudo R CMD INSTALL spam_2.5-1.tar.gz
-        sudo R CMD INSTALL maps_3.3.0.tar.gz 
-        sudo R CMD INSTALL fields_10.3.tar.gz
+#        wget https://cran.r-project.org/src/contrib/fields_10.3.tar.gz
+#        wget https://cran.r-project.org/src/contrib/spam_2.5-1.tar.gz
+#        wget https://cran.r-project.org/src/contrib/maps_3.3.0.tar.gz
+#        wget https://cran.r-project.org/src/contrib/dotCall64_1.0-0.tar.gz
+#        sudo R CMD INSTALL dotCall64_1.0-0.tar.gz
+#        sudo R CMD INSTALL spam_2.5-1.tar.gz
+#        sudo R CMD INSTALL maps_3.3.0.tar.gz 
+#        sudo R CMD INSTALL fields_10.3.tar.gz
       env:
         PIP_INDEX_URL: https://pypi.pacificclimate.org/simple
     - name: Flake8 Check
