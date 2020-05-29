@@ -1,6 +1,5 @@
 ![Python CI](https://github.com/pacificclimate/climpyrical/workflows/Python%20CI/badge.svg)
 # climpyrical
-[![Build Status](https://travis-ci.org/pacificclimate/climpyrical.svg?branch=master)](https://travis-ci.org/pacificclimate/climpyrical)
 
 `climpyrical` is a Python tool for reconstructing design value fields using meteorological station observations 
 
