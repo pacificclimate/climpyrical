@@ -1,4 +1,4 @@
-![logo.png](https://images.zenhubusercontent.com/5bc02597fcc72f27390ed1f9/c2cf2ba4-edb1-4b47-856e-20338712d4a7)
+![Python CI](https://github.com/pacificclimate/climpyrical/workflows/Python%20CI/badge.svg)
 # climpyrical
 [![Build Status](https://travis-ci.org/pacificclimate/climpyrical.svg?branch=master)](https://travis-ci.org/pacificclimate/climpyrical)
 
