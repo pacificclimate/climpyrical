@@ -38,10 +38,28 @@ def fit(
 
     """
 
+    if not isinstance(latlon, NDArray[(2, Any), float]):
+        raise TypeError(
+            f"Incorrect grid shape, size, or dtype. Must be {NDArray[(2, Any), float]}"
+        )
+
+    if not isinstance(z, NDArray[(Any,), float]):
+        raise TypeError(
+            f"Incorrect grid shape, size, or dtype. Must be {NDArray[(Any, ), float]}"
+        )
+
+    if not isinstance(nx, int) or not isinstance(ny, int):
+        raise TypeError("Provide integer grid size")
     if latlon.shape[1] != z.size:
         raise ValueError(
             "Different number of grid coordinates than observations"
         )
+
+    if not isinstance(xy, Tuple):
+        raise TypeError(f"Expected Tuple for xy, received {type(xy)}")
+
+    if not isinstance(distance, str) or not isinstance(variogram_model, str):
+        raise TypeError(f"distance and variogram_model must be strings.")
 
     latlon, z = latlon.tolist(), z.tolist()
 
@@ -53,6 +71,14 @@ def fit(
         "geo": "'rdist.earth'",
         "exponential": 'list(Covariance="Exponential")',
     }
+
+    if distance not in str_args_convert.keys():
+        raise ValueError(f"{distance} is not supported. Please use 'geo'")
+
+    if variogram_model not in str_args_convert.keys():
+        raise ValueError(
+            f"{variogram_model} is not supported. Please use 'exponential'"
+        )
 
     d = str_args_convert[distance]
     v_model = str_args_convert[variogram_model]
