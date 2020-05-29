@@ -1,5 +1,3 @@
-name: R CI
-
 on: push
 
 name: R-CMD-check
