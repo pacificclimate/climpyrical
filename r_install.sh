@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Set user library
-echo "$.libPaths(c( .libPaths(), '~/.' ))" > "$.Rprofile"
-echo "$.libPaths()" > "$config.R"
+echo ".libPaths(c( .libPaths(), '~/.' ))" > ".Rprofile"
+echo ".libPaths()" > "config.R"
 R CMD BATCH "config.R"
 
 # Install packages from requirements list
