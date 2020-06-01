@@ -2,7 +2,7 @@
 
 # Set user library
 mkdir "./r-library"
-echo "~/.Renviron" > "R_LIBS_USER=./r-library"
+echo "R_LIBS_USER=./r-library" > ".Renviron"
 
 # Install packages from requirements list
 cat r_requirements.txt | while read line || [[ -n $line ]]; do
