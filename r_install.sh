@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Set user library
+echo "$.libPaths('.')" > "$.Rprofile"
+
 # Install packages from requirements list
 cat r_requirements.txt | while read line || [[ -n $line ]]; do
     wget "https://cran.r-project.org/src/contrib/$line.tar.gz"
