@@ -14,32 +14,20 @@ new_N = 3 * N
 
 
 @pytest.mark.parametrize(
-    "latlon, z, nx, ny, xy, distance, variogram_model, error",
+    "latlon, z, nx, ny, xy, error",
     [
-        (coords, z, 3 * N, 3 * N, (1, 2), "geo", "exponential", None),
-        ("blargh", z, 3 * N, 3 * N, (1, 2), "geo", "exponential", TypeError),
-        (
-            coords,
-            "blargh",
-            3 * N,
-            3 * N,
-            (1, 2),
-            "geo",
-            "exponential",
-            TypeError,
-        ),
-        (coords, z, "blargh", 3 * N, (1, 2), "geo", "exponential", TypeError),
-        (coords, z, 3 * N, "blargh", (1, 2), "geo", "exponential", TypeError),
-        (coords, z, 3 * N, 3 * N, "blargh", "geo", "exponential", TypeError),
-        (coords, z, 3 * N, 3 * N, (1, 2), "blargh", "exponential", ValueError),
-        (coords, z, 3 * N, 3 * N, (1, 2), "geo", "blargh", ValueError),
-        (coords[:, :-1], z, 3 * N, 3 * N, (1, 2), "geo", "blargh", ValueError),
-        (coords, z, 3 * N, 3 * N, (1, 2), 4, "blargh", TypeError),
+        (coords, z, new_N, new_N, (1, 2), None),
+        ("blargh", z, new_N, new_N, (1, 2), TypeError),
+        (coords, "blargh", new_N, new_N, (1, 2), TypeError),
+        (coords, z, "blargh", new_N, (1, 2), TypeError),
+        (coords, z, new_N, "blargh", (1, 2), TypeError),
+        (coords, z, new_N, new_N, "blargh", TypeError),
+        (coords, z[:-1], new_N, new_N, (1, 2), ValueError)
     ],
 )
-def test_fit_params(latlon, z, nx, ny, xy, distance, variogram_model, error):
+def test_fit_params(latlon, z, nx, ny, xy, error):
     if error is None:
-        sp.fit(latlon, z, nx, ny, xy, distance, variogram_model)
+        sp.fit(latlon, z, nx, ny, xy)
     else:
         with pytest.raises(error):
-            sp.fit(latlon, z, nx, ny, xy, distance, variogram_model)
+            sp.fit(latlon, z, nx, ny, xy)

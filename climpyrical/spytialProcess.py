@@ -15,9 +15,7 @@ def fit(
     z: NDArray[(Any,), float],
     nx: int,
     ny: int,
-    xy: Tuple[int, int],
-    distance: str,
-    variogram_model: str,
+    xy: Tuple[int, int]
 ) -> Tuple[
     NDArray[(Any, Any), float], NDArray[(Any,), float], NDArray[(Any,), float]
 ]:
@@ -50,16 +48,14 @@ def fit(
 
     if not isinstance(nx, int) or not isinstance(ny, int):
         raise TypeError("Provide integer grid size")
+
     if latlon.shape[1] != z.size:
         raise ValueError(
             "Different number of grid coordinates than observations"
         )
 
-    if not isinstance(xy, Tuple[int, 2]):
+    if not isinstance(xy, tuple):
         raise TypeError(f"Expected Tuple for xy, received {type(xy)}")
-
-    if not isinstance(distance, str) or not isinstance(variogram_model, str):
-        raise TypeError(f"distance and variogram_model must be strings.")
 
     latlon, z = latlon.tolist(), z.tolist()
 
@@ -67,21 +63,14 @@ def fit(
     # to something R can understand
     xy = "c" + str(xy)
 
+    # formulate variogram parameters
+
     str_args_convert = {
         "geo": "'rdist.earth'",
         "exponential": 'list(Covariance="Exponential")',
     }
-
-    if distance not in str_args_convert.keys():
-        raise ValueError(f"{distance} is not supported. Please use 'geo'")
-
-    if variogram_model not in str_args_convert.keys():
-        raise ValueError(
-            f"{variogram_model} is not supported. Please use 'exponential'"
-        )
-
-    d = str_args_convert[distance]
-    v_model = str_args_convert[variogram_model]
+    d = str_args_convert["geo"]
+    v_model = str_args_convert["exponential"]
 
     # convert regular numeric data
 
