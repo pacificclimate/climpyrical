@@ -21,7 +21,7 @@ jobs:
         pip install -r requirements.txt -r test_requirements.txt
         pip install .
         source r_install.sh
-    env:
+      env:
         PIP_INDEX_URL: https://pypi.pacificclimate.org/simple
     - name: Flake8 Check
       run: |
