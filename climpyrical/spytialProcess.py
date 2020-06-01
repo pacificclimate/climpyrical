@@ -15,7 +15,7 @@ def fit(
     z: NDArray[(Any,), float],
     nx: int,
     ny: int,
-    xy: Tuple,
+    xy: Tuple[int, int],
     distance: str,
     variogram_model: str,
 ) -> Tuple[
@@ -55,7 +55,7 @@ def fit(
             "Different number of grid coordinates than observations"
         )
 
-    if not isinstance(xy, Tuple):
+    if not isinstance(xy, Tuple[int, 2]):
         raise TypeError(f"Expected Tuple for xy, received {type(xy)}")
 
     if not isinstance(distance, str) or not isinstance(variogram_model, str):
