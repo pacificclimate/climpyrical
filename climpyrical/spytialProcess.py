@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from pkg_resources import resource_string
 
 from nptyping import NDArray
 from typing import Any, Tuple
@@ -11,14 +12,8 @@ importr("fields")
 
 
 def fit(
-    latlon: NDArray[(2, Any), float],
-    z: NDArray[(Any,), float],
-    nx: int,
-    ny: int,
-    xy: Tuple[int, int]
-) -> Tuple[
-    NDArray[(Any, Any), float], NDArray[(Any,), float], NDArray[(Any,), float]
-]:
+    latlon: NDArray[(2, Any), float], z: NDArray[(Any,), float], nx: int, ny: int,
+) -> Tuple[NDArray[(Any, Any), float], NDArray[(Any,), float], NDArray[(Any,), float]]:
 
     """Encapsulates the functionality of R's spatialProcess into a Python
     Args:
@@ -50,27 +45,9 @@ def fit(
         raise TypeError("Provide integer grid size")
 
     if latlon.shape[1] != z.size:
-        raise ValueError(
-            "Different number of grid coordinates than observations"
-        )
-
-    if not isinstance(xy, tuple):
-        raise TypeError(f"Expected Tuple for xy, received {type(xy)}")
+        raise ValueError("Different number of grid coordinates than observations")
 
     latlon, z = latlon.tolist(), z.tolist()
-
-    # convert from easier to understand names
-    # to something R can understand
-    xy = "c" + str(xy)
-
-    # formulate variogram parameters
-
-    str_args_convert = {
-        "geo": "'rdist.earth'",
-        "exponential": 'list(Covariance="Exponential")',
-    }
-    d = str_args_convert["geo"]
-    v_model = str_args_convert["exponential"]
 
     # convert regular numeric data
 
@@ -85,27 +62,16 @@ def fit(
     # convert observations
     r_z = FloatVector(z)
 
-    # forced to use %-formatting due to RRuntime interpretation
-    rstring = """
-    function(latlon, z, nx, ny){
-        obj <- spatialProcess(latlon, z, Distance = %s, cov.args = %s)
-        predictSurface(obj, grid.list = NULL, extrap = FALSE, chull.mask = NA,
-                nx = nx, ny = ny, xy = %s, verbose = FALSE, ZGrid = NULL,
-                drop.Z = FALSE, just.fixed=FALSE)
-    }
-    """ % (
-        d,
-        v_model,
-        xy,
+    # use separate simple r-script in path below
+    rstring = resource_string("climpyrical", "tests/data/spatial_process_r.R").decode(
+        "utf-8"
     )
 
     rfunc = robjects.r(rstring)
     r_surface = rfunc(r_latlon, r_z, nx, ny)
 
     # extract data from R's interpolation
-    z = np.array(
-        list(dict(zip(r_surface.names, list(r_surface)))["z"])
-    ).reshape(nx, ny)
+    z = np.array(list(dict(zip(r_surface.names, list(r_surface)))["z"])).reshape(nx, ny)
     x = np.array(list(dict(zip(r_surface.names, list(r_surface)))["x"]))
     y = np.array(list(dict(zip(r_surface.names, list(r_surface)))["y"]))
 
