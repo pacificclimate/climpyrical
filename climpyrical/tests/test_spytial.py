@@ -17,8 +17,8 @@ new_N = 3 * N
     "latlon, z, nx, ny, xy, error",
     [
         (coords, z, new_N, new_N, (1, 2), None),
-        ("blargh", z, new_N, new_N, (1, 2), TypeError),
-        (coords, "blargh", new_N, new_N, (1, 2), TypeError),
+        (np.ones((1, 2, 3)), z, new_N, new_N, (1, 2), TypeError),
+        (coords, np.ones((1, 2, 3)), new_N, new_N, (1, 2), TypeError),
         (coords, z, "blargh", new_N, (1, 2), TypeError),
         (coords, z, new_N, "blargh", (1, 2), TypeError),
         (coords, z, new_N, new_N, "blargh", TypeError),
