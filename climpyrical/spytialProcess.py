@@ -71,8 +71,10 @@ def fit(
     r_surface = rfunc(r_latlon, r_z, nx, ny)
 
     # extract data from R's interpolation
-    z = np.array(list(dict(zip(r_surface.names, list(r_surface)))["z"])).reshape(nx, ny)
-    x = np.array(list(dict(zip(r_surface.names, list(r_surface)))["x"]))
-    y = np.array(list(dict(zip(r_surface.names, list(r_surface)))["y"]))
+    surface_dict = dict(zip(r_surface.names, list(r_surface)))
+    # z = np.array(list(r_surface[1]))
+    z = np.array(surface_dict["z"]).reshape(nx, ny)
+    x = np.array(surface_dict["x"])
+    y = np.array(surface_dict["y"])
 
     return z, x, y
