@@ -41,16 +41,11 @@ def test_check_ndims(data, n, error):
 
 # load example ensemble dataset for testing
 dv = "Rain-RL50"
-ds = read_data(
-    resource_filename("climpyrical", "tests/data/snw_test_ensemble.nc"), dv
-)
+ds = read_data(resource_filename("climpyrical", "tests/data/snw_test_ensemble.nc"), dv)
 
 ds_mean = ds.mean(dim="level")
 ds_regridded_proper = read_data(
-    resource_filename(
-        "climpyrical", "tests/data/snw_regridded_test_ensemble.nc"
-    ),
-    dv,
+    resource_filename("climpyrical", "tests/data/snw_regridded_test_ensemble.nc"), dv,
 )
 # read grids with expected dimension and ranges
 xi, yi = ds.rlon.values, ds.rlat.values
@@ -268,9 +263,7 @@ def test_check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs, error):
         )
     ],
 )
-def test_find_element_wise_nearest_pos(
-    x, y, x_obs, y_obs, expected_x, expected_y
-):
+def test_find_element_wise_nearest_pos(x, y, x_obs, y_obs, expected_x, expected_y):
     xclose, yclose = find_element_wise_nearest_pos(x, y, x_obs, y_obs)
     xclose_truth = np.allclose(xclose, expected_x)
     yclose_truth = np.allclose(yclose, expected_y)

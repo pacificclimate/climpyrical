@@ -22,9 +22,7 @@ def check_ndims(data, n):
     """
     if not isinstance(data, np.ndarray):
         raise TypeError(
-            "Provide an array of type {}, received {}".format(
-                np.ndarray, type(data)
-            )
+            "Provide an array of type {}, received {}".format(np.ndarray, type(data))
         )
     if not isinstance(n, int):
         raise TypeError(
@@ -32,9 +30,7 @@ def check_ndims(data, n):
         )
     if data.ndim != n:
         raise ValueError(
-            "Array has dimensions {}, expected {} dimensions.".format(
-                data.ndim, n
-            )
+            "Array has dimensions {}, expected {} dimensions.".format(data.ndim, n)
         )
 
 
@@ -103,14 +99,10 @@ def check_regrid_ensemble_inputs(ds, dv, n, keys):
         )
     if not isinstance(dv, str):
         raise TypeError(
-            "Provide design value key of type {}, received {}".format(
-                str, type(dv)
-            )
+            "Provide design value key of type {}, received {}".format(str, type(dv))
         )
     if not isinstance(n, int):
-        raise TypeError(
-            "Provide a scaling of {}, received {}".format(int, type(n))
-        )
+        raise TypeError("Provide a scaling of {}, received {}".format(int, type(n)))
 
     actual_keys = set(ds.variables).union(set(ds.dims))
     check_valid_keys(actual_keys, keys)
@@ -161,11 +153,7 @@ def regrid_ensemble(
     if "level" in keys:
         new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
         regridded_ds = xr.Dataset(
-            {
-                dv: (["level", "rlat", "rlon"], new_ds),
-                "lon": ds.lon,
-                "lat": ds.lat,
-            },
+            {dv: (["level", "rlat", "rlon"], new_ds), "lon": ds.lon, "lat": ds.lat},
             coords={
                 "rlon": ("rlon", new_x),
                 "rlat": ("rlat", new_y),
@@ -176,7 +164,7 @@ def regrid_ensemble(
         new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
         regridded_ds = xr.Dataset(
             {dv: (["rlat", "rlon"], new_ds), "lon": ds.lon, "lat": ds.lat},
-            coords={"rlon": ("rlon", new_x), "rlat": ("rlat", new_y)}
+            coords={"rlon": ("rlon", new_x), "rlat": ("rlat", new_y)},
         )
 
     return regridded_ds
@@ -233,9 +221,7 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
     check_ndims(x, 1)
     check_ndims(y, 1)
 
-    if (not isinstance(source_crs, dict)) or (
-        not isinstance(target_crs, dict)
-    ):
+    if (not isinstance(source_crs, dict)) or (not isinstance(target_crs, dict)):
         raise TypeError(f"Please provide an object of type {dict}")
 
     if x.size != y.size:
@@ -374,9 +360,7 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
                 If sizes of x and y or x_obs and y_obs are not the same
     """
 
-    is_ndarray = [
-        isinstance(array, np.ndarray) for array in [x, y, x_obs, y_obs]
-    ]
+    is_ndarray = [isinstance(array, np.ndarray) for array in [x, y, x_obs, y_obs]]
     if not np.any(is_ndarray):
         raise TypeError(f"Please provide data arrays of type {np.ndarray}")
     if x.size < 2 or y.size < 2:
@@ -439,9 +423,7 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
     """
     if (not isinstance(x_i, np.ndarray)) or (not isinstance(y_i, np.ndarray)):
         raise TypeError(f"Please provide index array of type {np.ndarray}.")
-    if (not x_i.dtype == np.dtype("int")) or (
-        not y_i.dtype == np.dtype("int")
-    ):
+    if (not x_i.dtype == np.dtype("int")) or (not y_i.dtype == np.dtype("int")):
         raise ValueError(
             f"Both index array must contain integers. Received \
             {x_i.dtype} and {y_i.dtype}"
@@ -519,9 +501,7 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
 
         # create interpolation function for every point
         # except the locations of the NaN values
-        f = NearestNDInterpolator(
-            pairs[master_mask.flatten()], field[master_mask]
-        )
+        f = NearestNDInterpolator(pairs[master_mask.flatten()], field[master_mask])
 
         # get the rlon and rlat locations of the NaN values
         x_nan = xarr[y_i, x_i][nanloc]

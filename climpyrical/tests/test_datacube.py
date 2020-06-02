@@ -30,17 +30,9 @@ def test_check_valid_data_path(data_path, passed):
 @pytest.mark.parametrize(
     "actual_keys,required_keys,passed",
     [
-        (
-            ["rlat", "rlon", "dv", 4, "lat", "lon"],
-            ["rlat", "rlon", "dv", 4],
-            True,
-        ),
+        (["rlat", "rlon", "dv", 4, "lat", "lon"], ["rlat", "rlon", "dv", 4], True,),
         (["rlat", "rlon", True, 99999], ["rlat", "rlon", True, 99999], True),
-        (
-            ["rlat", "rlon", 4.0, False],
-            ["hi", "nic", "was", "here", "lon"],
-            False,
-        ),
+        (["rlat", "rlon", 4.0, False], ["hi", "nic", "was", "here", "lon"], False,),
     ],
 )
 def test_check_valid_keys(actual_keys, required_keys, passed):
@@ -56,10 +48,7 @@ empty_ds = xr.Dataset({"empty": []}, coords={"rlon": 0, "rlat": 0})
 # simulate unexpected coordinate value inputs
 bad_coords = xr.Dataset(
     {"empty": [-10, 10, -10]},
-    coords={
-        "rlon": np.array([-10, np.nan, 10]),
-        "rlat": np.array([-10, np.nan, 10]),
-    },
+    coords={"rlon": np.array([-10, np.nan, 10]), "rlat": np.array([-10, np.nan, 10])},
 )
 non_mono_bad_coords = xr.Dataset(
     {"empty": [-10, 10, -10]},
@@ -74,16 +63,12 @@ non_mono_bad_coords = xr.Dataset(
         (bad_coords, "empty", False),
         (non_mono_bad_coords, "empty", False),
         (
-            xr.open_dataset(
-                resource_filename("climpyrical", "tests/data/snw.nc")
-            ),
+            xr.open_dataset(resource_filename("climpyrical", "tests/data/snw.nc")),
             "snw",
             True,
         ),
         (
-            xr.open_dataset(
-                resource_filename("climpyrical", "tests/data/hdd.nc")
-            ),
+            xr.open_dataset(resource_filename("climpyrical", "tests/data/hdd.nc")),
             "heating_degree_days_per_time_period",
             True,
         ),
@@ -157,9 +142,7 @@ def test_shape(data_path, design_value_name, keys, shape):
                 "snw",
                 ["rlat", "rlon", "lat", "lon"],
             ),
-            xr.open_dataset(
-                resource_filename("climpyrical", "tests/data/snw.nc")
-            ),
+            xr.open_dataset(resource_filename("climpyrical", "tests/data/snw.nc")),
         ),
         (
             read_data(
@@ -167,9 +150,7 @@ def test_shape(data_path, design_value_name, keys, shape):
                 "heating_degree_days_per_time_period",
                 ["rlat", "rlon", "lat", "lon", "level"],
             ),
-            xr.open_dataset(
-                resource_filename("climpyrical", "tests/data/hdd.nc")
-            ),
+            xr.open_dataset(resource_filename("climpyrical", "tests/data/hdd.nc")),
         ),
     ],
 )
