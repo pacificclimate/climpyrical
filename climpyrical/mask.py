@@ -36,7 +36,9 @@ def check_polygon_before_projection(p):
     crs2 = "epsg:4326"
     if p.crs != crs1 and p.crs != crs2:
         warnings.warn(
-            UserWarning(f"Polygon provided is in projection {p.crs}, expected {crs1} or {crs2}")
+            UserWarning(
+                f"Polygon provided is in projection {p.crs}, expected {crs1} or {crs2}"
+            )
         )
     return True
 
@@ -76,9 +78,7 @@ def check_input_grid_coords(x, y):
         bool True if passed
     """
     if (not isinstance(x, np.ndarray)) or (not isinstance(y, np.ndarray)):
-        raise TypeError(
-            "Please provide an object of type {}".format(np.ndarray)
-        )
+        raise TypeError("Please provide an object of type {}".format(np.ndarray))
 
     check_ndims(x, 1)
     check_ndims(y, 1)
