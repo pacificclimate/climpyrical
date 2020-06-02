@@ -1,3 +1,4 @@
+import warnings
 from climpyrical.gridding import check_ndims
 import numpy as np
 from shapely.geometry import Point
@@ -22,7 +23,7 @@ def check_polygon_validity(p):
 
 
 def check_polygon_before_projection(p):
-    """Raises a warning if polygon provided does not
+    """Raises an warning if polygon provided does not
     contain the expected WGS84 projection, but does not stop
     code from running
     Args:
@@ -31,12 +32,11 @@ def check_polygon_before_projection(p):
         bool True if passed
     """
     check_polygon_validity(p)
-    crs = {"init": "epsg:4326"}
-    if p.crs != crs:
-        raise ValueError(
-            "Polygon provided is in projection {}, expected {}".format(
-                p.crs, crs
-            )
+    crs1 = {"init": "epsg:4326"}
+    crs2 = "epsg:4326"
+    if p.crs != crs1 and p.crs != crs2:
+        warnings.warn(
+            UserWarning(f"Polygon provided is in projection {p.crs}, expected {crs1} or {crs2}")
         )
     return True
 

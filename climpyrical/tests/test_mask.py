@@ -66,18 +66,18 @@ def test_check_polygon_validity(p, error):
 
 
 @pytest.mark.parametrize(
-    "p,error",
+    "p,warning",
     [
         (canada, None),
-        (rotated_canada, ValueError),
-        (transformed_world, ValueError),
+        (rotated_canada, UserWarning),
+        (transformed_world, UserWarning),
     ],
 )
-def test_check_polygon_before_projection(p, error):
-    if error is None:
+def test_check_polygon_before_projection(p, warning):
+    if warning is None:
         check_polygon_before_projection(p)
     else:
-        with pytest.raises(error):
+        with pytest.warns(warning):
             check_polygon_before_projection(p)
 
 
