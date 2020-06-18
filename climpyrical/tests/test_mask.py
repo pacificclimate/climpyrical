@@ -66,18 +66,14 @@ def test_check_polygon_validity(p, error):
 
 
 @pytest.mark.parametrize(
-    "p,error",
-    [
-        (canada, None),
-        (rotated_canada, ValueError),
-        (transformed_world, ValueError),
-    ],
+    "p,warning",
+    [(canada, None), (rotated_canada, UserWarning), (transformed_world, UserWarning)],
 )
-def test_check_polygon_before_projection(p, error):
-    if error is None:
+def test_check_polygon_before_projection(p, warning):
+    if warning is None:
         check_polygon_before_projection(p)
     else:
-        with pytest.raises(error):
+        with pytest.warns(warning):
             check_polygon_before_projection(p)
 
 
@@ -118,16 +114,12 @@ def test_check_input_grid_coords(x, y, error):
             check_input_grid_coords(x, y)
 
 
-@pytest.mark.parametrize(
-    "p,crs,expected", [(canada, rotated_crs, rotated_canada)]
-)
+@pytest.mark.parametrize("p,crs,expected", [(canada, rotated_crs, rotated_canada)])
 def test_rotate_shapefile(p, crs, expected):
     assert rotate_shapefile(p, crs).geom_almost_equals(expected).values[0]
 
 
-maskarray = np.load(
-    resource_filename("climpyrical", "tests/data/maskarray.npy")
-)
+maskarray = np.load(resource_filename("climpyrical", "tests/data/maskarray.npy"))
 
 
 @pytest.mark.parametrize(

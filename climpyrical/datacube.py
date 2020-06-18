@@ -15,9 +15,7 @@ def check_valid_data_path(data_path):
         raise TypeError("Please provide a string as a data_path")
 
     if not data_path.endswith(".nc"):
-        raise TypeError(
-            "climpyrical requires a NetCDF4 file with extension .nc"
-        )
+        raise TypeError("climpyrical requires a NetCDF4 file with extension .nc")
 
     return True
 
@@ -64,15 +62,11 @@ def check_valid_data(ds, design_value_name):
         if (np.any(np.diff(ds.rlat.values) < 0)) or np.any(
             (np.diff(ds.rlon.values) < 0)
         ):
-            raise ValueError(
-                "Coordinate axis are not monotonically increasing"
-            )
+            raise ValueError("Coordinate axis are not monotonically increasing")
     return True
 
 
-def read_data(
-    data_path, design_value_name, keys=None
-):
+def read_data(data_path, design_value_name, keys=None):
     """Load an ensemble of CanRCM4
     models into a single datacube.
     ------------------------------
