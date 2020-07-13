@@ -122,6 +122,7 @@ def test_rotate_shapefile(p, crs, expected):
 maskarray = np.load(resource_filename("climpyrical", "tests/data/maskarray.npy"))
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "x,y,p,expected",
     [
