@@ -1,11 +1,12 @@
-name: Publish Python Package
+name: Pypi Publishing
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
-  deploy:
+  publish:
 
     runs-on: ubuntu-18.04
 
