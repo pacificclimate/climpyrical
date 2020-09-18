@@ -114,6 +114,7 @@ def regrid_ensemble(
     dv: str,
     n: int,
     keys: list = ["rlat", "rlon", "lat", "lon", "level"],
+    copy=False
 ) -> xr.Dataset:
     """Re-grids a regional model to have n^2 times the
     native number of grid cells (n times in each axis).
@@ -136,38 +137,88 @@ def regrid_ensemble(
     check_regrid_ensemble_inputs(ds, dv, n, keys)
     # calculate the size of each grid cell
     # see #20 for more info
-    dx = np.diff(ds.rlon.values).mean() / n
-    dy = np.diff(ds.rlat.values).mean() / n
+
+    dxn = np.diff(ds.rlon.values).mean() / n
+    dyn = np.diff(ds.rlat.values).mean() / n
+
+    dx = np.diff(ds.rlon.values).mean()
+    dy = np.diff(ds.rlat.values).mean()
 
     # define new boundaries
-    x1 = ds.rlon.min() - dx
-    x2 = ds.rlon.max() + dx
-    y1 = ds.rlat.min() - dy
-    y2 = ds.rlat.max() + dy
+    x1 = ds.rlon.min() - dx + dxn
+    x2 = ds.rlon.max() + dx - dxn
+    y1 = ds.rlat.min() - dy + dyn
+    y2 = ds.rlat.max() + dy - dyn
 
     # define new coordinate arrays
     new_x = np.linspace(x1, x2, ds.rlon.size * n)
     new_y = np.linspace(y1, y2, ds.rlat.size * n)
 
-    # re-create design value field on newly gridded size
-    if "level" in keys:
-        new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
-        regridded_ds = xr.Dataset(
-            {dv: (["level", "rlat", "rlon"], new_ds), "lon": ds.lon, "lat": ds.lat},
-            coords={
-                "rlon": ("rlon", new_x),
-                "rlat": ("rlat", new_y),
-                "level": ("level", ds.level.values.astype(int)),
-            },
-        )
+    if copy:
+        # re-create design value field on newly gridded size
+        if "level" in keys:
+            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
+            regridded_ds = xr.Dataset(
+                {dv: (["level", "rlat", "rlon"], new_ds)},
+                coords={
+                    "rlon": ("rlon", new_x),
+                    "rlat": ("rlat", new_y),
+                    "level": ("level", ds.level.values.astype(int)),
+                },
+            )
+        else:
+            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
+            regridded_ds = xr.Dataset(
+                {dv: (["rlat", "rlon"], new_ds)},
+                coords={"rlon": ("rlon", new_x), "rlat": ("rlat", new_y)},
+            )
     else:
-        new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
-        regridded_ds = xr.Dataset(
-            {dv: (["rlat", "rlon"], new_ds), "lon": ds.lon, "lat": ds.lat},
-            coords={"rlon": ("rlon", new_x), "rlat": ("rlat", new_y)},
-        )
+        # re-create design value field on newly gridded size
+        print("HERE")
+        if "level" in keys:
+            new_ds = np.zeros((ds.level.size, ds.rlat.size * n, ds.rlon.size * n))
+            regridded_ds = xr.Dataset(
+                {dv: (["level", "rlat", "rlon"], new_ds)},
+                coords={
+                    "rlon": ("rlon", new_x),
+                    "rlat": ("rlat", new_y),
+                    "level": ("level", ds.level.values.astype(int)),
+                },
+            )
+        else:
+            new_ds = np.zeros((ds.rlat.size * n, ds.rlon.size * n))
+            regridded_ds = xr.Dataset(
+                {dv: (["rlat", "rlon"], new_ds)},
+                coords={"rlon": ("rlon", new_x), "rlat": ("rlat", new_y)},
+            )
 
     return regridded_ds
+
+
+def extend_north(ds, dv, amount, fill_val=np.nan):
+    y = ds[dv].values.shape[0]
+    x = ds[dv].values.shape[1]
+    grid = np.ones((
+        y+amount, 
+        x))
+    grid[:] = fill_val
+    grid[:y, :x] = ds[dv].values
+
+    # create new coordinates
+    drlat = np.mean(np.diff(ds.rlat))
+    nrlat = np.linspace(
+        ds.rlat.min(), 
+        ds.rlat.max()+amount*drlat, 
+        ds.rlat.size+amount
+    )
+    nrlon = ds.rlon.copy()
+
+    new_ds = xr.Dataset(
+        {dv: (["rlat", "rlon"], grid)},
+        coords={"rlon": ("rlon", nrlon), "rlat": ("rlat", nrlat)},
+    )
+
+    return new_ds 
 
 
 def flatten_coords(

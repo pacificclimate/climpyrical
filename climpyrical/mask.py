@@ -1,7 +1,8 @@
 import warnings
-from climpyrical.gridding import check_ndims
+from climpyrical.gridding import check_ndims, find_nearest_index, flatten_coords
 import numpy as np
-from shapely.geometry import Point
+from shapely.geometry import Point, Polygon
+from tqdm import tqdm
 import geopandas as gpd
 
 
@@ -107,14 +108,24 @@ def rotate_shapefile(
             in new projection
     """
     # this checks the polyon input
-    check_polygon_validity(p)
+    # check_polygon_validity(p)
     # this checks polygon can be rotated
-    check_polygon_before_projection(p)
+    # check_polygon_before_projection(p)
     target = p.to_crs(crs)
     # this checks the rotation
-    check_polygon_after_projection(target)
+    # check_polygon_after_projection(target)
 
     return target
+
+
+def make_box(x, y, dx, dy):
+
+    p1 = x-dx, y-dy
+    p2 = x+dx, y-dy
+    p3 = x+dx, y+dy        
+    p4 = x-dx, y+dy
+    
+    return(Polygon([p1, p2, p3, p4]))
 
 
 def gen_raster_mask_from_vector(x, y, p):
@@ -128,14 +139,41 @@ def gen_raster_mask_from_vector(x, y, p):
             based on polygon boundaries
     """
     # this checks the coordinate inputes
-    check_input_grid_coords(x, y)
+    # check_input_grid_coords(x, y)
     # this checks the polygon input
-    check_polygon_validity(p)
+    # check_polygon_validity(p)
     # this checks that the polygon is in rotated form
-    check_polygon_after_projection(p)
-    grid = np.meshgrid(x, y)[0]
-    for i, rlon in enumerate(x):
-        for j, rlat in enumerate(y):
-            pt = Point(rlon, rlat)
-            grid[j, i] = p.contains(pt)
-    return grid == 1.0
+    # check_polygon_after_projection(p)
+
+    cx1, cx2 = p.bounds.minx.min(), p.bounds.maxx.max()
+    cy1, cy2 = p.bounds.miny.min(), p.bounds.maxy.max()
+
+    # find the bounds of canada to begin clipping to save computation time
+    icx1, icx2 = find_nearest_index(x, cx1), find_nearest_index(x, cx2)
+    icy1, icy2 = find_nearest_index(y, cy1), find_nearest_index(y, cy2)
+
+    dx = np.mean(np.diff(x))
+    dy = np.mean(np.diff(y))
+
+    xx, yy = flatten_coords(x[icx1:icx2], y[icy1:icy2])
+    xy = np.stack([xx, yy]).T
+
+    contained = []
+
+    with tqdm(total=len(xy), position=0, leave=True) as pbar:
+        for xcoord, ycoord in xy:
+            pbar.update()
+            contained.append(
+                np.any(
+                    p.intersects(
+                        make_box(xcoord, ycoord, dx, dy)
+
+                    )
+                )
+            )
+
+    contained = np.array(contained).reshape((icy2-icy1, icx2-icx1))
+    mask = np.zeros((y.size, x.size))
+    mask[icy1:icy2, icx1:icx2] = contained
+
+    return mask == 1
