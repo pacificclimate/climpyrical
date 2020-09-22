@@ -8,11 +8,23 @@ from rpy2.robjects.packages import importr
 from rpy2.robjects import FloatVector, DataFrame
 from rpy2 import robjects
 
+import rpy2.robjects.packages as rpackages
+utils = rpackages.importr('utils')
+
+# utils.chooseCRANmirror(ind=1) # select the first mirror in the list
+from rpy2.robjects.vectors import StrVector
+# utils.install_packages(StrVector(("fields")), "../r-library")
+# utils.install_packages(StrVector(("sp")), "../r-library")
+# utils.install_packages(StrVector(("gstat")), "../r-library")
+
+# print("FIELDS")
 importr("fields")
+# importr("sp")
+# importr("gstat")
 
 
 def fit(
-    latlon: NDArray[(2, Any), float], z: NDArray[(Any,), float], nx: int, ny: int,
+    latlon: NDArray[(2, Any), float], z: NDArray[(Any,), float], nx: int, ny: int, extrap: bool,
 ) -> Tuple[NDArray[(Any, Any), float], NDArray[(Any,), float], NDArray[(Any,), float]]:
 
     """Encapsulates the functionality of R's spatialProcess into a Python
@@ -68,7 +80,7 @@ def fit(
     )
 
     rfunc = robjects.r(rstring)
-    r_surface = rfunc(r_latlon, r_z, nx, ny)
+    r_surface = rfunc(r_latlon, r_z, nx, ny, extrap)
 
     # extract data from R's interpolation
     surface_dict = dict(zip(r_surface.names, list(r_surface)))
@@ -76,5 +88,7 @@ def fit(
     z = np.array(surface_dict["z"]).reshape(nx, ny)
     x = np.array(surface_dict["x"])
     y = np.array(surface_dict["y"])
+    cov = dict(zip(surface_dict["cov"].names, list(surface_dict["cov"])))
+    # cov = surface_dict["cov"]
 
-    return z, x, y
+    return z, x, y, cov
