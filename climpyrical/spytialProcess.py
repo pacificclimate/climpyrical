@@ -88,7 +88,7 @@ def fit(
     z = np.array(surface_dict["z"]).reshape(nx, ny)
     x = np.array(surface_dict["x"])
     y = np.array(surface_dict["y"])
-    cov = dict(zip(surface_dict["cov"].names, list(surface_dict["cov"])))
+    # cov = dict(zip(surface_dict["cov"].names, list(surface_dict["cov"])))
     # cov = surface_dict["cov"]
 
-    return z, x, y, cov
+    return z, x, y
