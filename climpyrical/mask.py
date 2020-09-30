@@ -128,7 +128,7 @@ def make_box(x, y, dx, dy):
     return(Polygon([p1, p2, p3, p4]))
 
 
-def gen_raster_mask_from_vector(x, y, p):
+def gen_raster_mask_from_vector(x, y, p, progress_bar=True):
     """Determines if points are contained within polygons of Canada
     Args:
         x, y (np.ndarray): Arrays containing the rlon and rlat of CanRCM4
@@ -159,10 +159,20 @@ def gen_raster_mask_from_vector(x, y, p):
     xy = np.stack([xx, yy]).T
 
     contained = []
+    if progress_bar:
+        with tqdm(total=len(xy), position=0, leave=True) as pbar:
+            for xcoord, ycoord in xy:
+                pbar.update()
+                contained.append(
+                    np.any(
+                        p.intersects(
+                            make_box(xcoord, ycoord, dx, dy)
 
-    with tqdm(total=len(xy), position=0, leave=True) as pbar:
+                        )
+                    )
+                )
+    else:
         for xcoord, ycoord in xy:
-            pbar.update()
             contained.append(
                 np.any(
                     p.intersects(
