@@ -1,11 +1,12 @@
 import pytest
 import geopandas as gpd
 import numpy as np
+from nptyping import NDArray
+from typing import Any
+from climpyrical.data import read_data
 from climpyrical.mask import (
     check_polygon_validity,
     check_polygon_before_projection,
-    check_polygon_after_projection,
-    check_input_grid_coords,
     rotate_shapefile,
     gen_raster_mask_from_vector,
 )
@@ -47,8 +48,6 @@ good_polygon = gpd.read_file(
 @pytest.mark.parametrize(
     "p,error",
     [
-        ({"string"}, TypeError),
-        ({5}, TypeError),
         (canada, None),
         (rotated_canada, None),
         (transformed_world, None),
@@ -77,62 +76,33 @@ def test_check_polygon_before_projection(p, warning):
             check_polygon_before_projection(p)
 
 
-@pytest.mark.parametrize(
-    "p,error",
-    [
-        ({"string"}, TypeError),
-        ({5}, TypeError),
-        (canada, ValueError),
-        (rotated_canada, None),
-        (transformed_world, ValueError),
-        (gpd.GeoSeries(), ValueError),
-    ],
-)
-def test_check_polygon_after_projection(p, error):
-    if error is None:
-        check_polygon_after_projection(p)
-    else:
-        with pytest.raises(error):
-            check_polygon_after_projection(p)
-
-
-@pytest.mark.parametrize(
-    "x,y,error",
-    [
-        ("x", np.linspace(-24, 24, 155), TypeError),
-        (np.linspace(-24, 24, 155), "y", TypeError),
-        (np.ones((2, 2)), np.linspace(-24, 24, 155), ValueError),
-        (np.linspace(-24, 24, 155), np.ones((2, 2)), ValueError),
-        (np.linspace(-24, 24, 155), np.linspace(-24, 24, 155), None),
-    ],
-)
-def test_check_input_grid_coords(x, y, error):
-    if error is None:
-        check_input_grid_coords(x, y)
-    else:
-        with pytest.raises(error):
-            check_input_grid_coords(x, y)
-
-
 @pytest.mark.parametrize("p,crs,expected", [(canada, rotated_crs, rotated_canada)])
 def test_rotate_shapefile(p, crs, expected):
     assert rotate_shapefile(p, crs).geom_almost_equals(expected).values[0]
 
 
-maskarray = np.load(resource_filename("climpyrical", "tests/data/maskarray.npy"))
-
+mask_ds = read_data(
+    resource_filename(
+        "climpyrical", 
+        "tests/data/canada_mask_rp.nc"
+    )
+)
 
 @pytest.mark.slow
 @pytest.mark.parametrize(
-    "x,y,p,expected",
+    "x,y,p,progress_bar,expected",
     [
         (
-            np.linspace(-33.8800048828125, 33.8800048828125, 155),
-            np.linspace(-28.59999656677246, 28.15999984741211, 130),
+            mask_ds.rlon.values[:100],
+            mask_ds.rlat.values[:100],
             rotated_canada,
-            maskarray,
+            True,
+            mask_ds['mask'].values[:100, :100]
         )
     ],
 )
-def test_gen_raster_mask_from_vector(x, y, p, expected):
-    assert np.array_equal(gen_raster_mask_from_vector(x, y, p), expected)
+def test_gen_raster_mask_from_vector(x, y, p, progress_bar, expected):
+    result = gen_raster_mask_from_vector(x, y, p, progress_bar)
+
+    assert isinstance(result, NDArray[(Any, Any), Any])
+    assert result.shape == (x.shape[0], y.shape[0])
