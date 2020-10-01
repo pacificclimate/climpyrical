@@ -104,6 +104,19 @@ def gen_dataset(
     x: NDArray[(Any,), np.float],
     y: NDArray[(Any,), np.float],
 ) -> xr.Dataset:
+    """Generates standard climpyrical xarray Dataset.
+    ------------------------------
+    Args:
+        dv (Str): key name of design value
+        field (np.ndarray): 2D array of design value field
+        x,y (np.ndarray, np.ndarray): coordinates along
+            each axis of design value field
+    Returns:
+        ds (xarray Dataset): dataset with new keys
+            and design value field
+    Raises:
+        From xarray.Dataset
+    """
     ds = xr.Dataset(
         {dv: (["rlat", "rlon"], field)},
         coords={"rlon": ("rlon", x), "rlat": ("rlat", y)},
@@ -118,6 +131,20 @@ def interpolate_dataset(
     target_points: NDArray[(Any, Any), np.float],
     method: str,
 ):
+
+    """Generates standard climpyrical xarray Dataset.
+    ------------------------------
+    Args:
+        points (np.ndarray): ordered pairs of coordinates
+            from current grid
+        values (np.ndarray): field values at points
+        target_points (np.ndarray): ordered pairs of coordinates
+            from target grid
+        method (str): desired method - can be either 'linear' or
+            'nearest'
+    Returns:
+        (np.ndarray): newly predicted values at target points
+    """
 
     if method != "linear" and method != "nearest":
         raise ValueError("Method must be linear or nearest.")
