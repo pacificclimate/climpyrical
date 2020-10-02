@@ -126,12 +126,12 @@ def gen_dataset(
         )
     else:
         ds = xr.Dataset(
-                {dv: (["level", "rlat", "rlon"], field)},
-                coords={
-                    "rlon": ("rlon", x),
-                    "rlat": ("rlat", y),
-                    "level": ("level", z),
-                }
+            {dv: (["level", "rlat", "rlon"], field)},
+            coords={
+                "rlon": ("rlon", x),
+                "rlat": ("rlat", y),
+                "level": ("level", z),
+            },
         )
 
     return ds
@@ -142,7 +142,7 @@ def interpolate_dataset(
     values: NDArray[(Any, Any), np.float],
     target_points: NDArray[(Any, Any), np.float],
     method: str,
-):
+) -> NDArray[(Any,), np.float]:
 
     """Generates standard climpyrical xarray Dataset.
     ------------------------------

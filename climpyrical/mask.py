@@ -91,6 +91,10 @@ def make_box(x: float, y: float, dx: float, dy: float) -> Polygon:
     Returns:
         (shapely Polygon object): Polygon representation of grid
     """
+    test_list = [x, y, dx, dy]
+    test_list_float = [isinstance(a, (int, float)) for a in test_list]
+    if not np.all(test_list_float):
+        raise TypeError(f"All parameters must be floats.")
 
     p1 = x - dx, y - dy
     p2 = x + dx, y - dy
@@ -135,6 +139,11 @@ def gen_raster_mask_from_vector(
     # ordered pairs of relevent grid cells
     xx, yy = flatten_coords(x[icx1:icx2], y[icy1:icy2])
     xy = np.stack([xx, yy]).T
+    if xy.size == 0:
+        raise ValueError(
+            "No matching coordinates. \
+            Does polygon overlap with coordinates provided?"
+        )
 
     # track whether or not grid cell is within polygon here
     contained = []

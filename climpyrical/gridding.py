@@ -1,4 +1,4 @@
-from climpyrical.data import check_valid_keys, gen_dataset
+from climpyrical.data import check_valid_keys, check_valid_data, gen_dataset
 
 import warnings
 import numpy as np
@@ -118,7 +118,7 @@ def check_regrid_ensemble_inputs(ds, dv, n, keys):
 
 
 def regrid_ensemble(
-    ds: xr.Dataset, dv: str, n: int, keys: list = ["rlat", "rlon"], copy=False
+    ds: xr.Dataset, dv: str, n: int, keys: list = ["rlat", "rlon"], copy=True
 ) -> xr.Dataset:
     """Re-grids a regional model to have n^2 times the
     native number of grid cells (n times in each axis).
@@ -140,7 +140,7 @@ def regrid_ensemble(
     """
     check_regrid_ensemble_inputs(ds, dv, n, keys)
     # calculate the size of each grid cell
-    # see #20 for more info
+    # see #20 for more information
 
     xx, yy = np.meshgrid(ds.rlon, ds.rlat)
 
@@ -188,21 +188,29 @@ def regrid_ensemble(
     return regridded_ds
 
 
-def extend_north(ds, dv, amount, fill_val=np.nan):
-    """The native CanRCM4 models have not coverage in northern canada
+def extend_north(
+    ds: xr.Dataset, dv: str, amount: int, fill_val: float = np.nan
+) -> xr.Dataset:
+    """The native CanRCM4 models have not coverage in northern canada. This
+    function extents the top rows of an array so that climpyrical will consider
+    these northern regions.
     Args:
-        x (numpy.ndarray): 1D array containing
-            the locations of the rotated latitude
-            grid cells
-        y (numpy.ndarray): 1D array containing
-            the locations of the rotated longitude
-            grid cells
+        ds: Dataset to extend
+        dv: Name of design value key in Dataset
+        amount: Number of rows at ds's resolution to add to the north
+        fill_val: What to fill the new rows with
     Return:
-        xext, yext (tuple of np.ndarrays):
-            array containing tuples of rlat and
-            rlon for each grid cell in the
-            ensemble size.
+        xarray Dataset containing extended coordinates and region to the north
     """
+    check_valid_data(ds)
+
+    if not isinstance(amount, int):
+        raise TypeError(
+            f"Please provide an amount of type {int}. Received {type(amount)}"
+        )
+    if amount < 0:
+        raise ValueError(f"amount must be positive.")
+
     y = ds[dv].values.shape[0]
     x = ds[dv].values.shape[1]
     grid = np.ones((y + amount, x))
@@ -216,10 +224,7 @@ def extend_north(ds, dv, amount, fill_val=np.nan):
     )
     nrlon = ds.rlon.copy()
 
-    new_ds = xr.Dataset(
-        {dv: (["rlat", "rlon"], grid)},
-        coords={"rlon": ("rlon", nrlon), "rlat": ("rlat", nrlat)},
-    )
+    new_ds = gen_dataset(dv, grid, nrlon, nrlat)
 
     return new_ds
 
