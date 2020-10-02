@@ -13,7 +13,7 @@ from climpyrical.gridding import (
     check_regrid_ensemble_inputs,
     regrid_ensemble,
 )
-from climpyrical.datacube import read_data
+from climpyrical.data import read_data
 import pytest
 from pkg_resources import resource_filename
 import numpy as np
@@ -41,11 +41,15 @@ def test_check_ndims(data, n, error):
 
 # load example ensemble dataset for testing
 dv = "Rain-RL50"
-ds = read_data(resource_filename("climpyrical", "tests/data/snw_test_ensemble.nc"), dv)
+ds = read_data(
+    resource_filename("climpyrical", "tests/data/snw_test_ensemble.nc")
+)
 
 ds_mean = ds.mean(dim="level")
 ds_regridded_proper = read_data(
-    resource_filename("climpyrical", "tests/data/snw_regridded_test_ensemble.nc"), dv,
+    resource_filename(
+        "climpyrical", "tests/data/snw_regridded_test_ensemble.nc"
+    ),
 )
 # read grids with expected dimension and ranges
 xi, yi = ds.rlon.values, ds.rlat.values
@@ -76,14 +80,14 @@ def test_check_regrid_ensemble_inputs(ds, dv, n, keys, error):
 @pytest.mark.parametrize(
     "ds,dv,n,keys",
     [
-        (ds, dv, 3, ["rlat", "rlon", "lat", "lon", "level"]),
-        (ds_mean, dv, 3, ["rlat", "rlon", "lat", "lon"]),
+        (ds, dv, 3, ["rlat", "rlon", "level"]),
+        (ds_mean, dv, 3, ["rlat", "rlon"]),
     ],
 )
 def test_regrid_ensemble(ds, dv, n, keys):
     ndim = np.ndim(ds[dv].values)
     nds = regrid_ensemble(ds, dv, n, keys)
-    assert isinstance(nds[dv].values, NDArray[(Any,) * ndim, np.float32])
+    assert isinstance(nds[dv].values, NDArray[(Any,) * ndim, np.float])
 
 
 @pytest.mark.parametrize(
@@ -263,7 +267,9 @@ def test_check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs, error):
         )
     ],
 )
-def test_find_element_wise_nearest_pos(x, y, x_obs, y_obs, expected_x, expected_y):
+def test_find_element_wise_nearest_pos(
+    x, y, x_obs, y_obs, expected_x, expected_y
+):
     xclose, yclose = find_element_wise_nearest_pos(x, y, x_obs, y_obs)
     xclose_truth = np.allclose(xclose, expected_x)
     yclose_truth = np.allclose(yclose, expected_y)

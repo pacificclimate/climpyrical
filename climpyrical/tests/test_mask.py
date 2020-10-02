@@ -1,6 +1,5 @@
 import pytest
 import geopandas as gpd
-import numpy as np
 from nptyping import NDArray
 from typing import Any
 from climpyrical.data import read_data
@@ -66,7 +65,11 @@ def test_check_polygon_validity(p, error):
 
 @pytest.mark.parametrize(
     "p,warning",
-    [(canada, None), (rotated_canada, UserWarning), (transformed_world, UserWarning)],
+    [
+        (canada, None),
+        (rotated_canada, UserWarning),
+        (transformed_world, UserWarning),
+    ],
 )
 def test_check_polygon_before_projection(p, warning):
     if warning is None:
@@ -76,17 +79,17 @@ def test_check_polygon_before_projection(p, warning):
             check_polygon_before_projection(p)
 
 
-@pytest.mark.parametrize("p,crs,expected", [(canada, rotated_crs, rotated_canada)])
+@pytest.mark.parametrize(
+    "p,crs,expected", [(canada, rotated_crs, rotated_canada)]
+)
 def test_rotate_shapefile(p, crs, expected):
     assert rotate_shapefile(p, crs).geom_almost_equals(expected).values[0]
 
 
 mask_ds = read_data(
-    resource_filename(
-        "climpyrical", 
-        "tests/data/canada_mask_rp.nc"
-    )
+    resource_filename("climpyrical", "tests/data/canada_mask_rp.nc")
 )
+
 
 @pytest.mark.slow
 @pytest.mark.parametrize(
@@ -97,7 +100,7 @@ mask_ds = read_data(
             mask_ds.rlat.values[:100],
             rotated_canada,
             True,
-            mask_ds['mask'].values[:100, :100]
+            mask_ds["mask"].values[:100, :100],
         )
     ],
 )

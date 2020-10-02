@@ -1,7 +1,7 @@
 import xarray as xr
 import numpy as np
 from nptyping import NDArray
-from typing import Any
+from typing import Any, Union
 
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 
@@ -100,9 +100,10 @@ def read_data(data_path: str, required_keys: list = None) -> xr.Dataset:
 
 def gen_dataset(
     dv: str,
-    field: NDArray[(Any, Any), np.float],
+    field: Union[NDArray[(Any, Any), Any], NDArray[(Any, Any, Any), Any]],
     x: NDArray[(Any,), np.float],
     y: NDArray[(Any,), np.float],
+    z:  None = None,
 ) -> xr.Dataset:
     """Generates standard climpyrical xarray Dataset.
     ------------------------------
@@ -111,16 +112,27 @@ def gen_dataset(
         field (np.ndarray): 2D array of design value field
         x,y (np.ndarray, np.ndarray): coordinates along
             each axis of design value field
+        cube (bool): whether to 
     Returns:
         ds (xarray Dataset): dataset with new keys
             and design value field
     Raises:
         From xarray.Dataset
     """
-    ds = xr.Dataset(
-        {dv: (["rlat", "rlon"], field)},
-        coords={"rlon": ("rlon", x), "rlat": ("rlat", y)},
-    )
+    if z is None:
+        ds = xr.Dataset(
+            {dv: (["rlat", "rlon"], field)},
+            coords={"rlon": ("rlon", x), "rlat": ("rlat", y)},
+        )
+    else:
+        ds = xr.Dataset(
+                {dv: (["level", "rlat", "rlon"], field)},
+                coords={
+                    "rlon": ("rlon", x),
+                    "rlat": ("rlat", y),
+                    "level": ("level", z),
+                }
+        )
 
     return ds
 

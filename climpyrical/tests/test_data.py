@@ -1,8 +1,4 @@
-from climpyrical.data import (
-    check_valid_keys,
-    check_valid_data,
-    read_data
-)
+from climpyrical.data import check_valid_keys, check_valid_data, read_data
 import pytest
 from pkg_resources import resource_filename
 import xarray as xr
@@ -12,9 +8,17 @@ import numpy as np
 @pytest.mark.parametrize(
     "actual_keys,required_keys,passed",
     [
-        (["rlat", "rlon", "dv", 4, "lat", "lon"], ["rlat", "rlon", "dv", 4], True,),
+        (
+            ["rlat", "rlon", "dv", 4, "lat", "lon"],
+            ["rlat", "rlon", "dv", 4],
+            True,
+        ),
         (["rlat", "rlon", True, 99999], ["rlat", "rlon", True, 99999], True),
-        (["rlat", "rlon", 4.0, False], ["hi", "nic", "was", "here", "lon"], False,),
+        (
+            ["rlat", "rlon", 4.0, False],
+            ["hi", "nic", "was", "here", "lon"],
+            False,
+        ),
     ],
 )
 def test_check_valid_keys(actual_keys, required_keys, passed):
@@ -30,7 +34,10 @@ empty_ds = xr.Dataset({"empty": []}, coords={"rlon": 0, "rlat": 0})
 # simulate unexpected coordinate value inputs
 bad_coords = xr.Dataset(
     {"empty": [-10, 10, -10]},
-    coords={"rlon": np.array([-10, np.nan, 10]), "rlat": np.array([-10, np.nan, 10])},
+    coords={
+        "rlon": np.array([-10, np.nan, 10]),
+        "rlat": np.array([-10, np.nan, 10]),
+    },
 )
 non_mono_bad_coords = xr.Dataset(
     {"empty": [-10, 10, -10]},
@@ -45,11 +52,15 @@ non_mono_bad_coords = xr.Dataset(
         (bad_coords, False),
         (non_mono_bad_coords, False),
         (
-            xr.open_dataset(resource_filename("climpyrical", "tests/data/snw.nc")),
+            xr.open_dataset(
+                resource_filename("climpyrical", "tests/data/snw.nc")
+            ),
             True,
         ),
         (
-            xr.open_dataset(resource_filename("climpyrical", "tests/data/hdd.nc")),
+            xr.open_dataset(
+                resource_filename("climpyrical", "tests/data/hdd.nc")
+            ),
             True,
         ),
     ],
