@@ -103,7 +103,7 @@ def gen_dataset(
     field: Union[NDArray[(Any, Any), Any], NDArray[(Any, Any, Any), Any]],
     x: NDArray[(Any,), np.float],
     y: NDArray[(Any,), np.float],
-    z:  None = None,
+    z: None = None,
 ) -> xr.Dataset:
     """Generates standard climpyrical xarray Dataset.
     ------------------------------
@@ -112,7 +112,7 @@ def gen_dataset(
         field (np.ndarray): 2D array of design value field
         x,y (np.ndarray, np.ndarray): coordinates along
             each axis of design value field
-        cube (bool): whether to 
+        z (np.ndarray or None): optional level/z coordinates
     Returns:
         ds (xarray Dataset): dataset with new keys
             and design value field
