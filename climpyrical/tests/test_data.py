@@ -89,6 +89,7 @@ def test_valid_data(ds, error):
         with pytest.raises(error):
             check_valid_data(ds)
 
+
 @pytest.mark.slow
 @pytest.mark.parametrize(
     "data_path,design_value_name,keys,shape",
