@@ -29,7 +29,7 @@ setup(
     zip_safe=True,
     scripts=[
         "climpyrical/gridding.py",
-        "climpyrical/datacube.py",
+        "climpyrical/data.py",
         "climpyrical/mask.py"
     ],
     install_requires=["numpy", "shapely", "geopandas", "xarray"],
