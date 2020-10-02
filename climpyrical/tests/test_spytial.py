@@ -11,26 +11,26 @@ z = np.sin(xx ** 2 + yy ** 2) / (xx ** 2 + yy ** 2)
 z = z.flatten()
 
 new_N = 3 * N
-newz, newx, newy = sp.fit(coords, z, new_N, new_N)
+newz, newx, newy = sp.fit(coords, z, new_N, new_N, True)
 
 
 @pytest.mark.parametrize(
-    "latlon, z, nx, ny, error",
+    "latlon, z, nx, ny, extrap, error",
     [
-        (coords, z, new_N, new_N, None),
-        (np.ones((1, 2, 3)), z, new_N, new_N, TypeError),
-        (coords, np.ones((1, 2, 3)), new_N, new_N, TypeError),
-        (coords, z, "blargh", new_N, TypeError),
-        (coords, z, new_N, "blargh", TypeError),
-        (coords, z[:-1], new_N, new_N, ValueError),
+        (coords, z, new_N, new_N, True, None),
+        (np.ones((1, 2, 3)), z, new_N, new_N, True, TypeError),
+        (coords, np.ones((1, 2, 3)), new_N, new_N, True, TypeError),
+        (coords, z, "blargh", new_N, True, TypeError),
+        (coords, z, new_N, "blargh", True, TypeError),
+        (coords, z[:-1], new_N, new_N, True, ValueError),
     ],
 )
-def test_fit_params(latlon, z, nx, ny, error):
+def test_fit_params(latlon, z, nx, ny, extrap, error):
     if error is None:
-        sp.fit(latlon, z, nx, ny)
+        sp.fit(latlon, z, nx, ny, extrap)
     else:
         with pytest.raises(error):
-            sp.fit(latlon, z, nx, ny)
+            sp.fit(latlon, z, nx, ny, extrap)
 
 
 def test_nan():

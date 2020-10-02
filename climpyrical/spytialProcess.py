@@ -9,10 +9,11 @@ from rpy2.robjects import FloatVector, DataFrame
 from rpy2 import robjects
 
 import rpy2.robjects.packages as rpackages
-utils = rpackages.importr('utils')
+
+utils = rpackages.importr("utils")
 
 # utils.chooseCRANmirror(ind=1) # select the first mirror in the list
-from rpy2.robjects.vectors import StrVector
+
 # utils.install_packages(StrVector(("fields")), "../r-library")
 # utils.install_packages(StrVector(("sp")), "../r-library")
 # utils.install_packages(StrVector(("gstat")), "../r-library")
@@ -24,8 +25,14 @@ importr("fields")
 
 
 def fit(
-    latlon: NDArray[(2, Any), float], z: NDArray[(Any,), float], nx: int, ny: int, extrap: bool,
-) -> Tuple[NDArray[(Any, Any), float], NDArray[(Any,), float], NDArray[(Any,), float]]:
+    latlon: NDArray[(2, Any), float],
+    z: NDArray[(Any,), float],
+    nx: int,
+    ny: int,
+    extrap: bool,
+) -> Tuple[
+    NDArray[(Any, Any), float], NDArray[(Any,), float], NDArray[(Any,), float]
+]:
 
     """Encapsulates the functionality of R's spatialProcess into a Python
     Args:
@@ -57,7 +64,9 @@ def fit(
         raise TypeError("Provide integer grid size")
 
     if latlon.shape[1] != z.size:
-        raise ValueError("Different number of grid coordinates than observations")
+        raise ValueError(
+            "Different number of grid coordinates than observations"
+        )
 
     latlon, z = latlon.tolist(), z.tolist()
 
@@ -75,9 +84,9 @@ def fit(
     r_z = FloatVector(z)
 
     # use separate simple r-script in path below
-    rstring = resource_string("climpyrical", "tests/data/spatial_process_r.R").decode(
-        "utf-8"
-    )
+    rstring = resource_string(
+        "climpyrical", "tests/data/spatial_process_r.R"
+    ).decode("utf-8")
 
     rfunc = robjects.r(rstring)
     r_surface = rfunc(r_latlon, r_z, nx, ny, extrap)
