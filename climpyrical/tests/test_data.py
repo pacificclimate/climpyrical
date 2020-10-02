@@ -1,4 +1,9 @@
-from climpyrical.data import check_valid_keys, check_valid_data, read_data
+from climpyrical.data import (
+    check_valid_keys,
+    check_valid_data,
+    read_data,
+    interpolate_dataset,
+)
 import pytest
 from pkg_resources import resource_filename
 import xarray as xr
@@ -31,6 +36,13 @@ def test_check_valid_keys(actual_keys, required_keys, passed):
 
 # simulate an empty design value input
 empty_ds = xr.Dataset({"empty": []}, coords={"rlon": 0, "rlat": 0})
+
+# simulate an Null valued input
+nan_ds = xr.Dataset(
+    {"NaN": (["rlat", "rlon"], np.ones((10, 10)) * np.nan)},
+    coords={"rlon": np.linspace(0, 10, 10), "rlat": np.linspace(0, 10, 10)},
+)
+
 # simulate unexpected coordinate value inputs
 bad_coords = xr.Dataset(
     {"empty": [-10, 10, -10]},
@@ -39,6 +51,7 @@ bad_coords = xr.Dataset(
         "rlat": np.array([-10, np.nan, 10]),
     },
 )
+
 non_mono_bad_coords = xr.Dataset(
     {"empty": [-10, 10, -10]},
     coords={"rlon": np.linspace(10, 0, 10), "rlat": np.linspace(10, 0, 10)},
@@ -46,33 +59,34 @@ non_mono_bad_coords = xr.Dataset(
 
 
 @pytest.mark.parametrize(
-    "ds,passed",
+    "ds,error",
     [
-        (empty_ds, False),
-        (bad_coords, False),
-        (non_mono_bad_coords, False),
+        (empty_ds, ValueError),
+        (bad_coords, ValueError),
+        (non_mono_bad_coords, ValueError),
+        (nan_ds, ValueError),
         (
             xr.open_dataset(
                 resource_filename("climpyrical", "tests/data/snw.nc")
             ),
-            True,
+            None,
         ),
         (
             xr.open_dataset(
                 resource_filename("climpyrical", "tests/data/hdd.nc")
             ),
-            True,
+            None,
         ),
     ],
 )
-def test_valid_data(ds, passed):
+def test_valid_data(ds, error):
     # tests that xr.open_dataset does the same
     # thing as read_data for a few examples
 
-    if passed:
+    if error is None:
         assert check_valid_data(ds)
     else:
-        with pytest.raises(ValueError):
+        with pytest.raises(error):
             check_valid_data(ds)
 
 
@@ -122,3 +136,50 @@ def test_shape(data_path, design_value_name, keys, shape):
     # properly
     ds = read_data(data_path, keys)
     assert ds[design_value_name].shape == shape
+
+
+@pytest.mark.parametrize(
+    "data_path,error",
+    [
+        (
+            resource_filename("climpyrical", "tests/data/world.geojson"),
+            TypeError,
+        ),
+        (resource_filename("climpyrical", "tests/data/hdd.nc"), None),
+    ],
+)
+def test_path(data_path, error):
+    # tests path checker
+
+    if error is None:
+        read_data(data_path)
+    else:
+        with pytest.raises(error):
+            read_data(data_path)
+
+
+xx, yy = np.meshgrid(np.linspace(0, 50, 50), np.linspace(-25, 25, 50))
+points = np.stack([xx.flatten(), yy.flatten()]).T
+ones = np.ones(xx.shape).flatten()
+
+xxn, yyn = np.meshgrid(np.linspace(0, 50, 100), np.linspace(-25, 25, 100))
+target_points = np.stack([xxn.flatten(), yyn.flatten()]).T
+
+
+@pytest.mark.parametrize(
+    "points, values, target_points, method, error",
+    [
+        (points, ones, target_points, "linear", None),
+        (points, ones, target_points, "nearest", None),
+        (points, ones, target_points, "spaghetti", ValueError),
+    ],
+)
+def test_interpolate_dataset(points, values, target_points, method, error):
+    if error is None:
+        np.testing.assert_allclose(
+            np.ones(xxn.shape).flatten(),
+            interpolate_dataset(points, values, target_points, method),
+        )
+    else:
+        with pytest.raises(error):
+            interpolate_dataset(points, values, target_points, method)

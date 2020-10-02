@@ -8,6 +8,7 @@ from climpyrical.mask import (
     check_polygon_before_projection,
     rotate_shapefile,
     gen_raster_mask_from_vector,
+    make_box,
 )
 from pkg_resources import resource_filename
 
@@ -93,19 +94,54 @@ mask_ds = read_data(
 
 @pytest.mark.slow
 @pytest.mark.parametrize(
-    "x,y,p,progress_bar,expected",
+    "x,y,p,progress_bar,error",
     [
         (
-            mask_ds.rlon.values[:100],
-            mask_ds.rlat.values[:100],
+            mask_ds.rlon.values[::10],
+            mask_ds.rlat.values[::10],
             rotated_canada,
             True,
-            mask_ds["mask"].values[:100, :100],
-        )
+            None,
+        ),
+        (
+            mask_ds.rlon.values[:10],
+            mask_ds.rlat.values[:10],
+            rotated_canada,
+            True,
+            ValueError,
+        ),
+        (
+            mask_ds.rlon.values[::10],
+            mask_ds.rlat.values[::10],
+            rotated_canada,
+            False,
+            None,
+        ),
     ],
 )
-def test_gen_raster_mask_from_vector(x, y, p, progress_bar, expected):
-    result = gen_raster_mask_from_vector(x, y, p, progress_bar)
+def test_gen_raster_mask_from_vector(x, y, p, progress_bar, error):
+    if error is None:
+        result = gen_raster_mask_from_vector(x, y, p, progress_bar)
+        assert isinstance(result, NDArray[(Any, Any), Any])
+        assert result.shape == (y.shape[0], x.shape[0])
+    else:
+        with pytest.raises(ValueError):
+            gen_raster_mask_from_vector(x, y, p, progress_bar)
 
-    assert isinstance(result, NDArray[(Any, Any), Any])
-    assert result.shape == (x.shape[0], y.shape[0])
+
+@pytest.mark.parametrize(
+    "x,y,dx,dy,error",
+    [
+        (0, 0, 0.5, "0.5", TypeError),
+        (0, 0, 0.5, 0.5, None),
+        (0, 0, 0.5, 0.5, None),
+    ],
+)
+def test_make_box(x, y, dx, dy, error):
+    if error is None:
+        p = make_box(x, y, dx, dy)
+        assert p.area == (2.0 * dx) * (2.0 * dy)
+        assert p.area != 0.0
+    else:
+        with pytest.raises(error):
+            make_box(x, y, dx, dy)
