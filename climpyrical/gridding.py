@@ -1,4 +1,4 @@
-from climpyrical.data import check_valid_keys, check_valid_data, gen_dataset
+from climpyrical.data import check_valid_data, gen_dataset
 
 import warnings
 import numpy as np
@@ -94,29 +94,6 @@ def check_input_coords(x, y, ds):
     close_range(y, ds, "rlat")
 
 
-def check_regrid_ensemble_inputs(ds, dv, n, keys):
-    if not isinstance(ds, xr.Dataset):
-        raise TypeError(
-            "Provide an ensemble object of type {}, received {}".format(
-                xr.Dataset, type(ds)
-            )
-        )
-    if not isinstance(dv, str):
-        raise TypeError(
-            "Provide design value key of type {}, received {}".format(
-                str, type(dv)
-            )
-        )
-    if not isinstance(n, int):
-        raise TypeError(
-            "Provide a scaling of {}, received {}".format(int, type(n))
-        )
-
-    actual_keys = set(ds.variables).union(set(ds.dims))
-    check_valid_keys(actual_keys, keys)
-    check_input_coords(ds.rlon.values, ds.rlat.values, ds)
-
-
 def regrid_ensemble(
     ds: xr.Dataset, dv: str, n: int, keys: list = ["rlat", "rlon"], copy=True
 ) -> xr.Dataset:
@@ -138,7 +115,7 @@ def regrid_ensemble(
         ValueError: if number of dimensions are unexpected, or coordinates
             are not of expected range
     """
-    check_regrid_ensemble_inputs(ds, dv, n, keys)
+
     # calculate the size of each grid cell
     # see #20 for more information
 
@@ -164,16 +141,19 @@ def regrid_ensemble(
 
     if copy:
         # re-create design value field on newly gridded size
+        # 3D version
         if "level" in keys:
             new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
             regridded_ds = gen_dataset(
                 dv, new_ds, new_x, new_y, ds.level.values.astype(int)
             )
+        # 2D version
         else:
             new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
             regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
     else:
         # re-create design value field on newly gridded size
+        # 3D version
         if "level" in keys:
             new_ds = np.zeros(
                 (ds.level.size, ds.rlat.size * n, ds.rlon.size * n)
@@ -181,6 +161,7 @@ def regrid_ensemble(
             regridded_ds = gen_dataset(
                 dv, new_ds, new_x, new_y, ds.level.values.astype(int)
             )
+        # 2D version
         else:
             new_ds = np.zeros((ds.rlat.size * n, ds.rlon.size * n))
             regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
@@ -230,8 +211,8 @@ def extend_north(
 
 
 def flatten_coords(
-    x: NDArray[Any, float], y: NDArray[Any, float]
-) -> Tuple[NDArray[Any, float], NDArray[Any, float]]:
+    x: NDArray[(Any, ), float], y: NDArray[(Any, ), float]
+) -> Tuple[NDArray[(Any, ), float], NDArray[(Any, ), float]]:
     """Takes the rlat and rlon 1D arrays from the
     NetCDF files for each ensemble member, and creates
     an ordered pairing of each grid cell coordinate in

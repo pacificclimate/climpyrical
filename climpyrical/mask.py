@@ -63,7 +63,7 @@ def check_polygon_before_projection(
                     "Neither init or datum found in proj4 data. Please provide initial \
                     reference projection with Polygon.crs = \"epsg:4326\""
                 )
-            )
+        )
 
     return True
 
