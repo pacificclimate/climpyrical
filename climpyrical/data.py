@@ -101,8 +101,8 @@ def read_data(data_path: str, required_keys: list = None) -> xr.Dataset:
 def gen_dataset(
     dv: str,
     field: Union[NDArray[(Any, Any), Any], NDArray[(Any, Any, Any), Any]],
-    x: NDArray[(Any,), np.float],
-    y: NDArray[(Any,), np.float],
+    x: NDArray[(Any,), float],
+    y: NDArray[(Any,), float],
     z: None = None,
 ) -> xr.Dataset:
     """Generates standard climpyrical xarray Dataset.
@@ -138,11 +138,11 @@ def gen_dataset(
 
 
 def interpolate_dataset(
-    points: NDArray[(Any, Any), np.float],
-    values: NDArray[(Any, Any), np.float],
-    target_points: NDArray[(Any, Any), np.float],
+    points: NDArray[(2, Any), float],
+    values: NDArray[(Any, Any), float],
+    target_points: NDArray[(2, Any), float],
     method: str,
-) -> NDArray[(Any,), np.float]:
+) -> NDArray[(Any,), float]:
 
     """Generates standard climpyrical xarray Dataset.
     ------------------------------
