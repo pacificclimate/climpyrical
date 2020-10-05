@@ -40,15 +40,30 @@ def check_polygon_before_projection(
     # check polygon validity
     check_polygon_validity(p)
 
-    crs1 = {"init": "epsg:4326"}
-    crs2 = "epsg:4326"
-    if p.crs != crs1 and p.crs != crs2:
-        warnings.warn(
-            UserWarning(
-                f"Polygon provided is in projection {p.crs}, expected {crs1} or {crs2}.\
-                 Other transformations are experimental and have not been tested."
+    # is dict or not
+    if "datum" in p.crs.to_dict().keys():
+        if p.crs.to_dict()["datum"] != 'WGS84':
+            warnings.warn(
+                UserWarning(
+                    f"Polygon provided is in unexpected projection. Expected epsg:4326.\
+                     Other transformations are experimental and have not been tested."
+                )
             )
-        )
+    elif "init" in p.crs.to_dict().keys():
+        if p.crs.to_dict()["init"] != 'epsg:4326':
+            warnings.warn(
+                UserWarning(
+                    f"Polygon provided is in unexpected projection. Expected epsg:4326.\
+                     Other transformations are experimental and have not been tested."
+                )
+            )
+    else:
+        warnings.warn(
+                UserWarning(
+                    "Neither init or datum found in proj4 data. Please provide initial \
+                    reference projection with Polygon.crs = \"epsg:4326\""
+                )
+            )
 
     return True
 
