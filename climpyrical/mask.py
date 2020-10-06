@@ -21,8 +21,7 @@ def check_polygon_validity(p: Union[gpd.GeoSeries, gpd.GeoDataFrame]) -> bool:
 
     if not p.size > 0:
         raise ValueError("Empty data provided in polygons")
-    if not p.is_valid.values[0]:
-        raise ValueError("Invalid values in polygons")
+
     return True
 
 
