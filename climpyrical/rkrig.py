@@ -7,7 +7,7 @@ import xarray as xr
 from sklearn.neighbors import NearestNeighbors
 from pykrige.ok import OrdinaryKriging
 from tqdm import tqdm
-import dask.array as da
+
 from scipy.spatial import ConvexHull
 import rpy2
 
@@ -19,7 +19,22 @@ import pandas as pd
 def krigit_north(
     df: pd.DataFrame, station_dv: str, n: int, ds: xr.Dataset
 ) -> NDArray[(Any, Any), float]:
-
+    """Krigs an extrapolated field for N nearest stations
+    to the northernmost in the dataframe provided. Output is
+    in the same dimensions as the dataset provided to be
+    easily added to a final reconstruction
+        Args:
+            df: pandas dataframe containing the coordinates in
+                both regular and roated, as well as the station
+                data
+            station_dv: name of the column containing
+                station data in df
+            n: number of nearest neighbors to northern
+                most stations
+            ds: model xarray dataset
+        Returns:
+            field: kriged field for the north
+    """
     df = df[["lat", "lon", "rlat", "rlon", station_dv]]
 
     dataframe_keys = ["lat", "lon", "rlat", "rlon"]
@@ -33,16 +48,24 @@ def krigit_north(
     # Metrics intended for two-dimensional vector spaces: Note that the
     # haversine distance metric requires data in the form
     # of [latitude, longitude] and both inputs and outputs are in units of radians.
+
+    # the reason for using a haversine metric here on regular coordinates
+    # rather than rotated coordinates, was that this particular haversine
+    # implementation gives incorrect values for rotated lon and rotated lat.
+    # it does give correct distances for regular lat and lon.
     nbrs = NearestNeighbors(n_neighbors=n, metric="haversine").fit(
         regular_points
     )
     dist, ind = nbrs.kneighbors(regular_points)
-    imax = df.rlat.idxmax(axis=0, skipna=True)
+    imax = np.argmax(df.rlat.values)  # idxmax(axis=0, skipna=True)
     temp_df = df.iloc[ind[imax]]
 
     xmin, xmax = temp_df.rlon.min(), temp_df.rlon.max()
     ymin, ymax = temp_df.rlat.min(), temp_df.rlat.max()
 
+    # Note that spytialProcess requires rlon and rlat. Different
+    # from the form required for haversine distances from
+    # nearest neighbour
     latlon = np.stack([temp_df.rlon, temp_df.rlat])
     stats = temp_df[station_dv]
 
@@ -57,6 +80,7 @@ def krigit_north(
     ylim = u - lw
     xlim = r - l
 
+    # krig it
     z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=True)
 
     field = np.ones((ds.rlat.size, ds.rlon.size))
@@ -73,6 +97,32 @@ def rkrig_py(
     ds: xr.Dataset,
     exact_values: bool = False,
 ) -> NDArray[(Any, Any), float]:
+    """User has the option of kriging using a Python backend
+    instead of using R's fields package. PyKrige has a moving
+    window implementation, however, the exacts and parameterization
+    is more obscured.
+        Args:
+            df: pandas dataframe containing the coordinates in
+                both regular and roated, as well as the station
+                data
+            station_dv: name of the column containing
+                station data in df
+            n: number of nearest neighbors to northern
+                most stations
+            ds: model xarray dataset
+            exact_values: whether to reproduce the
+                exact value of inputs
+        Returns:
+            field: kriged field
+    """
+
+    dataframe_keys = ["lat", "lon", "rlat", "rlon", station_dv]
+    contains_keys = [key not in df.columns for key in dataframe_keys]
+
+    if np.any(contains_keys):
+        raise ValueError(f"Dataframe must contain {dataframe_keys}")
+
+    df = df[["lat", "lon", "rlat", "rlon", station_dv]]
 
     ok = OrdinaryKriging(
         df.rlon,
@@ -88,9 +138,29 @@ def rkrig_py(
     return z
 
 
-def rkrig_r(df, indices, n, ds, min_size=30):
+def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
+    """Implements climpyricals moving window method.
+    Args:
+        df: pandas dataframe containing the coordinates in
+            both regular and roated, as well as the station
+            data
+        n: number of nearest neighbors to northern
+            most stations
+        ds: model xarray dataset
+        min_size: minimum number of grid cells in target res
+            to include in the reconstruction. This number is
+            used to calculate an equivalent minimum area
+            that is compared to the polygon produced by
+            the perimeter of stations in a nearest neighbor set
+    Returns:
+        kriged field
+    """
 
-    Zl = []
+    dataframe_keys = ["lat", "lon", "rlat", "rlon", "ratio"]
+    contains_keys = [key not in df.columns for key in dataframe_keys]
+
+    if np.any(contains_keys):
+        raise ValueError(f"Dataframe must contain {dataframe_keys}")
 
     X_distances = np.stack(
         [np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)]
@@ -101,8 +171,14 @@ def rkrig_r(df, indices, n, ds, min_size=30):
 
     xyr = df[["rlon", "rlat", "ratio"]].values
 
-    with tqdm(total=len(indices), position=0, leave=True) as pbar:
-        for i in indices:
+    # used to calculate average at end
+    field = np.ones((ds.rlat.size, ds.rlon.size))
+    field[:] = np.nan
+    # tracks the number of summations in each grid cell
+    nancount = np.zeros(field.shape)
+
+    with tqdm(total=len(df.ratio), position=0, leave=True) as pbar:
+        for i in range(df.ratio.size):
             pbar.update()
             nn = n
 
@@ -113,7 +189,6 @@ def rkrig_r(df, indices, n, ds, min_size=30):
             temp_xyr = xyr[ind[i], :]
 
             latlon = temp_xyr[:, :2]
-            #stats = temp_xyr[:, 2]
             hull = ConvexHull(points=latlon)
 
             while hull.area < dA * min_size ** 2:
@@ -128,17 +203,32 @@ def rkrig_r(df, indices, n, ds, min_size=30):
                 hull = ConvexHull(points=latlon.T)
 
             try:
-                final = krig_at_field(ds, temp_xyr)
-                final_da = da.from_array(final, chunks=(250, 250))
-                Zl.append(final_da)
+                this_field = krig_at_field(ds, temp_xyr)
+                field = np.nansum([field, this_field], axis=0)
+                nancount[~np.isnan(this_field)] += 1
 
             except rpy2.rinterface_lib.embedded.RRuntimeError:
                 continue
 
-        return Zl
+        # taking this fraction computes the mean
+        return field / nancount
 
 
-def krig_at_field(ds, temp_xyr):
+def krig_at_field(
+    ds: xr.Dataset, temp_xyr: NDArray[(Any, 3), float]
+) -> NDArray[(Any, Any), float]:
+    """Matches the output of spytialProcess to the dataset provided
+    and returns a 2D array of the krigged field with same dimensions
+    as the dataset's design value field. This produces individual
+    windows in the moving window algorithm.
+        Args:
+            ds: model xarray dataset
+            temp_xyr: subset of station ratios/station values
+                from which the kriging is calculated. This array
+                must contain [longitudes, latitudes, ratios]
+        Returns:
+            kriged subset field
+    """
 
     xmin, xmax = temp_xyr[:, 0].min(), temp_xyr[:, 0].max()
     ymin, ymax = temp_xyr[:, 1].min(), temp_xyr[:, 1].max()
