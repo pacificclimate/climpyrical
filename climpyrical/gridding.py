@@ -211,8 +211,8 @@ def extend_north(
 
 
 def flatten_coords(
-    x: NDArray[(Any, ), float], y: NDArray[(Any, ), float]
-) -> Tuple[NDArray[(Any, ), float], NDArray[(Any, ), float]]:
+    x: NDArray[(Any,), float], y: NDArray[(Any,), float]
+) -> Tuple[NDArray[(Any,), float], NDArray[(Any,), float]]:
     """Takes the rlat and rlon 1D arrays from the
     NetCDF files for each ensemble member, and creates
     an ordered pairing of each grid cell coordinate in
