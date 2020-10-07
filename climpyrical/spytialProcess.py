@@ -10,7 +10,11 @@ from rpy2 import robjects
 
 import rpy2.robjects.packages as rpackages
 
+# from rpy2.robjects.vectors import StrVector
+
 utils = rpackages.importr("utils")
+utils.install_packages("fields", version="11.3")
+
 
 # utils.chooseCRANmirror(ind=1) # select the first mirror in the list
 
