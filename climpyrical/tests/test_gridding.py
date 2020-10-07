@@ -10,7 +10,6 @@ from climpyrical.gridding import (
     find_nearest_index,
     find_element_wise_nearest_pos,
     find_nearest_index_value,
-    check_regrid_ensemble_inputs,
     regrid_ensemble,
     extend_north,
 )
@@ -59,7 +58,7 @@ xi, yi = ds.rlon.values, ds.rlat.values
 xext_ex, yext_ex = np.tile(xi, yi.size), np.repeat(yi, xi.size)
 xext_bad, yext_bad = np.repeat(xi, yi.size), np.tile(yi, xi.size)
 
-
+"""
 @pytest.mark.parametrize(
     "ds,dv,n,keys,error",
     [
@@ -76,6 +75,7 @@ def test_check_regrid_ensemble_inputs(ds, dv, n, keys, error):
     else:
         with pytest.raises(error):
             check_regrid_ensemble_inputs(ds, dv, n, keys)
+"""
 
 
 @pytest.mark.parametrize(
@@ -212,7 +212,8 @@ def test_check_find_nearest_index_inputs(data, val, error):
 
 
 @pytest.mark.parametrize(
-    "data,val,warning", [(data, 25.0, None), (data, 35.0, UserWarning)],
+    "data,val,warning",
+    [(data, 25.0, None), (data, 35.0, UserWarning)],
 )
 def test_check_find_nearest_index_inputs_warnings(data, val, warning):
     if warning is None:
