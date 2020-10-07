@@ -16,3 +16,8 @@ data/
 notebooks/*.html
 notebooks/map1.geojson
 notebooks/reconstruction_snow.pdf
+.Renviron
+r-library
+dist
+*.egg-info
+build
