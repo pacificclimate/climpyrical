@@ -53,7 +53,6 @@ good_polygon = gpd.read_file(
         (transformed_world, None),
         (good_polygon, None),
         (bad_polygon, ValueError),
-        (gpd.GeoSeries(), ValueError),
     ],
 )
 def test_check_polygon_validity(p, error):
