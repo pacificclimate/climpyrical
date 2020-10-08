@@ -9,7 +9,6 @@ from rpy2.robjects import FloatVector, DataFrame
 from rpy2 import robjects
 
 import rpy2.robjects.packages as rpackages
-from rpy2.robjects.vectors import StrVector
 
 
 utils = rpackages.importr("utils")

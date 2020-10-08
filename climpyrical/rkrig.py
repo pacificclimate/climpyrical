@@ -17,7 +17,9 @@ import pandas as pd
 
 import warnings
 from rpy2.rinterface import RRuntimeWarning
+
 warnings.filterwarnings("ignore", category=RRuntimeWarning)
+
 
 def check_df(df, keys=["lat", "lon", "rlat", "rlon"]):
     contains_keys = [key not in df.columns for key in keys]
@@ -144,7 +146,13 @@ def rkrig_py(
     return z
 
 
-def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, station_dv: str, min_size: int = 30):
+def rkrig_r(
+    df: pd.DataFrame,
+    n: int,
+    ds: xr.Dataset,
+    station_dv: str,
+    min_size: int = 30,
+):
     """Implements climpyricals moving window method.
     Args:
         df: pandas dataframe containing the coordinates in
@@ -162,7 +170,15 @@ def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, station_dv: str, min_size:
         kriged field
     """
 
-    dataframe_keys = ["lat", "lon", "rlat", "rlon", station_dv, "model_vals", "ratio"]
+    dataframe_keys = [
+        "lat",
+        "lon",
+        "rlat",
+        "rlon",
+        station_dv,
+        "model_vals",
+        "ratio",
+    ]
     check_df(df, dataframe_keys)
 
     X_distances = np.stack(
@@ -243,20 +259,16 @@ def krig_at_field(
     latlon = temp_xyr[:, :2].T
     model_vals = temp_xyr[:, 2]
     station_vals = temp_xyr[:, 3]
-    
 
-    start = np.mean(model_vals)/np.mean(station_vals)
-    tol = np.linspace(0.1, start*3, 1000)
+    start = np.mean(model_vals) / np.mean(station_vals)
+    tol = np.linspace(0.1, start * 3, 1000)
 
-    diff = np.array(
-        [np.mean(station_vals - model_vals/t) for t in tol]
-    )
+    diff = np.array([np.mean(station_vals - model_vals / t) for t in tol])
 
     best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
 
-
     # stats = temp_xyr[:, 2]
-    stats = station_vals/(model_vals/best_tol)
+    stats = station_vals / (model_vals / best_tol)
 
     lw, u = (
         find_nearest_index(ds.rlat.values, ymin),
