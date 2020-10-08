@@ -1,0 +1,32 @@
+name: Documentation Check
+
+on: push
+
+jobs:
+  check:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.6'
+    - name: Install dependencies
+      run : |
+        sudo apt-get install -y proj-bin libproj-dev r-base
+        pip install -r requirements.txt
+        pip install .
+        source r_install.sh
+        pip install pdoc3==0.9.1
+    - name: Genereate docs
+      run: |
+        for file in climpyrical/*.py; do pdoc --html -o docs --force $file; done
+    - name: Check for changes
+      run: echo "::set-env name=CHANGES::$( git diff )"
+    - name: Changes detected, run `make docs` to generate new documentation
+      run: exit 1
+      if: env.CHANGES != ''
+    - run: echo "No changes detected"
+      if: env.CHANGES == ''
