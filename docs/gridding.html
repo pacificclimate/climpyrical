@@ -1,0 +1,1590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.1" />
+<title>gridding API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>gridding</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from climpyrical.data import check_valid_data, gen_dataset
+
+import warnings
+import numpy as np
+import xarray as xr
+from scipy.interpolate import NearestNDInterpolator
+from pyproj import Transformer, Proj
+from nptyping import NDArray
+from typing import Any, Tuple
+
+
+def check_ndims(data, n):
+    &#34;&#34;&#34;Checks that a provided array has n dimensions
+    Args:
+        data (np.ndarray): Array to check dimensions of
+        n (integer): data&#39;s expected dimensions
+    Raises:
+        TypeError:
+            If data or n are not arrays or an integer
+        ValueError:
+            If data&#39;s dimension is not expected
+    &#34;&#34;&#34;
+    if not isinstance(data, np.ndarray):
+        raise TypeError(
+            &#34;Provide an array of type {}, received {}&#34;.format(
+                np.ndarray, type(data)
+            )
+        )
+    if not isinstance(n, int):
+        raise TypeError(
+            &#34;Provide a dimension of type {}, received {}&#34;.format(int, type(n))
+        )
+    if data.ndim != n:
+        raise ValueError(
+            &#34;Array has dimensions {}, expected {} dimensions.&#34;.format(
+                data.ndim, n
+            )
+        )
+
+
+def close_range(x, ds, key):
+    &#34;&#34;&#34;Checks that the input coordinates defining the CanRCM4 grid
+    are the expected type,and range of values. Some input coordinates
+    may be interpolated, and so only the extremes of the provided arrays
+    are compared to the original dataset.
+    Args:
+        x (np.ndarray): numpy array of CanRCM4 coordinates
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
+        key (str): &#39;rlon&#39; or &#39;rlat&#39; key in ds we wish to check
+    Raises:
+        ValueError:
+            If x or y are not in expected range of values
+    &#34;&#34;&#34;
+    if (not np.isclose(x.max(), ds[key].max())) or (
+        not np.isclose(x.min(), ds[key].min())
+    ):
+        raise ValueError(
+            &#34;{} dimension array must have min/max values between \
+            {} and {}. Array \
+            provided has values between {} \
+            and {}&#34;.format(
+                key, ds[key].min(), ds[key].max(), x.min(), x.max()
+            )
+        )
+
+
+def check_input_coords(x, y, ds):
+    &#34;&#34;&#34;Checks that the input coordinates defining the CanRCM4 grid
+    are the expected type, dimensions, and range of values.
+    Args:
+        x, y (np.ndarray): numpy arrays of rlon, rlat respectively
+            of CanRCM4 grids
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
+    Raises:
+        ValueError:
+            If dimensions are unexpected
+        TypeError:
+            If numpy array not provided
+        ValueError:
+            If x or y are not in expected range of values
+    &#34;&#34;&#34;
+
+    if (not isinstance(x, np.ndarray)) or (not isinstance(y, np.ndarray)):
+        raise TypeError(
+            &#34;Please provide coordinate objects of type {}&#34;.format(np.ndarray)
+        )
+
+    check_ndims(x, 1)
+    check_ndims(y, 1)
+
+    close_range(x, ds, &#34;rlon&#34;)
+    close_range(y, ds, &#34;rlat&#34;)
+
+
+def regrid_ensemble(
+    ds: xr.Dataset, dv: str, n: int, keys: list = [&#34;rlat&#34;, &#34;rlon&#34;], copy=True
+) -&gt; xr.Dataset:
+    &#34;&#34;&#34;Re-grids a regional model to have n^2 times the
+    native number of grid cells (n times in each axis).
+    This subdivides each grid cell into n equal components
+    in both the x and y dimensions.
+    Args:
+        ds: Dataset to regrid
+        dv: Name of design value key in Dataset
+        n: Number of splits in each dimension (symmetric re-gridding is
+            only supported)
+        keys: Expected keys in dataset
+    Returns:
+        xarray.Dataset similar to original, but regridded n-fold.
+    Raises:
+        TypeError: incorrect input types
+        KeyError: incorrect or unexpected keys in dataset
+        ValueError: if number of dimensions are unexpected, or coordinates
+            are not of expected range
+    &#34;&#34;&#34;
+
+    # calculate the size of each grid cell
+    # see #20 for more information
+
+    xx, yy = np.meshgrid(ds.rlon, ds.rlat)
+
+    dxn = np.diff(ds.rlon.values).mean() / n
+    dyn = np.diff(ds.rlat.values).mean() / n
+
+    dx = np.diff(ds.rlon.values).mean()
+    dy = np.diff(ds.rlat.values).mean()
+
+    # define new boundaries
+    x1 = ds.rlon.min() - dx + dxn
+    x2 = ds.rlon.max() + dx - dxn
+    y1 = ds.rlat.min() - dy + dyn
+    y2 = ds.rlat.max() + dy - dyn
+
+    # define new coordinate arrays
+    new_x = np.linspace(x1, x2, ds.rlon.size * n)
+    new_y = np.linspace(y1, y2, ds.rlat.size * n)
+
+    new_xx, new_yy = np.meshgrid(new_x, new_y)
+
+    if copy:
+        # re-create design value field on newly gridded size
+        # 3D version
+        if &#34;level&#34; in keys:
+            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
+            regridded_ds = gen_dataset(
+                dv, new_ds, new_x, new_y, ds.level.values.astype(int)
+            )
+        # 2D version
+        else:
+            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
+            regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
+    else:
+        # re-create design value field on newly gridded size
+        # 3D version
+        if &#34;level&#34; in keys:
+            new_ds = np.zeros(
+                (ds.level.size, ds.rlat.size * n, ds.rlon.size * n)
+            )
+            regridded_ds = gen_dataset(
+                dv, new_ds, new_x, new_y, ds.level.values.astype(int)
+            )
+        # 2D version
+        else:
+            new_ds = np.zeros((ds.rlat.size * n, ds.rlon.size * n))
+            regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
+
+    return regridded_ds
+
+
+def extend_north(
+    ds: xr.Dataset, dv: str, amount: int, fill_val: float = np.nan
+) -&gt; xr.Dataset:
+    &#34;&#34;&#34;The native CanRCM4 models have not coverage in northern canada. This
+    function extents the top rows of an array so that climpyrical will consider
+    these northern regions.
+    Args:
+        ds: Dataset to extend
+        dv: Name of design value key in Dataset
+        amount: Number of rows at ds&#39;s resolution to add to the north
+        fill_val: What to fill the new rows with
+    Return:
+        xarray Dataset containing extended coordinates and region to the north
+    &#34;&#34;&#34;
+    check_valid_data(ds)
+
+    if not isinstance(amount, int):
+        raise TypeError(
+            f&#34;Please provide an amount of type {int}. Received {type(amount)}&#34;
+        )
+    if amount &lt; 0:
+        raise ValueError(f&#34;amount must be positive.&#34;)
+
+    y = ds[dv].values.shape[0]
+    x = ds[dv].values.shape[1]
+    grid = np.ones((y + amount, x))
+    grid[:] = fill_val
+    grid[:y, :x] = ds[dv].values
+
+    # create new coordinates
+    drlat = np.mean(np.diff(ds.rlat))
+    nrlat = np.linspace(
+        ds.rlat.min(), ds.rlat.max() + amount * drlat, ds.rlat.size + amount
+    )
+    nrlon = ds.rlon.copy()
+
+    new_ds = gen_dataset(dv, grid, nrlon, nrlat)
+
+    return new_ds
+
+
+def flatten_coords(
+    x: NDArray[(Any,), float], y: NDArray[(Any,), float]
+) -&gt; Tuple[NDArray[(Any,), float], NDArray[(Any,), float]]:
+    &#34;&#34;&#34;Takes the rlat and rlon 1D arrays from the
+    NetCDF files for each ensemble member, and creates
+    an ordered pairing of each grid cell coordinate in
+    rotated pole (rlat, rlon).
+
+    Args:
+        x (numpy.ndarray): 1D array containing
+            the locations of the rotated latitude
+            grid cells
+        y (numpy.ndarray): 1D array containing
+            the locations of the rotated longitude
+            grid cells
+    Return:
+        xext, yext (tuple of np.ndarrays):
+            array containing tuples of rlat and
+            rlon for each grid cell in the
+            ensemble size.
+    &#34;&#34;&#34;
+    xext = np.tile(x, y.size)
+    yext = np.repeat(y, x.size)
+
+    return xext, yext
+
+
+def check_transform_coords_inputs(x, y, source_crs, target_crs):
+    &#34;&#34;&#34;Checks the inputs of transform_coords(). Tests assume that
+    the target and source CRS are WGS84 and rotated pole respectively.
+    Args:
+        x,y (numpy.ndarray): array containing
+            latitudes and longitudes of
+            stations in source_crs projection
+        source_crs (dict): source proj4 crs
+        target_crs(dict): destination proj4 crs
+    Raises:
+        TypeError:
+                If input coords are not numpy arrays
+                If crs provided are not dict
+        ValueError:
+                If x and y are not the same size
+                If x and y ranges are outside of the CanRCM4 grid cell
+                    in WGS84
+    &#34;&#34;&#34;
+    if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
+        raise TypeError(f&#34;Please provide an object of type {np.ndarray}&#34;)
+
+    check_ndims(x, 1)
+    check_ndims(y, 1)
+
+    if (not isinstance(source_crs, dict)) or (
+        not isinstance(target_crs, dict)
+    ):
+        raise TypeError(f&#34;Please provide an object of type {dict}&#34;)
+
+    if x.size != y.size:
+        raise ValueError(
+            &#34;x and y must be pairwise station coordinates \
+            and have the same size.&#34;
+        )
+
+
+def transform_coords(
+    x,
+    y,
+    source_crs={&#34;init&#34;: &#34;epsg:4326&#34;},
+    target_crs={
+        &#34;proj&#34;: &#34;ob_tran&#34;,
+        &#34;o_proj&#34;: &#34;longlat&#34;,
+        &#34;lon_0&#34;: -97,
+        &#34;o_lat_p&#34;: 42.5,
+        &#34;a&#34;: 6378137,
+        &#34;to_meter&#34;: 0.0174532925199,
+        &#34;no_defs&#34;: True,
+    },
+):
+    &#34;&#34;&#34;Rotates regular WGS84 coordinates to rotated pole
+    coordinates given a proj4 string that defines
+    the rotated poles. Projection string parameters are defined
+    here: https://proj.org/operations/projections/ob_tran.html
+    Args:
+        x,y (numpy.ndarray): array containing
+            latitudes and longitudes of
+            stations
+        source_crs (dict): proj4 dict defining source coordinates
+            coordinates used.
+    Returns:
+        x,y (tuple): tuple containing the newly rotated
+            coordinates rlon, rlat
+    Raises:
+        TypeError, ValueError in check_transform_coords_inputs
+        TypeError:
+                If input coords are not numpy arrays
+                If crs provided are not dict
+        ValueError:
+                If x and y are not the same shape
+                If x and y ranges are outside of the CanRCM4 grid cell
+                    in WGS84
+    &#34;&#34;&#34;
+    check_transform_coords_inputs(x, y, source_crs, target_crs)
+    p_source = Proj(source_crs)
+    p_target = Proj(target_crs)
+    t = Transformer.from_proj(p_source, p_target)
+
+    return t.transform(x, y)
+
+
+def check_find_nearest_index_inputs(data, val):
+    &#34;&#34;&#34;Checks the inputs for find_nearest_index() for correct
+    datatypem are increasing monotonically, have a size greater than 1, and are
+    located somewhere in the CanRCM4 grid cell bounds.
+    Args:
+        data (np.ndarray): monotonically increasing array of column or
+            rowcoordinates
+        val (float): location of grid cell in x (rlon) or y (rlat) coords
+    Raises:
+        TypeError:
+                If data or val are not the correct type
+        ValueError:
+                If data is not monotonically increasing
+                If size is not greater than 1
+                If val is not within data&#39;s range of values
+    &#34;&#34;&#34;
+    if not isinstance(data, np.ndarray):
+        raise TypeError(f&#34;Please provide a data array of type {np.ndarray}&#34;)
+    check_ndims(data, 1)
+    if np.any(np.diff(data) &lt; 0):
+        raise ValueError(&#34;Array must be monotonically increasing.&#34;)
+    if data.size &lt; 2:
+        raise ValueError(&#34;Array size must be greater than 1&#34;)
+
+    if not isinstance(val, float):
+        raise TypeError(f&#34;Please provide a value of type {float}&#34;)
+
+    if val &gt; data.max() or val &lt; data.min():
+        warnings.warn(
+            f&#34;{val} is outside of array&#39;s domain between {data.min()} and {data.max()}. \
+            A station is outside of the CanRCM4 model grid space.&#34;
+        )
+
+
+def find_nearest_index(data, val):
+    &#34;&#34;&#34;Bisect search algorithm to find a value within a monotonically
+    increasing array
+    Args:
+        data (np.ndarray): monotonically increasing array of column or row
+            coordinates
+        val (float): location of grid cell in x (rlon) or y (rlat) coords
+    Returns:
+        best_ind (integer): index in data of closest data value to val
+    Raises:
+        TypeError, ValueError in check_find_nearest_index_inputs
+        TypeError:
+                If data or val are not the correct type
+        ValueError:
+                If data is not monotonically increasing
+                If size is not greater than 1
+                If val is not within data&#39;s range of values
+    &#34;&#34;&#34;
+    check_find_nearest_index_inputs(data, val)
+    lo, hi = 0, len(data) - 1
+    best_ind = lo
+    while lo &lt;= hi:
+        mid = int(lo + (hi - lo) / 2)
+        if data[mid] &lt; val:
+            lo = mid + 1
+        elif data[mid] &gt; val:
+            hi = mid - 1
+        else:
+            best_ind = mid
+            break
+        # check if data[mid] is closer to val than data[best_ind]
+        if abs(data[mid] - val) &lt; abs(data[best_ind] - val):
+            best_ind = mid
+    return best_ind
+
+
+def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
+    &#34;&#34;&#34;Checks the inputs for find_element_wise_nearest_pos()
+    Args:
+        x, y (np.ndarray): monotonically increasing array of column
+            or rowcoordinates
+        x_obs, y_obs (np.ndarray): observations full of values to find
+            in x and y
+    Raises:
+        TypeError:
+                If any arrays provided are not np.ndarray
+        ValueError:
+                If sizes of x and y or x_obs and y_obs are not the same
+    &#34;&#34;&#34;
+
+    is_ndarray = [
+        isinstance(array, np.ndarray) for array in [x, y, x_obs, y_obs]
+    ]
+    if not np.any(is_ndarray):
+        raise TypeError(f&#34;Please provide data arrays of type {np.ndarray}&#34;)
+    if x.size &lt; 2 or y.size &lt; 2:
+        raise ValueError(
+            f&#34;Must have x and y arrays with a size greater than 1. \
+            Received {x.size} and {y.size} respectively.&#34;
+        )
+
+
+def find_element_wise_nearest_pos(x, y, x_obs, y_obs):
+    &#34;&#34;&#34;Finds the nearest positions in x and y for each value in
+    x_obs and y_obs. x and y should be the rlon and rlat arrays,
+    and the x_obs and y_obs should be the station coordinates in
+    rotated pole coords.
+    Args:
+        x, y (np.ndarray): monotonically increasing array of column
+            or rowcoordinates
+        x_obs, y_obs (np.ndarray): observations full of values to find
+            in x and y
+    Returns:
+        x_i, y_i (array of indices): locations in each coordinate axis
+            of locations in x and y where x_obs and y_obs are respectively
+            closest
+    Raises:
+        TypeError, ValueError in check_find_element_wise_nearest_pos_inputs
+        TypeError:
+                If any arrays provided are not np.ndarray
+        ValueError:
+                If sizes of x and y or x_obs and y_obs are not the same
+                If data is not monotonically increasing
+                If val in x_obs or y_obs is not within
+                    data&#39;s range of values
+                If x or y are not in expected range of values
+    &#34;&#34;&#34;
+    check_ndims(x, 1)
+    check_ndims(y, 1)
+    check_ndims(x_obs, 1)
+    check_ndims(y_obs, 1)
+    check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs)
+    x_i = np.array([find_nearest_index(x, obs) for obs in x_obs])
+    y_i = np.array([find_nearest_index(y, obs) for obs in y_obs])
+    return x_i, y_i
+
+
+def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
+    &#34;&#34;&#34;Checks find_nearest_value() inputs.
+    Args:
+        x, y (np.ndarray): monotonically increasing array of column
+            or rowcoordinates
+        x_i, y_i (np.ndarray): indices in the rlon and rlat arrays
+            of the closest grid to stations
+        field (np.ndarray): 2 dimensional field array containing
+            the CanRCM4 field
+        mask (np.ndarray of bool): 2 dimensional mask array matching field
+            with a boolean mask of accepted values for analyses
+    Raises:
+        ValueError:
+                If field provided is not made of x and y coordinates
+                If field shape and mask shapes are different
+    &#34;&#34;&#34;
+    if (not isinstance(x_i, np.ndarray)) or (not isinstance(y_i, np.ndarray)):
+        raise TypeError(f&#34;Please provide index array of type {np.ndarray}.&#34;)
+    if (not x_i.dtype == np.dtype(&#34;int&#34;)) or (
+        not y_i.dtype == np.dtype(&#34;int&#34;)
+    ):
+        raise ValueError(
+            f&#34;Both index array must contain integers. Received \
+            {x_i.dtype} and {y_i.dtype}&#34;
+        )
+    if (x_i.max() &gt; x.size) or (y_i.max() &gt; y.size):
+        raise ValueError(
+            &#34;Indices in index arrays are larger than coordinate array size. \
+            Received x, y {x_i.max()},{y_i.max()} with sizes \
+            {x.size}, {y.size}.&#34;
+        )
+    # field same shape as xiyi
+    if field.shape != (y.size, x.size):
+        raise ValueError(
+            &#34;Field provided is not consistent with coordinates provided. \
+            Recevied field shape {field.shape}, expected shape \
+            ({y.size},{x.size}})&#34;
+        )
+    # mask same shape as field
+    if field.shape != mask.shape:
+        raise ValueError(
+            &#34;Field and mask are not the same shape. Received field shape \
+            {field.shape} and mask shape {mask.shape}.&#34;
+        )
+
+
+def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
+    &#34;&#34;&#34;Finds the nearest model value to a station location in the CanRCM4
+    grid space
+    Args:
+        x, y (np.ndarrays): monotonically increasing array of column
+            or rowcoordinates
+        x_i, y_i (np.ndarrays): indices in the rlon and rlat arrays
+            of the closest grid to stations
+        field (np.ndarray): 2 dimensional field array containing
+            the CanRCM4 field
+        mask (np.ndarray of bool): 2 dimensional mask array matching field
+            with a boolean mask of accepted values for analyses
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
+    Raises:
+        TypeError, ValueError in check_find_nearest_value_inputs
+        TypeError:
+                If arrays are not of type np.ndarray
+        ValueError:
+                If field provided is not made of x and y coordinates
+                If field shape and mask shapes are different
+                If x and y arrays are not monotonically increasing
+                If x and y arrays do not have expected range
+                If there are indices provided in x_i or y_i outside
+                    of the expected grid space
+                If all values in x_i or y_i are not integers
+    &#34;&#34;&#34;
+    check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
+
+    # find any stations that have a NaN corresponding grid cell
+    nanloc = np.isnan(field[y_i, x_i])
+
+    # combine mask and nan locations in field to
+    # create a master mask of eligible grid cells
+    # for interpolation
+    master_mask = np.logical_and(mask, ~np.isnan(field))
+
+    # if any NaN values found over station values,
+    # perform a nearest neighbour interpolation to get
+    # valid model value at that location
+    if np.any(nanloc):
+        # create grids of rlon and rlat
+        xarr, yarr = np.meshgrid(x, y)
+
+        # flatten coordinates
+        xext, yext = flatten_coords(x, y)
+
+        # arrange the pairs
+        pairs = np.array(list(zip(xext, yext)))
+
+        # create interpolation function for every point
+        # except the locations of the NaN values
+        f = NearestNDInterpolator(
+            pairs[master_mask.flatten()], field[master_mask]
+        )
+
+        # get the rlon and rlat locations of the NaN values
+        x_nan = xarr[y_i, x_i][nanloc]
+        y_nan = yarr[y_i, x_i][nanloc]
+
+        # interpolate a value at the locations of those NaN values
+        nan_pairs = np.array(list(zip(x_nan, y_nan)))
+
+        # replace the field value at NaN locations with the
+        # interpolated values
+        field[y_i[nanloc], x_i[nanloc]] = f(nan_pairs)
+
+    # provide a final array of field values at station locations
+    # including any replaced NaN values if program found it neccessary
+    final = field[y_i, x_i]
+
+    return final</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="gridding.check_find_element_wise_nearest_pos_inputs"><code class="name flex">
+<span>def <span class="ident">check_find_element_wise_nearest_pos_inputs</span></span>(<span>x, y, x_obs, y_obs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks the inputs for find_element_wise_nearest_pos()</p>
+<h2 id="args">Args</h2>
+<p>x, y (np.ndarray): monotonically increasing array of column
+or rowcoordinates
+x_obs, y_obs (np.ndarray): observations full of values to find
+in x and y</p>
+<h2 id="raises">Raises</h2>
+<p>TypeError:
+If any arrays provided are not np.ndarray
+ValueError:
+If sizes of x and y or x_obs and y_obs are not the same</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
+    &#34;&#34;&#34;Checks the inputs for find_element_wise_nearest_pos()
+    Args:
+        x, y (np.ndarray): monotonically increasing array of column
+            or rowcoordinates
+        x_obs, y_obs (np.ndarray): observations full of values to find
+            in x and y
+    Raises:
+        TypeError:
+                If any arrays provided are not np.ndarray
+        ValueError:
+                If sizes of x and y or x_obs and y_obs are not the same
+    &#34;&#34;&#34;
+
+    is_ndarray = [
+        isinstance(array, np.ndarray) for array in [x, y, x_obs, y_obs]
+    ]
+    if not np.any(is_ndarray):
+        raise TypeError(f&#34;Please provide data arrays of type {np.ndarray}&#34;)
+    if x.size &lt; 2 or y.size &lt; 2:
+        raise ValueError(
+            f&#34;Must have x and y arrays with a size greater than 1. \
+            Received {x.size} and {y.size} respectively.&#34;
+        )</code></pre>
+</details>
+</dd>
+<dt id="gridding.check_find_nearest_index_inputs"><code class="name flex">
+<span>def <span class="ident">check_find_nearest_index_inputs</span></span>(<span>data, val)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks the inputs for find_nearest_index() for correct
+datatypem are increasing monotonically, have a size greater than 1, and are
+located somewhere in the CanRCM4 grid cell bounds.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>monotonically increasing array of column or
+rowcoordinates</dd>
+<dt><strong><code>val</code></strong> :&ensp;<code>float</code></dt>
+<dd>location of grid cell in x (rlon) or y (rlat) coords</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<p>TypeError:
+If data or val are not the correct type
+ValueError:
+If data is not monotonically increasing
+If size is not greater than 1
+If val is not within data's range of values</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_find_nearest_index_inputs(data, val):
+    &#34;&#34;&#34;Checks the inputs for find_nearest_index() for correct
+    datatypem are increasing monotonically, have a size greater than 1, and are
+    located somewhere in the CanRCM4 grid cell bounds.
+    Args:
+        data (np.ndarray): monotonically increasing array of column or
+            rowcoordinates
+        val (float): location of grid cell in x (rlon) or y (rlat) coords
+    Raises:
+        TypeError:
+                If data or val are not the correct type
+        ValueError:
+                If data is not monotonically increasing
+                If size is not greater than 1
+                If val is not within data&#39;s range of values
+    &#34;&#34;&#34;
+    if not isinstance(data, np.ndarray):
+        raise TypeError(f&#34;Please provide a data array of type {np.ndarray}&#34;)
+    check_ndims(data, 1)
+    if np.any(np.diff(data) &lt; 0):
+        raise ValueError(&#34;Array must be monotonically increasing.&#34;)
+    if data.size &lt; 2:
+        raise ValueError(&#34;Array size must be greater than 1&#34;)
+
+    if not isinstance(val, float):
+        raise TypeError(f&#34;Please provide a value of type {float}&#34;)
+
+    if val &gt; data.max() or val &lt; data.min():
+        warnings.warn(
+            f&#34;{val} is outside of array&#39;s domain between {data.min()} and {data.max()}. \
+            A station is outside of the CanRCM4 model grid space.&#34;
+        )</code></pre>
+</details>
+</dd>
+<dt id="gridding.check_find_nearest_value_inputs"><code class="name flex">
+<span>def <span class="ident">check_find_nearest_value_inputs</span></span>(<span>x, y, x_i, y_i, field, mask)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks find_nearest_value() inputs.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt>x, y (np.ndarray): monotonically increasing array of column</dt>
+<dt>or rowcoordinates</dt>
+<dt>x_i, y_i (np.ndarray): indices in the rlon and rlat arrays</dt>
+<dt>of the closest grid to stations</dt>
+<dt><strong><code>field</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>2 dimensional field array containing
+the CanRCM4 field</dd>
+<dt><strong><code>mask</code></strong> :&ensp;<code>np.ndarray</code> of <code>bool</code></dt>
+<dd>2 dimensional mask array matching field
+with a boolean mask of accepted values for analyses</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<p>ValueError:
+If field provided is not made of x and y coordinates
+If field shape and mask shapes are different</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
+    &#34;&#34;&#34;Checks find_nearest_value() inputs.
+    Args:
+        x, y (np.ndarray): monotonically increasing array of column
+            or rowcoordinates
+        x_i, y_i (np.ndarray): indices in the rlon and rlat arrays
+            of the closest grid to stations
+        field (np.ndarray): 2 dimensional field array containing
+            the CanRCM4 field
+        mask (np.ndarray of bool): 2 dimensional mask array matching field
+            with a boolean mask of accepted values for analyses
+    Raises:
+        ValueError:
+                If field provided is not made of x and y coordinates
+                If field shape and mask shapes are different
+    &#34;&#34;&#34;
+    if (not isinstance(x_i, np.ndarray)) or (not isinstance(y_i, np.ndarray)):
+        raise TypeError(f&#34;Please provide index array of type {np.ndarray}.&#34;)
+    if (not x_i.dtype == np.dtype(&#34;int&#34;)) or (
+        not y_i.dtype == np.dtype(&#34;int&#34;)
+    ):
+        raise ValueError(
+            f&#34;Both index array must contain integers. Received \
+            {x_i.dtype} and {y_i.dtype}&#34;
+        )
+    if (x_i.max() &gt; x.size) or (y_i.max() &gt; y.size):
+        raise ValueError(
+            &#34;Indices in index arrays are larger than coordinate array size. \
+            Received x, y {x_i.max()},{y_i.max()} with sizes \
+            {x.size}, {y.size}.&#34;
+        )
+    # field same shape as xiyi
+    if field.shape != (y.size, x.size):
+        raise ValueError(
+            &#34;Field provided is not consistent with coordinates provided. \
+            Recevied field shape {field.shape}, expected shape \
+            ({y.size},{x.size}})&#34;
+        )
+    # mask same shape as field
+    if field.shape != mask.shape:
+        raise ValueError(
+            &#34;Field and mask are not the same shape. Received field shape \
+            {field.shape} and mask shape {mask.shape}.&#34;
+        )</code></pre>
+</details>
+</dd>
+<dt id="gridding.check_input_coords"><code class="name flex">
+<span>def <span class="ident">check_input_coords</span></span>(<span>x, y, ds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks that the input coordinates defining the CanRCM4 grid
+are the expected type, dimensions, and range of values.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt>x, y (np.ndarray): numpy arrays of rlon, rlat respectively</dt>
+<dt>of CanRCM4 grids</dt>
+<dt><strong><code>ds</code></strong> :&ensp;<code>xarray.core.dataset.Dataset</code></dt>
+<dd>dataset containing the ensemble for
+checking consistency with ensemble</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<p>ValueError:
+If dimensions are unexpected
+TypeError:
+If numpy array not provided
+ValueError:
+If x or y are not in expected range of values</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_input_coords(x, y, ds):
+    &#34;&#34;&#34;Checks that the input coordinates defining the CanRCM4 grid
+    are the expected type, dimensions, and range of values.
+    Args:
+        x, y (np.ndarray): numpy arrays of rlon, rlat respectively
+            of CanRCM4 grids
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
+    Raises:
+        ValueError:
+            If dimensions are unexpected
+        TypeError:
+            If numpy array not provided
+        ValueError:
+            If x or y are not in expected range of values
+    &#34;&#34;&#34;
+
+    if (not isinstance(x, np.ndarray)) or (not isinstance(y, np.ndarray)):
+        raise TypeError(
+            &#34;Please provide coordinate objects of type {}&#34;.format(np.ndarray)
+        )
+
+    check_ndims(x, 1)
+    check_ndims(y, 1)
+
+    close_range(x, ds, &#34;rlon&#34;)
+    close_range(y, ds, &#34;rlat&#34;)</code></pre>
+</details>
+</dd>
+<dt id="gridding.check_ndims"><code class="name flex">
+<span>def <span class="ident">check_ndims</span></span>(<span>data, n)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks that a provided array has n dimensions</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>Array to check dimensions of</dd>
+<dt><strong><code>n</code></strong> :&ensp;<code>integer</code></dt>
+<dd>data's expected dimensions</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<p>TypeError:
+If data or n are not arrays or an integer
+ValueError:
+If data's dimension is not expected</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_ndims(data, n):
+    &#34;&#34;&#34;Checks that a provided array has n dimensions
+    Args:
+        data (np.ndarray): Array to check dimensions of
+        n (integer): data&#39;s expected dimensions
+    Raises:
+        TypeError:
+            If data or n are not arrays or an integer
+        ValueError:
+            If data&#39;s dimension is not expected
+    &#34;&#34;&#34;
+    if not isinstance(data, np.ndarray):
+        raise TypeError(
+            &#34;Provide an array of type {}, received {}&#34;.format(
+                np.ndarray, type(data)
+            )
+        )
+    if not isinstance(n, int):
+        raise TypeError(
+            &#34;Provide a dimension of type {}, received {}&#34;.format(int, type(n))
+        )
+    if data.ndim != n:
+        raise ValueError(
+            &#34;Array has dimensions {}, expected {} dimensions.&#34;.format(
+                data.ndim, n
+            )
+        )</code></pre>
+</details>
+</dd>
+<dt id="gridding.check_transform_coords_inputs"><code class="name flex">
+<span>def <span class="ident">check_transform_coords_inputs</span></span>(<span>x, y, source_crs, target_crs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks the inputs of transform_coords(). Tests assume that
+the target and source CRS are WGS84 and rotated pole respectively.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt>x,y (numpy.ndarray): array containing</dt>
+<dt>latitudes and longitudes of</dt>
+<dt>stations in source_crs projection</dt>
+<dt><strong><code>source_crs</code></strong> :&ensp;<code>dict</code></dt>
+<dd>source proj4 crs</dd>
+</dl>
+<p>target_crs(dict): destination proj4 crs</p>
+<h2 id="raises">Raises</h2>
+<p>TypeError:
+If input coords are not numpy arrays
+If crs provided are not dict
+ValueError:
+If x and y are not the same size
+If x and y ranges are outside of the CanRCM4 grid cell
+in WGS84</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_transform_coords_inputs(x, y, source_crs, target_crs):
+    &#34;&#34;&#34;Checks the inputs of transform_coords(). Tests assume that
+    the target and source CRS are WGS84 and rotated pole respectively.
+    Args:
+        x,y (numpy.ndarray): array containing
+            latitudes and longitudes of
+            stations in source_crs projection
+        source_crs (dict): source proj4 crs
+        target_crs(dict): destination proj4 crs
+    Raises:
+        TypeError:
+                If input coords are not numpy arrays
+                If crs provided are not dict
+        ValueError:
+                If x and y are not the same size
+                If x and y ranges are outside of the CanRCM4 grid cell
+                    in WGS84
+    &#34;&#34;&#34;
+    if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
+        raise TypeError(f&#34;Please provide an object of type {np.ndarray}&#34;)
+
+    check_ndims(x, 1)
+    check_ndims(y, 1)
+
+    if (not isinstance(source_crs, dict)) or (
+        not isinstance(target_crs, dict)
+    ):
+        raise TypeError(f&#34;Please provide an object of type {dict}&#34;)
+
+    if x.size != y.size:
+        raise ValueError(
+            &#34;x and y must be pairwise station coordinates \
+            and have the same size.&#34;
+        )</code></pre>
+</details>
+</dd>
+<dt id="gridding.close_range"><code class="name flex">
+<span>def <span class="ident">close_range</span></span>(<span>x, ds, key)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Checks that the input coordinates defining the CanRCM4 grid
+are the expected type,and range of values. Some input coordinates
+may be interpolated, and so only the extremes of the provided arrays
+are compared to the original dataset.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>x</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>numpy array of CanRCM4 coordinates</dd>
+<dt><strong><code>ds</code></strong> :&ensp;<code>xarray.core.dataset.Dataset</code></dt>
+<dd>dataset containing the ensemble for
+checking consistency with ensemble</dd>
+<dt><strong><code>key</code></strong> :&ensp;<code>str</code></dt>
+<dd>'rlon' or 'rlat' key in ds we wish to check</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<p>ValueError:
+If x or y are not in expected range of values</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def close_range(x, ds, key):
+    &#34;&#34;&#34;Checks that the input coordinates defining the CanRCM4 grid
+    are the expected type,and range of values. Some input coordinates
+    may be interpolated, and so only the extremes of the provided arrays
+    are compared to the original dataset.
+    Args:
+        x (np.ndarray): numpy array of CanRCM4 coordinates
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
+        key (str): &#39;rlon&#39; or &#39;rlat&#39; key in ds we wish to check
+    Raises:
+        ValueError:
+            If x or y are not in expected range of values
+    &#34;&#34;&#34;
+    if (not np.isclose(x.max(), ds[key].max())) or (
+        not np.isclose(x.min(), ds[key].min())
+    ):
+        raise ValueError(
+            &#34;{} dimension array must have min/max values between \
+            {} and {}. Array \
+            provided has values between {} \
+            and {}&#34;.format(
+                key, ds[key].min(), ds[key].max(), x.min(), x.max()
+            )
+        )</code></pre>
+</details>
+</dd>
+<dt id="gridding.extend_north"><code class="name flex">
+<span>def <span class="ident">extend_north</span></span>(<span>ds: xarray.core.dataset.Dataset, dv: str, amount: int, fill_val: float = nan) ‑> xarray.core.dataset.Dataset</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The native CanRCM4 models have not coverage in northern canada. This
+function extents the top rows of an array so that climpyrical will consider
+these northern regions.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>ds</code></strong></dt>
+<dd>Dataset to extend</dd>
+<dt><strong><code>dv</code></strong></dt>
+<dd>Name of design value key in Dataset</dd>
+<dt><strong><code>amount</code></strong></dt>
+<dd>Number of rows at ds's resolution to add to the north</dd>
+<dt><strong><code>fill_val</code></strong></dt>
+<dd>What to fill the new rows with</dd>
+</dl>
+<h2 id="return">Return</h2>
+<p>xarray Dataset containing extended coordinates and region to the north</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extend_north(
+    ds: xr.Dataset, dv: str, amount: int, fill_val: float = np.nan
+) -&gt; xr.Dataset:
+    &#34;&#34;&#34;The native CanRCM4 models have not coverage in northern canada. This
+    function extents the top rows of an array so that climpyrical will consider
+    these northern regions.
+    Args:
+        ds: Dataset to extend
+        dv: Name of design value key in Dataset
+        amount: Number of rows at ds&#39;s resolution to add to the north
+        fill_val: What to fill the new rows with
+    Return:
+        xarray Dataset containing extended coordinates and region to the north
+    &#34;&#34;&#34;
+    check_valid_data(ds)
+
+    if not isinstance(amount, int):
+        raise TypeError(
+            f&#34;Please provide an amount of type {int}. Received {type(amount)}&#34;
+        )
+    if amount &lt; 0:
+        raise ValueError(f&#34;amount must be positive.&#34;)
+
+    y = ds[dv].values.shape[0]
+    x = ds[dv].values.shape[1]
+    grid = np.ones((y + amount, x))
+    grid[:] = fill_val
+    grid[:y, :x] = ds[dv].values
+
+    # create new coordinates
+    drlat = np.mean(np.diff(ds.rlat))
+    nrlat = np.linspace(
+        ds.rlat.min(), ds.rlat.max() + amount * drlat, ds.rlat.size + amount
+    )
+    nrlon = ds.rlon.copy()
+
+    new_ds = gen_dataset(dv, grid, nrlon, nrlat)
+
+    return new_ds</code></pre>
+</details>
+</dd>
+<dt id="gridding.find_element_wise_nearest_pos"><code class="name flex">
+<span>def <span class="ident">find_element_wise_nearest_pos</span></span>(<span>x, y, x_obs, y_obs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Finds the nearest positions in x and y for each value in
+x_obs and y_obs. x and y should be the rlon and rlat arrays,
+and the x_obs and y_obs should be the station coordinates in
+rotated pole coords.</p>
+<h2 id="args">Args</h2>
+<p>x, y (np.ndarray): monotonically increasing array of column
+or rowcoordinates
+x_obs, y_obs (np.ndarray): observations full of values to find
+in x and y</p>
+<h2 id="returns">Returns</h2>
+<p>x_i, y_i (array of indices): locations in each coordinate axis
+of locations in x and y where x_obs and y_obs are respectively
+closest</p>
+<h2 id="raises">Raises</h2>
+<p>TypeError, ValueError in check_find_element_wise_nearest_pos_inputs
+TypeError:
+If any arrays provided are not np.ndarray
+ValueError:
+If sizes of x and y or x_obs and y_obs are not the same
+If data is not monotonically increasing
+If val in x_obs or y_obs is not within
+data's range of values
+If x or y are not in expected range of values</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def find_element_wise_nearest_pos(x, y, x_obs, y_obs):
+    &#34;&#34;&#34;Finds the nearest positions in x and y for each value in
+    x_obs and y_obs. x and y should be the rlon and rlat arrays,
+    and the x_obs and y_obs should be the station coordinates in
+    rotated pole coords.
+    Args:
+        x, y (np.ndarray): monotonically increasing array of column
+            or rowcoordinates
+        x_obs, y_obs (np.ndarray): observations full of values to find
+            in x and y
+    Returns:
+        x_i, y_i (array of indices): locations in each coordinate axis
+            of locations in x and y where x_obs and y_obs are respectively
+            closest
+    Raises:
+        TypeError, ValueError in check_find_element_wise_nearest_pos_inputs
+        TypeError:
+                If any arrays provided are not np.ndarray
+        ValueError:
+                If sizes of x and y or x_obs and y_obs are not the same
+                If data is not monotonically increasing
+                If val in x_obs or y_obs is not within
+                    data&#39;s range of values
+                If x or y are not in expected range of values
+    &#34;&#34;&#34;
+    check_ndims(x, 1)
+    check_ndims(y, 1)
+    check_ndims(x_obs, 1)
+    check_ndims(y_obs, 1)
+    check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs)
+    x_i = np.array([find_nearest_index(x, obs) for obs in x_obs])
+    y_i = np.array([find_nearest_index(y, obs) for obs in y_obs])
+    return x_i, y_i</code></pre>
+</details>
+</dd>
+<dt id="gridding.find_nearest_index"><code class="name flex">
+<span>def <span class="ident">find_nearest_index</span></span>(<span>data, val)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Bisect search algorithm to find a value within a monotonically
+increasing array</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>monotonically increasing array of column or row
+coordinates</dd>
+<dt><strong><code>val</code></strong> :&ensp;<code>float</code></dt>
+<dd>location of grid cell in x (rlon) or y (rlat) coords</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>best_ind (integer): index in data of closest data value to val</p>
+<h2 id="raises">Raises</h2>
+<p>TypeError, ValueError in check_find_nearest_index_inputs
+TypeError:
+If data or val are not the correct type
+ValueError:
+If data is not monotonically increasing
+If size is not greater than 1
+If val is not within data's range of values</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def find_nearest_index(data, val):
+    &#34;&#34;&#34;Bisect search algorithm to find a value within a monotonically
+    increasing array
+    Args:
+        data (np.ndarray): monotonically increasing array of column or row
+            coordinates
+        val (float): location of grid cell in x (rlon) or y (rlat) coords
+    Returns:
+        best_ind (integer): index in data of closest data value to val
+    Raises:
+        TypeError, ValueError in check_find_nearest_index_inputs
+        TypeError:
+                If data or val are not the correct type
+        ValueError:
+                If data is not monotonically increasing
+                If size is not greater than 1
+                If val is not within data&#39;s range of values
+    &#34;&#34;&#34;
+    check_find_nearest_index_inputs(data, val)
+    lo, hi = 0, len(data) - 1
+    best_ind = lo
+    while lo &lt;= hi:
+        mid = int(lo + (hi - lo) / 2)
+        if data[mid] &lt; val:
+            lo = mid + 1
+        elif data[mid] &gt; val:
+            hi = mid - 1
+        else:
+            best_ind = mid
+            break
+        # check if data[mid] is closer to val than data[best_ind]
+        if abs(data[mid] - val) &lt; abs(data[best_ind] - val):
+            best_ind = mid
+    return best_ind</code></pre>
+</details>
+</dd>
+<dt id="gridding.find_nearest_index_value"><code class="name flex">
+<span>def <span class="ident">find_nearest_index_value</span></span>(<span>x, y, x_i, y_i, field, mask, ds)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Finds the nearest model value to a station location in the CanRCM4
+grid space</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt>x, y (np.ndarrays): monotonically increasing array of column</dt>
+<dt>or rowcoordinates</dt>
+<dt>x_i, y_i (np.ndarrays): indices in the rlon and rlat arrays</dt>
+<dt>of the closest grid to stations</dt>
+<dt><strong><code>field</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>2 dimensional field array containing
+the CanRCM4 field</dd>
+<dt><strong><code>mask</code></strong> :&ensp;<code>np.ndarray</code> of <code>bool</code></dt>
+<dd>2 dimensional mask array matching field
+with a boolean mask of accepted values for analyses</dd>
+<dt><strong><code>ds</code></strong> :&ensp;<code>xarray.core.dataset.Dataset</code></dt>
+<dd>dataset containing the ensemble for
+checking consistency with ensemble</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<p>TypeError, ValueError in check_find_nearest_value_inputs
+TypeError:
+If arrays are not of type np.ndarray
+ValueError:
+If field provided is not made of x and y coordinates
+If field shape and mask shapes are different
+If x and y arrays are not monotonically increasing
+If x and y arrays do not have expected range
+If there are indices provided in x_i or y_i outside
+of the expected grid space
+If all values in x_i or y_i are not integers</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
+    &#34;&#34;&#34;Finds the nearest model value to a station location in the CanRCM4
+    grid space
+    Args:
+        x, y (np.ndarrays): monotonically increasing array of column
+            or rowcoordinates
+        x_i, y_i (np.ndarrays): indices in the rlon and rlat arrays
+            of the closest grid to stations
+        field (np.ndarray): 2 dimensional field array containing
+            the CanRCM4 field
+        mask (np.ndarray of bool): 2 dimensional mask array matching field
+            with a boolean mask of accepted values for analyses
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
+    Raises:
+        TypeError, ValueError in check_find_nearest_value_inputs
+        TypeError:
+                If arrays are not of type np.ndarray
+        ValueError:
+                If field provided is not made of x and y coordinates
+                If field shape and mask shapes are different
+                If x and y arrays are not monotonically increasing
+                If x and y arrays do not have expected range
+                If there are indices provided in x_i or y_i outside
+                    of the expected grid space
+                If all values in x_i or y_i are not integers
+    &#34;&#34;&#34;
+    check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
+
+    # find any stations that have a NaN corresponding grid cell
+    nanloc = np.isnan(field[y_i, x_i])
+
+    # combine mask and nan locations in field to
+    # create a master mask of eligible grid cells
+    # for interpolation
+    master_mask = np.logical_and(mask, ~np.isnan(field))
+
+    # if any NaN values found over station values,
+    # perform a nearest neighbour interpolation to get
+    # valid model value at that location
+    if np.any(nanloc):
+        # create grids of rlon and rlat
+        xarr, yarr = np.meshgrid(x, y)
+
+        # flatten coordinates
+        xext, yext = flatten_coords(x, y)
+
+        # arrange the pairs
+        pairs = np.array(list(zip(xext, yext)))
+
+        # create interpolation function for every point
+        # except the locations of the NaN values
+        f = NearestNDInterpolator(
+            pairs[master_mask.flatten()], field[master_mask]
+        )
+
+        # get the rlon and rlat locations of the NaN values
+        x_nan = xarr[y_i, x_i][nanloc]
+        y_nan = yarr[y_i, x_i][nanloc]
+
+        # interpolate a value at the locations of those NaN values
+        nan_pairs = np.array(list(zip(x_nan, y_nan)))
+
+        # replace the field value at NaN locations with the
+        # interpolated values
+        field[y_i[nanloc], x_i[nanloc]] = f(nan_pairs)
+
+    # provide a final array of field values at station locations
+    # including any replaced NaN values if program found it neccessary
+    final = field[y_i, x_i]
+
+    return final</code></pre>
+</details>
+</dd>
+<dt id="gridding.flatten_coords"><code class="name flex">
+<span>def <span class="ident">flatten_coords</span></span>(<span>x: nptyping.types._ndarray.NDArray, y: nptyping.types._ndarray.NDArray) ‑> Tuple[nptypes._ndarray.NDArray, nptypes._ndarray.NDArray]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Takes the rlat and rlon 1D arrays from the
+NetCDF files for each ensemble member, and creates
+an ordered pairing of each grid cell coordinate in
+rotated pole (rlat, rlon).</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>x</code></strong> :&ensp;<code>numpy.ndarray</code></dt>
+<dd>1D array containing
+the locations of the rotated latitude
+grid cells</dd>
+<dt><strong><code>y</code></strong> :&ensp;<code>numpy.ndarray</code></dt>
+<dd>1D array containing
+the locations of the rotated longitude
+grid cells</dd>
+</dl>
+<h2 id="return">Return</h2>
+<p>xext, yext (tuple of np.ndarrays):
+array containing tuples of rlat and
+rlon for each grid cell in the
+ensemble size.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def flatten_coords(
+    x: NDArray[(Any,), float], y: NDArray[(Any,), float]
+) -&gt; Tuple[NDArray[(Any,), float], NDArray[(Any,), float]]:
+    &#34;&#34;&#34;Takes the rlat and rlon 1D arrays from the
+    NetCDF files for each ensemble member, and creates
+    an ordered pairing of each grid cell coordinate in
+    rotated pole (rlat, rlon).
+
+    Args:
+        x (numpy.ndarray): 1D array containing
+            the locations of the rotated latitude
+            grid cells
+        y (numpy.ndarray): 1D array containing
+            the locations of the rotated longitude
+            grid cells
+    Return:
+        xext, yext (tuple of np.ndarrays):
+            array containing tuples of rlat and
+            rlon for each grid cell in the
+            ensemble size.
+    &#34;&#34;&#34;
+    xext = np.tile(x, y.size)
+    yext = np.repeat(y, x.size)
+
+    return xext, yext</code></pre>
+</details>
+</dd>
+<dt id="gridding.regrid_ensemble"><code class="name flex">
+<span>def <span class="ident">regrid_ensemble</span></span>(<span>ds: xarray.core.dataset.Dataset, dv: str, n: int, keys: list = ['rlat', 'rlon'], copy=True) ‑> xarray.core.dataset.Dataset</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Re-grids a regional model to have n^2 times the
+native number of grid cells (n times in each axis).
+This subdivides each grid cell into n equal components
+in both the x and y dimensions.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>ds</code></strong></dt>
+<dd>Dataset to regrid</dd>
+<dt><strong><code>dv</code></strong></dt>
+<dd>Name of design value key in Dataset</dd>
+<dt><strong><code>n</code></strong></dt>
+<dd>Number of splits in each dimension (symmetric re-gridding is
+only supported)</dd>
+<dt><strong><code>keys</code></strong></dt>
+<dd>Expected keys in dataset</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>xarray.Dataset similar to original, but regridded n-fold.</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>TypeError</code></dt>
+<dd>incorrect input types</dd>
+<dt><code>KeyError</code></dt>
+<dd>incorrect or unexpected keys in dataset</dd>
+<dt><code>ValueError</code></dt>
+<dd>if number of dimensions are unexpected, or coordinates
+are not of expected range</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def regrid_ensemble(
+    ds: xr.Dataset, dv: str, n: int, keys: list = [&#34;rlat&#34;, &#34;rlon&#34;], copy=True
+) -&gt; xr.Dataset:
+    &#34;&#34;&#34;Re-grids a regional model to have n^2 times the
+    native number of grid cells (n times in each axis).
+    This subdivides each grid cell into n equal components
+    in both the x and y dimensions.
+    Args:
+        ds: Dataset to regrid
+        dv: Name of design value key in Dataset
+        n: Number of splits in each dimension (symmetric re-gridding is
+            only supported)
+        keys: Expected keys in dataset
+    Returns:
+        xarray.Dataset similar to original, but regridded n-fold.
+    Raises:
+        TypeError: incorrect input types
+        KeyError: incorrect or unexpected keys in dataset
+        ValueError: if number of dimensions are unexpected, or coordinates
+            are not of expected range
+    &#34;&#34;&#34;
+
+    # calculate the size of each grid cell
+    # see #20 for more information
+
+    xx, yy = np.meshgrid(ds.rlon, ds.rlat)
+
+    dxn = np.diff(ds.rlon.values).mean() / n
+    dyn = np.diff(ds.rlat.values).mean() / n
+
+    dx = np.diff(ds.rlon.values).mean()
+    dy = np.diff(ds.rlat.values).mean()
+
+    # define new boundaries
+    x1 = ds.rlon.min() - dx + dxn
+    x2 = ds.rlon.max() + dx - dxn
+    y1 = ds.rlat.min() - dy + dyn
+    y2 = ds.rlat.max() + dy - dyn
+
+    # define new coordinate arrays
+    new_x = np.linspace(x1, x2, ds.rlon.size * n)
+    new_y = np.linspace(y1, y2, ds.rlat.size * n)
+
+    new_xx, new_yy = np.meshgrid(new_x, new_y)
+
+    if copy:
+        # re-create design value field on newly gridded size
+        # 3D version
+        if &#34;level&#34; in keys:
+            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
+            regridded_ds = gen_dataset(
+                dv, new_ds, new_x, new_y, ds.level.values.astype(int)
+            )
+        # 2D version
+        else:
+            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
+            regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
+    else:
+        # re-create design value field on newly gridded size
+        # 3D version
+        if &#34;level&#34; in keys:
+            new_ds = np.zeros(
+                (ds.level.size, ds.rlat.size * n, ds.rlon.size * n)
+            )
+            regridded_ds = gen_dataset(
+                dv, new_ds, new_x, new_y, ds.level.values.astype(int)
+            )
+        # 2D version
+        else:
+            new_ds = np.zeros((ds.rlat.size * n, ds.rlon.size * n))
+            regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
+
+    return regridded_ds</code></pre>
+</details>
+</dd>
+<dt id="gridding.transform_coords"><code class="name flex">
+<span>def <span class="ident">transform_coords</span></span>(<span>x, y, source_crs={'init': 'epsg:4326'}, target_crs={'proj': 'ob_tran', 'o_proj': 'longlat', 'lon_0': -97, 'o_lat_p': 42.5, 'a': 6378137, 'to_meter': 0.0174532925199, 'no_defs': True})</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Rotates regular WGS84 coordinates to rotated pole
+coordinates given a proj4 string that defines
+the rotated poles. Projection string parameters are defined
+here: <a href="https://proj.org/operations/projections/ob_tran.html">https://proj.org/operations/projections/ob_tran.html</a></p>
+<h2 id="args">Args</h2>
+<dl>
+<dt>x,y (numpy.ndarray): array containing</dt>
+<dt>latitudes and longitudes of</dt>
+<dt>stations</dt>
+<dt><strong><code>source_crs</code></strong> :&ensp;<code>dict</code></dt>
+<dd>proj4 dict defining source coordinates
+coordinates used.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>x,y (tuple): tuple containing the newly rotated
+coordinates rlon, rlat</p>
+<h2 id="raises">Raises</h2>
+<p>TypeError, ValueError in check_transform_coords_inputs
+TypeError:
+If input coords are not numpy arrays
+If crs provided are not dict
+ValueError:
+If x and y are not the same shape
+If x and y ranges are outside of the CanRCM4 grid cell
+in WGS84</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def transform_coords(
+    x,
+    y,
+    source_crs={&#34;init&#34;: &#34;epsg:4326&#34;},
+    target_crs={
+        &#34;proj&#34;: &#34;ob_tran&#34;,
+        &#34;o_proj&#34;: &#34;longlat&#34;,
+        &#34;lon_0&#34;: -97,
+        &#34;o_lat_p&#34;: 42.5,
+        &#34;a&#34;: 6378137,
+        &#34;to_meter&#34;: 0.0174532925199,
+        &#34;no_defs&#34;: True,
+    },
+):
+    &#34;&#34;&#34;Rotates regular WGS84 coordinates to rotated pole
+    coordinates given a proj4 string that defines
+    the rotated poles. Projection string parameters are defined
+    here: https://proj.org/operations/projections/ob_tran.html
+    Args:
+        x,y (numpy.ndarray): array containing
+            latitudes and longitudes of
+            stations
+        source_crs (dict): proj4 dict defining source coordinates
+            coordinates used.
+    Returns:
+        x,y (tuple): tuple containing the newly rotated
+            coordinates rlon, rlat
+    Raises:
+        TypeError, ValueError in check_transform_coords_inputs
+        TypeError:
+                If input coords are not numpy arrays
+                If crs provided are not dict
+        ValueError:
+                If x and y are not the same shape
+                If x and y ranges are outside of the CanRCM4 grid cell
+                    in WGS84
+    &#34;&#34;&#34;
+    check_transform_coords_inputs(x, y, source_crs, target_crs)
+    p_source = Proj(source_crs)
+    p_target = Proj(target_crs)
+    t = Transformer.from_proj(p_source, p_target)
+
+    return t.transform(x, y)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="gridding.check_find_element_wise_nearest_pos_inputs" href="#gridding.check_find_element_wise_nearest_pos_inputs">check_find_element_wise_nearest_pos_inputs</a></code></li>
+<li><code><a title="gridding.check_find_nearest_index_inputs" href="#gridding.check_find_nearest_index_inputs">check_find_nearest_index_inputs</a></code></li>
+<li><code><a title="gridding.check_find_nearest_value_inputs" href="#gridding.check_find_nearest_value_inputs">check_find_nearest_value_inputs</a></code></li>
+<li><code><a title="gridding.check_input_coords" href="#gridding.check_input_coords">check_input_coords</a></code></li>
+<li><code><a title="gridding.check_ndims" href="#gridding.check_ndims">check_ndims</a></code></li>
+<li><code><a title="gridding.check_transform_coords_inputs" href="#gridding.check_transform_coords_inputs">check_transform_coords_inputs</a></code></li>
+<li><code><a title="gridding.close_range" href="#gridding.close_range">close_range</a></code></li>
+<li><code><a title="gridding.extend_north" href="#gridding.extend_north">extend_north</a></code></li>
+<li><code><a title="gridding.find_element_wise_nearest_pos" href="#gridding.find_element_wise_nearest_pos">find_element_wise_nearest_pos</a></code></li>
+<li><code><a title="gridding.find_nearest_index" href="#gridding.find_nearest_index">find_nearest_index</a></code></li>
+<li><code><a title="gridding.find_nearest_index_value" href="#gridding.find_nearest_index_value">find_nearest_index_value</a></code></li>
+<li><code><a title="gridding.flatten_coords" href="#gridding.flatten_coords">flatten_coords</a></code></li>
+<li><code><a title="gridding.regrid_ensemble" href="#gridding.regrid_ensemble">regrid_ensemble</a></code></li>
+<li><code><a title="gridding.transform_coords" href="#gridding.transform_coords">transform_coords</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+</footer>
+</body>
+</html>
