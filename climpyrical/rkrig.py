@@ -10,10 +10,16 @@ from tqdm import tqdm
 
 from scipy.spatial import ConvexHull
 import rpy2
-
+import scipy
 
 import numpy as np
 import pandas as pd
+
+
+def check_df(df, keys=["lat", "lon", "rlat", "rlon"]):
+    contains_keys = [key not in df.columns for key in keys]
+    if np.any(contains_keys):
+        raise KeyError(f"Dataframe must contain {keys}")
 
 
 def krigit_north(
@@ -35,13 +41,11 @@ def krigit_north(
         Returns:
             field: kriged field for the north
     """
+
+    dataframe_keys = ["lat", "lon", "rlat", "rlon", station_dv]
+    check_df(df, dataframe_keys)
+
     df = df[["lat", "lon", "rlat", "rlon", station_dv]]
-
-    dataframe_keys = ["lat", "lon", "rlat", "rlon"]
-    contains_keys = [key not in df.columns for key in dataframe_keys]
-
-    if np.any(contains_keys):
-        raise ValueError(f"Dataframe must contain {dataframe_keys}")
 
     regular_points = np.stack([np.deg2rad(df.lat), np.deg2rad(df.lon)]).T
 
@@ -100,7 +104,9 @@ def rkrig_py(
     """User has the option of kriging using a Python backend
     instead of using R's fields package. PyKrige has a moving
     window implementation, however, the exacts and parameterization
-    is more obscured.
+    is more obscured. Note that the exponentional variogram
+    function for PyKrige is different from spatialProcess in R, and
+    so identical results should not be expected.
         Args:
             df: pandas dataframe containing the coordinates in
                 both regular and roated, as well as the station
@@ -117,10 +123,7 @@ def rkrig_py(
     """
 
     dataframe_keys = ["lat", "lon", "rlat", "rlon", station_dv]
-    contains_keys = [key not in df.columns for key in dataframe_keys]
-
-    if np.any(contains_keys):
-        raise ValueError(f"Dataframe must contain {dataframe_keys}")
+    check_df(df, dataframe_keys)
 
     df = df[["lat", "lon", "rlat", "rlon", station_dv]]
 
@@ -128,7 +131,7 @@ def rkrig_py(
         df.rlon,
         df.rlat,
         df[station_dv],
-        exact_values,
+        exact_values=exact_values,
         variogram_function="exponential",
     )
     z, ss = ok.execute(
@@ -157,10 +160,7 @@ def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
     """
 
     dataframe_keys = ["lat", "lon", "rlat", "rlon", "ratio"]
-    contains_keys = [key not in df.columns for key in dataframe_keys]
-
-    if np.any(contains_keys):
-        raise ValueError(f"Dataframe must contain {dataframe_keys}")
+    check_df(df, dataframe_keys)
 
     X_distances = np.stack(
         [np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)]
@@ -189,18 +189,22 @@ def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
             temp_xyr = xyr[ind[i], :]
 
             latlon = temp_xyr[:, :2]
-            hull = ConvexHull(points=latlon)
 
-            while hull.area < dA * min_size ** 2:
-                nn += 1
-                nbrs = NearestNeighbors(
-                    n_neighbors=nn, metric="haversine"
-                ).fit(X_distances.T)
-                dist, ind = nbrs.kneighbors(X_distances.T)
+            try:
+                hull = ConvexHull(points=latlon)
 
-                temp_xyr = xyr[ind[i], :]
-                latlon = temp_xyr[:, :2]
-                hull = ConvexHull(points=latlon.T)
+                while hull.area < dA * min_size ** 2:
+                    nn += 1
+                    nbrs = NearestNeighbors(
+                        n_neighbors=nn, metric="haversine"
+                    ).fit(X_distances.T)
+                    dist, ind = nbrs.kneighbors(X_distances.T)
+
+                    temp_xyr = xyr[ind[i], :]
+                    latlon = temp_xyr[:, :2]
+                    hull = ConvexHull(points=latlon.T)
+            except scipy.spatial.qhull.QhullError:
+                continue
 
             try:
                 this_field = krig_at_field(ds, temp_xyr)
