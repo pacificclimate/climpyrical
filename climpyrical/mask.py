@@ -48,14 +48,6 @@ def check_polygon_before_projection(
                      Other transformations are experimental and have not been tested."
                 )
             )
-    elif "init" in p.crs.to_dict().keys():
-        if p.crs.to_dict()["init"] != "epsg:4326":
-            warnings.warn(
-                UserWarning(
-                    f"Polygon provided is in unexpected projection. Expected epsg:4326.\
-                     Other transformations are experimental and have not been tested."
-                )
-            )
     else:
         warnings.warn(
             UserWarning(
