@@ -10,10 +10,10 @@ from climpyrical.gridding import (
     find_nearest_index,
     find_element_wise_nearest_pos,
     find_nearest_index_value,
-    check_regrid_ensemble_inputs,
     regrid_ensemble,
+    extend_north,
 )
-from climpyrical.datacube import read_data
+from climpyrical.data import read_data, gen_dataset
 import pytest
 from pkg_resources import resource_filename
 import numpy as np
@@ -41,11 +41,15 @@ def test_check_ndims(data, n, error):
 
 # load example ensemble dataset for testing
 dv = "Rain-RL50"
-ds = read_data(resource_filename("climpyrical", "tests/data/snw_test_ensemble.nc"), dv)
+ds = read_data(
+    resource_filename("climpyrical", "tests/data/snw_test_ensemble.nc")
+)
 
 ds_mean = ds.mean(dim="level")
 ds_regridded_proper = read_data(
-    resource_filename("climpyrical", "tests/data/snw_regridded_test_ensemble.nc"), dv,
+    resource_filename(
+        "climpyrical", "tests/data/snw_regridded_test_ensemble.nc"
+    ),
 )
 # read grids with expected dimension and ranges
 xi, yi = ds.rlon.values, ds.rlat.values
@@ -54,7 +58,7 @@ xi, yi = ds.rlon.values, ds.rlat.values
 xext_ex, yext_ex = np.tile(xi, yi.size), np.repeat(yi, xi.size)
 xext_bad, yext_bad = np.repeat(xi, yi.size), np.tile(yi, xi.size)
 
-
+"""
 @pytest.mark.parametrize(
     "ds,dv,n,keys,error",
     [
@@ -71,19 +75,22 @@ def test_check_regrid_ensemble_inputs(ds, dv, n, keys, error):
     else:
         with pytest.raises(error):
             check_regrid_ensemble_inputs(ds, dv, n, keys)
+"""
 
 
 @pytest.mark.parametrize(
-    "ds,dv,n,keys",
+    "ds,dv,n,keys,copy",
     [
-        (ds, dv, 3, ["rlat", "rlon", "lat", "lon", "level"]),
-        (ds_mean, dv, 3, ["rlat", "rlon", "lat", "lon"]),
+        (ds, dv, 3, ["rlat", "rlon", "level"], True),
+        (ds_mean, dv, 3, ["rlat", "rlon"], True),
+        (ds, dv, 3, ["rlat", "rlon", "level"], False),
+        (ds_mean, dv, 3, ["rlat", "rlon"], False),
     ],
 )
-def test_regrid_ensemble(ds, dv, n, keys):
+def test_regrid_ensemble(ds, dv, n, keys, copy):
     ndim = np.ndim(ds[dv].values)
-    nds = regrid_ensemble(ds, dv, n, keys)
-    assert isinstance(nds[dv].values, NDArray[(Any,) * ndim, np.float32])
+    nds = regrid_ensemble(ds, dv, n, keys, copy)
+    assert isinstance(nds[dv].values, NDArray[(Any,) * ndim, Any])
 
 
 @pytest.mark.parametrize(
@@ -205,7 +212,8 @@ def test_check_find_nearest_index_inputs(data, val, error):
 
 
 @pytest.mark.parametrize(
-    "data,val,warning", [(data, 25.0, None), (data, 35.0, UserWarning)],
+    "data,val,warning",
+    [(data, 25.0, None), (data, 35.0, UserWarning)],
 )
 def test_check_find_nearest_index_inputs_warnings(data, val, warning):
     if warning is None:
@@ -263,7 +271,9 @@ def test_check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs, error):
         )
     ],
 )
-def test_find_element_wise_nearest_pos(x, y, x_obs, y_obs, expected_x, expected_y):
+def test_find_element_wise_nearest_pos(
+    x, y, x_obs, y_obs, expected_x, expected_y
+):
     xclose, yclose = find_element_wise_nearest_pos(x, y, x_obs, y_obs)
     xclose_truth = np.allclose(xclose, expected_x)
     yclose_truth = np.allclose(yclose, expected_y)
@@ -333,3 +343,31 @@ def test_find_nearest_index_value(x, y, x_i, y_i, field, mask, expected):
     )
 
     assert truth is False
+
+
+dv = "Rain-RL50"
+ds = read_data(
+    resource_filename("climpyrical", "tests/data/snw_test_ensemble.nc")
+)
+
+nan_field = ds[dv].values[0, ...]
+nan_field[:] = np.nan
+ds_nan = gen_dataset(dv, nan_field, ds.rlon, ds.rlat)
+
+
+@pytest.mark.parametrize(
+    "ds,dv,amount,fill_val,error",
+    [
+        (ds, dv, "200", np.nan, TypeError),
+        (ds, dv, -1, np.nan, ValueError),
+        (ds_nan, dv, 20, np.nan, ValueError),
+        (ds_mean, dv, 20, np.nan, None),
+    ],
+)
+def test_extend_north(ds, dv, amount, fill_val, error):
+    if error is None:
+        ds_ext = extend_north(ds, dv, amount, fill_val)
+        assert ds_ext[dv].values.shape == (ds.rlat.size + amount, ds.rlon.size)
+    else:
+        with pytest.raises(error):
+            extend_north(ds, dv, amount, fill_val)

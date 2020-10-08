@@ -1,4 +1,4 @@
-from climpyrical.datacube import check_valid_keys
+from climpyrical.data import check_valid_data, gen_dataset
 
 import warnings
 import numpy as np
@@ -22,7 +22,9 @@ def check_ndims(data, n):
     """
     if not isinstance(data, np.ndarray):
         raise TypeError(
-            "Provide an array of type {}, received {}".format(np.ndarray, type(data))
+            "Provide an array of type {}, received {}".format(
+                np.ndarray, type(data)
+            )
         )
     if not isinstance(n, int):
         raise TypeError(
@@ -30,7 +32,9 @@ def check_ndims(data, n):
         )
     if data.ndim != n:
         raise ValueError(
-            "Array has dimensions {}, expected {} dimensions.".format(data.ndim, n)
+            "Array has dimensions {}, expected {} dimensions.".format(
+                data.ndim, n
+            )
         )
 
 
@@ -90,30 +94,8 @@ def check_input_coords(x, y, ds):
     close_range(y, ds, "rlat")
 
 
-def check_regrid_ensemble_inputs(ds, dv, n, keys):
-    if not isinstance(ds, xr.Dataset):
-        raise TypeError(
-            "Provide an ensemble object of type {}, received {}".format(
-                xr.Dataset, type(ds)
-            )
-        )
-    if not isinstance(dv, str):
-        raise TypeError(
-            "Provide design value key of type {}, received {}".format(str, type(dv))
-        )
-    if not isinstance(n, int):
-        raise TypeError("Provide a scaling of {}, received {}".format(int, type(n)))
-
-    actual_keys = set(ds.variables).union(set(ds.dims))
-    check_valid_keys(actual_keys, keys)
-    check_input_coords(ds.rlon.values, ds.rlat.values, ds)
-
-
 def regrid_ensemble(
-    ds: xr.Dataset,
-    dv: str,
-    n: int,
-    keys: list = ["rlat", "rlon", "lat", "lon", "level"],
+    ds: xr.Dataset, dv: str, n: int, keys: list = ["rlat", "rlon"], copy=True
 ) -> xr.Dataset:
     """Re-grids a regional model to have n^2 times the
     native number of grid cells (n times in each axis).
@@ -133,46 +115,104 @@ def regrid_ensemble(
         ValueError: if number of dimensions are unexpected, or coordinates
             are not of expected range
     """
-    check_regrid_ensemble_inputs(ds, dv, n, keys)
+
     # calculate the size of each grid cell
-    # see #20 for more info
-    dx = np.diff(ds.rlon.values).mean() / n
-    dy = np.diff(ds.rlat.values).mean() / n
+    # see #20 for more information
+
+    xx, yy = np.meshgrid(ds.rlon, ds.rlat)
+
+    dxn = np.diff(ds.rlon.values).mean() / n
+    dyn = np.diff(ds.rlat.values).mean() / n
+
+    dx = np.diff(ds.rlon.values).mean()
+    dy = np.diff(ds.rlat.values).mean()
 
     # define new boundaries
-    x1 = ds.rlon.min() - dx
-    x2 = ds.rlon.max() + dx
-    y1 = ds.rlat.min() - dy
-    y2 = ds.rlat.max() + dy
+    x1 = ds.rlon.min() - dx + dxn
+    x2 = ds.rlon.max() + dx - dxn
+    y1 = ds.rlat.min() - dy + dyn
+    y2 = ds.rlat.max() + dy - dyn
 
     # define new coordinate arrays
     new_x = np.linspace(x1, x2, ds.rlon.size * n)
     new_y = np.linspace(y1, y2, ds.rlat.size * n)
 
-    # re-create design value field on newly gridded size
-    if "level" in keys:
-        new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
-        regridded_ds = xr.Dataset(
-            {dv: (["level", "rlat", "rlon"], new_ds), "lon": ds.lon, "lat": ds.lat},
-            coords={
-                "rlon": ("rlon", new_x),
-                "rlat": ("rlat", new_y),
-                "level": ("level", ds.level.values.astype(int)),
-            },
-        )
+    new_xx, new_yy = np.meshgrid(new_x, new_y)
+
+    if copy:
+        # re-create design value field on newly gridded size
+        # 3D version
+        if "level" in keys:
+            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
+            regridded_ds = gen_dataset(
+                dv, new_ds, new_x, new_y, ds.level.values.astype(int)
+            )
+        # 2D version
+        else:
+            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
+            regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
     else:
-        new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
-        regridded_ds = xr.Dataset(
-            {dv: (["rlat", "rlon"], new_ds), "lon": ds.lon, "lat": ds.lat},
-            coords={"rlon": ("rlon", new_x), "rlat": ("rlat", new_y)},
-        )
+        # re-create design value field on newly gridded size
+        # 3D version
+        if "level" in keys:
+            new_ds = np.zeros(
+                (ds.level.size, ds.rlat.size * n, ds.rlon.size * n)
+            )
+            regridded_ds = gen_dataset(
+                dv, new_ds, new_x, new_y, ds.level.values.astype(int)
+            )
+        # 2D version
+        else:
+            new_ds = np.zeros((ds.rlat.size * n, ds.rlon.size * n))
+            regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
 
     return regridded_ds
 
 
+def extend_north(
+    ds: xr.Dataset, dv: str, amount: int, fill_val: float = np.nan
+) -> xr.Dataset:
+    """The native CanRCM4 models have not coverage in northern canada. This
+    function extents the top rows of an array so that climpyrical will consider
+    these northern regions.
+    Args:
+        ds: Dataset to extend
+        dv: Name of design value key in Dataset
+        amount: Number of rows at ds's resolution to add to the north
+        fill_val: What to fill the new rows with
+    Return:
+        xarray Dataset containing extended coordinates and region to the north
+    """
+    check_valid_data(ds)
+
+    if not isinstance(amount, int):
+        raise TypeError(
+            f"Please provide an amount of type {int}. Received {type(amount)}"
+        )
+    if amount < 0:
+        raise ValueError(f"amount must be positive.")
+
+    y = ds[dv].values.shape[0]
+    x = ds[dv].values.shape[1]
+    grid = np.ones((y + amount, x))
+    grid[:] = fill_val
+    grid[:y, :x] = ds[dv].values
+
+    # create new coordinates
+    drlat = np.mean(np.diff(ds.rlat))
+    nrlat = np.linspace(
+        ds.rlat.min(), ds.rlat.max() + amount * drlat, ds.rlat.size + amount
+    )
+    nrlon = ds.rlon.copy()
+
+    new_ds = gen_dataset(dv, grid, nrlon, nrlat)
+
+    return new_ds
+
+
 def flatten_coords(
-    x: NDArray[Any, float], y: NDArray[Any, float]
-) -> Tuple[NDArray[Any, float], NDArray[Any, float]]:
+    x: NDArray[(Any,), float], y: NDArray[(Any,), float]
+) -> Tuple[NDArray[(Any,), float], NDArray[(Any,), float]]:
     """Takes the rlat and rlon 1D arrays from the
     NetCDF files for each ensemble member, and creates
     an ordered pairing of each grid cell coordinate in
@@ -221,7 +261,9 @@ def check_transform_coords_inputs(x, y, source_crs, target_crs):
     check_ndims(x, 1)
     check_ndims(y, 1)
 
-    if (not isinstance(source_crs, dict)) or (not isinstance(target_crs, dict)):
+    if (not isinstance(source_crs, dict)) or (
+        not isinstance(target_crs, dict)
+    ):
         raise TypeError(f"Please provide an object of type {dict}")
 
     if x.size != y.size:
@@ -360,7 +402,9 @@ def check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs):
                 If sizes of x and y or x_obs and y_obs are not the same
     """
 
-    is_ndarray = [isinstance(array, np.ndarray) for array in [x, y, x_obs, y_obs]]
+    is_ndarray = [
+        isinstance(array, np.ndarray) for array in [x, y, x_obs, y_obs]
+    ]
     if not np.any(is_ndarray):
         raise TypeError(f"Please provide data arrays of type {np.ndarray}")
     if x.size < 2 or y.size < 2:
@@ -423,7 +467,9 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
     """
     if (not isinstance(x_i, np.ndarray)) or (not isinstance(y_i, np.ndarray)):
         raise TypeError(f"Please provide index array of type {np.ndarray}.")
-    if (not x_i.dtype == np.dtype("int")) or (not y_i.dtype == np.dtype("int")):
+    if (not x_i.dtype == np.dtype("int")) or (
+        not y_i.dtype == np.dtype("int")
+    ):
         raise ValueError(
             f"Both index array must contain integers. Received \
             {x_i.dtype} and {y_i.dtype}"
@@ -453,9 +499,9 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
     """Finds the nearest model value to a station location in the CanRCM4
     grid space
     Args:
-        x, y (np.ndarray): monotonically increasing array of column
+        x, y (np.ndarrays): monotonically increasing array of column
             or rowcoordinates
-        x_i, y_i (np.ndarray): indices in the rlon and rlat arrays
+        x_i, y_i (np.ndarrays): indices in the rlon and rlat arrays
             of the closest grid to stations
         field (np.ndarray): 2 dimensional field array containing
             the CanRCM4 field
@@ -501,7 +547,9 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
 
         # create interpolation function for every point
         # except the locations of the NaN values
-        f = NearestNDInterpolator(pairs[master_mask.flatten()], field[master_mask])
+        f = NearestNDInterpolator(
+            pairs[master_mask.flatten()], field[master_mask]
+        )
 
         # get the rlon and rlat locations of the NaN values
         x_nan = xarr[y_i, x_i][nanloc]
