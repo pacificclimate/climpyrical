@@ -15,6 +15,11 @@ import scipy
 import numpy as np
 import pandas as pd
 
+import warnings
+from rpy2.rinterface import RRuntimeWarning
+
+warnings.filterwarnings("ignore", category=RRuntimeWarning)
+
 
 def check_df(df, keys=["lat", "lon", "rlat", "rlon"]):
     contains_keys = [key not in df.columns for key in keys]
@@ -141,7 +146,13 @@ def rkrig_py(
     return z
 
 
-def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
+def rkrig_r(
+    df: pd.DataFrame,
+    n: int,
+    ds: xr.Dataset,
+    station_dv: str,
+    min_size: int = 30,
+):
     """Implements climpyricals moving window method.
     Args:
         df: pandas dataframe containing the coordinates in
@@ -159,7 +170,15 @@ def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
         kriged field
     """
 
-    dataframe_keys = ["lat", "lon", "rlat", "rlon", "ratio"]
+    dataframe_keys = [
+        "lat",
+        "lon",
+        "rlat",
+        "rlon",
+        station_dv,
+        "model_vals",
+        "ratio",
+    ]
     check_df(df, dataframe_keys)
 
     X_distances = np.stack(
@@ -169,7 +188,7 @@ def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
     dy = (np.amax(ds.rlat.values) - np.amin(ds.rlat.values)) / ds.rlat.size
     dA = dx * dy
 
-    xyr = df[["rlon", "rlat", "ratio"]].values
+    xyr = df[["rlon", "rlat", "model_vals", station_dv]].values
 
     # used to calculate average at end
     field = np.ones((ds.rlat.size, ds.rlon.size))
@@ -219,7 +238,7 @@ def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
 
 
 def krig_at_field(
-    ds: xr.Dataset, temp_xyr: NDArray[(Any, 3), float]
+    ds: xr.Dataset, temp_xyr: NDArray[(Any, 4), float]
 ) -> NDArray[(Any, Any), float]:
     """Matches the output of spytialProcess to the dataset provided
     and returns a 2D array of the krigged field with same dimensions
@@ -238,7 +257,18 @@ def krig_at_field(
     ymin, ymax = temp_xyr[:, 1].min(), temp_xyr[:, 1].max()
 
     latlon = temp_xyr[:, :2].T
-    stats = temp_xyr[:, 2]
+    model_vals = temp_xyr[:, 2]
+    station_vals = temp_xyr[:, 3]
+
+    start = np.mean(model_vals) / np.mean(station_vals)
+    tol = np.linspace(0.1, start * 3, 1000)
+
+    diff = np.array([np.mean(station_vals - model_vals / t) for t in tol])
+
+    best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
+
+    # stats = temp_xyr[:, 2]
+    stats = station_vals / (model_vals / best_tol)
 
     lw, u = (
         find_nearest_index(ds.rlat.values, ymin),

@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from pkg_resources import resource_string
+from pkg_resources import resource_string, resource_filename
 
 from nptyping import NDArray
 from typing import Any, Tuple
@@ -10,22 +10,14 @@ from rpy2 import robjects
 
 import rpy2.robjects.packages as rpackages
 
-# from rpy2.robjects.vectors import StrVector
 
 utils = rpackages.importr("utils")
-utils.install_packages("fields", version="11.3")
 
+rpath = resource_filename("climpyrical", "/r-library")
+libPath = robjects.r(".libPaths")
+libPath(rpath)
 
-# utils.chooseCRANmirror(ind=1) # select the first mirror in the list
-
-# utils.install_packages(StrVector(("fields")), "../r-library")
-# utils.install_packages(StrVector(("sp")), "../r-library")
-# utils.install_packages(StrVector(("gstat")), "../r-library")
-
-# print("FIELDS")
-importr("fields")
-# importr("sp")
-# importr("gstat")
+importr("fields", rpath)
 
 
 def fit(
