@@ -1,7 +1,5 @@
 import pytest
 import geopandas as gpd
-from nptyping import NDArray
-from typing import Any
 from climpyrical.data import read_data
 from climpyrical.mask import (
     check_polygon_validity,
@@ -52,7 +50,7 @@ good_polygon = gpd.read_file(
         (rotated_canada, None),
         (transformed_world, None),
         (good_polygon, None),
-        (bad_polygon, ValueError),
+        (gpd.GeoSeries(), ValueError)
     ],
 )
 def test_check_polygon_validity(p, error):
@@ -69,6 +67,7 @@ def test_check_polygon_validity(p, error):
         (canada, None),
         (rotated_canada, UserWarning),
         (transformed_world, UserWarning),
+        (transformed_world.to_crs('+init=epsg:4236'), UserWarning)
     ],
 )
 def test_check_polygon_before_projection(p, warning):
@@ -121,7 +120,6 @@ mask_ds = read_data(
 def test_gen_raster_mask_from_vector(x, y, p, progress_bar, error):
     if error is None:
         result = gen_raster_mask_from_vector(x, y, p, progress_bar)
-        assert isinstance(result, NDArray[(Any, Any), Any])
         assert result.shape == (y.shape[0], x.shape[0])
     else:
         with pytest.raises(ValueError):
