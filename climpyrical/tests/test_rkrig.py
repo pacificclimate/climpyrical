@@ -75,11 +75,12 @@ def test_rkrig_py(df, station_dv, n, ds):
 
 @pytest.mark.slow
 @pytest.mark.parametrize(
-    "df, n, ds, min_size",
-    [(df_, 30, ds, 2), (df_, 30, ds, 200)],
+    "df, n, ds, station_dv, min_size",
+    [(df_, 30, ds, "TJan2.5 (degC)", 2),
+     (df_, 30, ds, "TJan2.5 (degC)", 200)],
 )
-def test_rkrig_r(df, n, ds, min_size):
-    result = rkrig_r(df, n, ds, min_size)
+def test_rkrig_r(df, n, ds, station_dv, min_size):
+    result = rkrig_r(df, n, ds, station_dv, min_size)
 
     assert result.shape == (ds.rlat.size, ds.rlon.size)
     # results should not all be NaN
