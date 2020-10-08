@@ -106,12 +106,12 @@ def test_valid_data(ds, error):
             ["rlat", "rlon", "lat", "lon", "level"],
             (35, 130, 155),
         ),
-        (
-            resource_filename("climpyrical", "tests/data/example1.nc"),
-            "hyai",
-            ["lon", "lat"],
-            (27,),
-        ),
+        # (
+        #     resource_filename("climpyrical", "tests/data/example1.nc"),
+        #     "hyai",
+        #     ["lon", "lat"],
+        #     (27,),
+        # ),
         (
             resource_filename("climpyrical", "tests/data/example2.nc"),
             "tas",
