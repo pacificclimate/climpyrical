@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.1" />
+<title>rkrig API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>rkrig</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import climpyrical.spytialProcess as sp
+from climpyrical.gridding import find_nearest_index
+
+from nptyping import NDArray
+from typing import Any
+import xarray as xr
+from sklearn.neighbors import NearestNeighbors
+from pykrige.ok import OrdinaryKriging
+from tqdm import tqdm
+
+from scipy.spatial import ConvexHull
+import rpy2
+import scipy
+
+import numpy as np
+import pandas as pd
+
+
+def check_df(df, keys=[&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;]):
+    contains_keys = [key not in df.columns for key in keys]
+    if np.any(contains_keys):
+        raise KeyError(f&#34;Dataframe must contain {keys}&#34;)
+
+
+def krigit_north(
+    df: pd.DataFrame, station_dv: str, n: int, ds: xr.Dataset
+) -&gt; NDArray[(Any, Any), float]:
+    &#34;&#34;&#34;Krigs an extrapolated field for N nearest stations
+    to the northernmost in the dataframe provided. Output is
+    in the same dimensions as the dataset provided to be
+    easily added to a final reconstruction
+        Args:
+            df: pandas dataframe containing the coordinates in
+                both regular and roated, as well as the station
+                data
+            station_dv: name of the column containing
+                station data in df
+            n: number of nearest neighbors to northern
+                most stations
+            ds: model xarray dataset
+        Returns:
+            field: kriged field for the north
+    &#34;&#34;&#34;
+
+    dataframe_keys = [&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, station_dv]
+    check_df(df, dataframe_keys)
+
+    df = df[[&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, station_dv]]
+
+    regular_points = np.stack([np.deg2rad(df.lat), np.deg2rad(df.lon)]).T
+
+    # Metrics intended for two-dimensional vector spaces: Note that the
+    # haversine distance metric requires data in the form
+    # of [latitude, longitude] and both inputs and outputs are in units of radians.
+
+    # the reason for using a haversine metric here on regular coordinates
+    # rather than rotated coordinates, was that this particular haversine
+    # implementation gives incorrect values for rotated lon and rotated lat.
+    # it does give correct distances for regular lat and lon.
+    nbrs = NearestNeighbors(n_neighbors=n, metric=&#34;haversine&#34;).fit(
+        regular_points
+    )
+    dist, ind = nbrs.kneighbors(regular_points)
+    imax = np.argmax(df.rlat.values)  # idxmax(axis=0, skipna=True)
+    temp_df = df.iloc[ind[imax]]
+
+    xmin, xmax = temp_df.rlon.min(), temp_df.rlon.max()
+    ymin, ymax = temp_df.rlat.min(), temp_df.rlat.max()
+
+    # Note that spytialProcess requires rlon and rlat. Different
+    # from the form required for haversine distances from
+    # nearest neighbour
+    latlon = np.stack([temp_df.rlon, temp_df.rlat])
+    stats = temp_df[station_dv]
+
+    lw, u = (
+        find_nearest_index(ds.rlat.values, ymin),
+        find_nearest_index(ds.rlat.values, ymax),
+    )
+    l, r = (
+        find_nearest_index(ds.rlon.values, xmin),
+        find_nearest_index(ds.rlon.values, xmax),
+    )
+    ylim = u - lw
+    xlim = r - l
+
+    # krig it
+    z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=True)
+
+    field = np.ones((ds.rlat.size, ds.rlon.size))
+    field[:, :] = np.nan
+    field[lw:u, l:r] = z.T
+
+    return field
+
+
+def rkrig_py(
+    df: pd.DataFrame,
+    station_dv: str,
+    n: int,
+    ds: xr.Dataset,
+    exact_values: bool = False,
+) -&gt; NDArray[(Any, Any), float]:
+    &#34;&#34;&#34;User has the option of kriging using a Python backend
+    instead of using R&#39;s fields package. PyKrige has a moving
+    window implementation, however, the exacts and parameterization
+    is more obscured. Note that the exponentional variogram
+    function for PyKrige is different from spatialProcess in R, and
+    so identical results should not be expected.
+        Args:
+            df: pandas dataframe containing the coordinates in
+                both regular and roated, as well as the station
+                data
+            station_dv: name of the column containing
+                station data in df
+            n: number of nearest neighbors to northern
+                most stations
+            ds: model xarray dataset
+            exact_values: whether to reproduce the
+                exact value of inputs
+        Returns:
+            field: kriged field
+    &#34;&#34;&#34;
+
+    dataframe_keys = [&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, station_dv]
+    check_df(df, dataframe_keys)
+
+    df = df[[&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, station_dv]]
+
+    ok = OrdinaryKriging(
+        df.rlon,
+        df.rlat,
+        df[station_dv],
+        exact_values=exact_values,
+        variogram_function=&#34;exponential&#34;,
+    )
+    z, ss = ok.execute(
+        &#34;grid&#34;, ds.rlon.values, ds.rlat.values, backend=&#34;C&#34;, n_closest_points=n
+    )
+
+    return z
+
+
+def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
+    &#34;&#34;&#34;Implements climpyricals moving window method.
+    Args:
+        df: pandas dataframe containing the coordinates in
+            both regular and roated, as well as the station
+            data
+        n: number of nearest neighbors to northern
+            most stations
+        ds: model xarray dataset
+        min_size: minimum number of grid cells in target res
+            to include in the reconstruction. This number is
+            used to calculate an equivalent minimum area
+            that is compared to the polygon produced by
+            the perimeter of stations in a nearest neighbor set
+    Returns:
+        kriged field
+    &#34;&#34;&#34;
+
+    dataframe_keys = [&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, &#34;ratio&#34;]
+    check_df(df, dataframe_keys)
+
+    X_distances = np.stack(
+        [np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)]
+    )
+    dx = (np.amax(ds.rlon.values) - np.amin(ds.rlon.values)) / ds.rlon.size
+    dy = (np.amax(ds.rlat.values) - np.amin(ds.rlat.values)) / ds.rlat.size
+    dA = dx * dy
+
+    xyr = df[[&#34;rlon&#34;, &#34;rlat&#34;, &#34;ratio&#34;]].values
+
+    # used to calculate average at end
+    field = np.ones((ds.rlat.size, ds.rlon.size))
+    field[:] = np.nan
+    # tracks the number of summations in each grid cell
+    nancount = np.zeros(field.shape)
+
+    with tqdm(total=len(df.ratio), position=0, leave=True) as pbar:
+        for i in range(df.ratio.size):
+            pbar.update()
+            nn = n
+
+            nbrs = NearestNeighbors(n_neighbors=nn, metric=&#34;haversine&#34;).fit(
+                X_distances.T
+            )
+            dist, ind = nbrs.kneighbors(X_distances.T)
+            temp_xyr = xyr[ind[i], :]
+
+            latlon = temp_xyr[:, :2]
+
+            try:
+                hull = ConvexHull(points=latlon)
+
+                while hull.area &lt; dA * min_size ** 2:
+                    nn += 1
+                    nbrs = NearestNeighbors(
+                        n_neighbors=nn, metric=&#34;haversine&#34;
+                    ).fit(X_distances.T)
+                    dist, ind = nbrs.kneighbors(X_distances.T)
+
+                    temp_xyr = xyr[ind[i], :]
+                    latlon = temp_xyr[:, :2]
+                    hull = ConvexHull(points=latlon.T)
+            except scipy.spatial.qhull.QhullError:
+                continue
+
+            try:
+                this_field = krig_at_field(ds, temp_xyr)
+                field = np.nansum([field, this_field], axis=0)
+                nancount[~np.isnan(this_field)] += 1
+
+            except rpy2.rinterface_lib.embedded.RRuntimeError:
+                continue
+
+        # taking this fraction computes the mean
+        return field / nancount
+
+
+def krig_at_field(
+    ds: xr.Dataset, temp_xyr: NDArray[(Any, 3), float]
+) -&gt; NDArray[(Any, Any), float]:
+    &#34;&#34;&#34;Matches the output of spytialProcess to the dataset provided
+    and returns a 2D array of the krigged field with same dimensions
+    as the dataset&#39;s design value field. This produces individual
+    windows in the moving window algorithm.
+        Args:
+            ds: model xarray dataset
+            temp_xyr: subset of station ratios/station values
+                from which the kriging is calculated. This array
+                must contain [longitudes, latitudes, ratios]
+        Returns:
+            kriged subset field
+    &#34;&#34;&#34;
+
+    xmin, xmax = temp_xyr[:, 0].min(), temp_xyr[:, 0].max()
+    ymin, ymax = temp_xyr[:, 1].min(), temp_xyr[:, 1].max()
+
+    latlon = temp_xyr[:, :2].T
+    stats = temp_xyr[:, 2]
+
+    lw, u = (
+        find_nearest_index(ds.rlat.values, ymin),
+        find_nearest_index(ds.rlat.values, ymax),
+    )
+    l, r = (
+        find_nearest_index(ds.rlon.values, xmin),
+        find_nearest_index(ds.rlon.values, xmax),
+    )
+
+    ylim = u - lw
+    xlim = r - l
+
+    z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=False)
+
+    final = np.ones((ds.rlat.size, ds.rlon.size), dtype=np.float16)
+    final[:] = np.nan
+    final[lw:u, l:r] = z.T
+
+    return final</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="rkrig.check_df"><code class="name flex">
+<span>def <span class="ident">check_df</span></span>(<span>df, keys=['lat', 'lon', 'rlat', 'rlon'])</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_df(df, keys=[&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;]):
+    contains_keys = [key not in df.columns for key in keys]
+    if np.any(contains_keys):
+        raise KeyError(f&#34;Dataframe must contain {keys}&#34;)</code></pre>
+</details>
+</dd>
+<dt id="rkrig.krig_at_field"><code class="name flex">
+<span>def <span class="ident">krig_at_field</span></span>(<span>ds: xarray.core.dataset.Dataset, temp_xyr: nptyping.types._ndarray.NDArray) ‑> nptyping.types._ndarray.NDArray</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Matches the output of spytialProcess to the dataset provided
+and returns a 2D array of the krigged field with same dimensions
+as the dataset's design value field. This produces individual
+windows in the moving window algorithm.
+Args:
+ds: model xarray dataset
+temp_xyr: subset of station ratios/station values
+from which the kriging is calculated. This array
+must contain [longitudes, latitudes, ratios]
+Returns:
+kriged subset field</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def krig_at_field(
+    ds: xr.Dataset, temp_xyr: NDArray[(Any, 3), float]
+) -&gt; NDArray[(Any, Any), float]:
+    &#34;&#34;&#34;Matches the output of spytialProcess to the dataset provided
+    and returns a 2D array of the krigged field with same dimensions
+    as the dataset&#39;s design value field. This produces individual
+    windows in the moving window algorithm.
+        Args:
+            ds: model xarray dataset
+            temp_xyr: subset of station ratios/station values
+                from which the kriging is calculated. This array
+                must contain [longitudes, latitudes, ratios]
+        Returns:
+            kriged subset field
+    &#34;&#34;&#34;
+
+    xmin, xmax = temp_xyr[:, 0].min(), temp_xyr[:, 0].max()
+    ymin, ymax = temp_xyr[:, 1].min(), temp_xyr[:, 1].max()
+
+    latlon = temp_xyr[:, :2].T
+    stats = temp_xyr[:, 2]
+
+    lw, u = (
+        find_nearest_index(ds.rlat.values, ymin),
+        find_nearest_index(ds.rlat.values, ymax),
+    )
+    l, r = (
+        find_nearest_index(ds.rlon.values, xmin),
+        find_nearest_index(ds.rlon.values, xmax),
+    )
+
+    ylim = u - lw
+    xlim = r - l
+
+    z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=False)
+
+    final = np.ones((ds.rlat.size, ds.rlon.size), dtype=np.float16)
+    final[:] = np.nan
+    final[lw:u, l:r] = z.T
+
+    return final</code></pre>
+</details>
+</dd>
+<dt id="rkrig.krigit_north"><code class="name flex">
+<span>def <span class="ident">krigit_north</span></span>(<span>df: pandas.core.frame.DataFrame, station_dv: str, n: int, ds: xarray.core.dataset.Dataset) ‑> nptyping.types._ndarray.NDArray</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Krigs an extrapolated field for N nearest stations
+to the northernmost in the dataframe provided. Output is
+in the same dimensions as the dataset provided to be
+easily added to a final reconstruction
+Args:
+df: pandas dataframe containing the coordinates in
+both regular and roated, as well as the station
+data
+station_dv: name of the column containing
+station data in df
+n: number of nearest neighbors to northern
+most stations
+ds: model xarray dataset
+Returns:
+field: kriged field for the north</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def krigit_north(
+    df: pd.DataFrame, station_dv: str, n: int, ds: xr.Dataset
+) -&gt; NDArray[(Any, Any), float]:
+    &#34;&#34;&#34;Krigs an extrapolated field for N nearest stations
+    to the northernmost in the dataframe provided. Output is
+    in the same dimensions as the dataset provided to be
+    easily added to a final reconstruction
+        Args:
+            df: pandas dataframe containing the coordinates in
+                both regular and roated, as well as the station
+                data
+            station_dv: name of the column containing
+                station data in df
+            n: number of nearest neighbors to northern
+                most stations
+            ds: model xarray dataset
+        Returns:
+            field: kriged field for the north
+    &#34;&#34;&#34;
+
+    dataframe_keys = [&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, station_dv]
+    check_df(df, dataframe_keys)
+
+    df = df[[&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, station_dv]]
+
+    regular_points = np.stack([np.deg2rad(df.lat), np.deg2rad(df.lon)]).T
+
+    # Metrics intended for two-dimensional vector spaces: Note that the
+    # haversine distance metric requires data in the form
+    # of [latitude, longitude] and both inputs and outputs are in units of radians.
+
+    # the reason for using a haversine metric here on regular coordinates
+    # rather than rotated coordinates, was that this particular haversine
+    # implementation gives incorrect values for rotated lon and rotated lat.
+    # it does give correct distances for regular lat and lon.
+    nbrs = NearestNeighbors(n_neighbors=n, metric=&#34;haversine&#34;).fit(
+        regular_points
+    )
+    dist, ind = nbrs.kneighbors(regular_points)
+    imax = np.argmax(df.rlat.values)  # idxmax(axis=0, skipna=True)
+    temp_df = df.iloc[ind[imax]]
+
+    xmin, xmax = temp_df.rlon.min(), temp_df.rlon.max()
+    ymin, ymax = temp_df.rlat.min(), temp_df.rlat.max()
+
+    # Note that spytialProcess requires rlon and rlat. Different
+    # from the form required for haversine distances from
+    # nearest neighbour
+    latlon = np.stack([temp_df.rlon, temp_df.rlat])
+    stats = temp_df[station_dv]
+
+    lw, u = (
+        find_nearest_index(ds.rlat.values, ymin),
+        find_nearest_index(ds.rlat.values, ymax),
+    )
+    l, r = (
+        find_nearest_index(ds.rlon.values, xmin),
+        find_nearest_index(ds.rlon.values, xmax),
+    )
+    ylim = u - lw
+    xlim = r - l
+
+    # krig it
+    z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=True)
+
+    field = np.ones((ds.rlat.size, ds.rlon.size))
+    field[:, :] = np.nan
+    field[lw:u, l:r] = z.T
+
+    return field</code></pre>
+</details>
+</dd>
+<dt id="rkrig.rkrig_py"><code class="name flex">
+<span>def <span class="ident">rkrig_py</span></span>(<span>df: pandas.core.frame.DataFrame, station_dv: str, n: int, ds: xarray.core.dataset.Dataset, exact_values: bool = False) ‑> nptyping.types._ndarray.NDArray</span>
+</code></dt>
+<dd>
+<div class="desc"><p>User has the option of kriging using a Python backend
+instead of using R's fields package. PyKrige has a moving
+window implementation, however, the exacts and parameterization
+is more obscured. Note that the exponentional variogram
+function for PyKrige is different from spatialProcess in R, and
+so identical results should not be expected.
+Args:
+df: pandas dataframe containing the coordinates in
+both regular and roated, as well as the station
+data
+station_dv: name of the column containing
+station data in df
+n: number of nearest neighbors to northern
+most stations
+ds: model xarray dataset
+exact_values: whether to reproduce the
+exact value of inputs
+Returns:
+field: kriged field</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rkrig_py(
+    df: pd.DataFrame,
+    station_dv: str,
+    n: int,
+    ds: xr.Dataset,
+    exact_values: bool = False,
+) -&gt; NDArray[(Any, Any), float]:
+    &#34;&#34;&#34;User has the option of kriging using a Python backend
+    instead of using R&#39;s fields package. PyKrige has a moving
+    window implementation, however, the exacts and parameterization
+    is more obscured. Note that the exponentional variogram
+    function for PyKrige is different from spatialProcess in R, and
+    so identical results should not be expected.
+        Args:
+            df: pandas dataframe containing the coordinates in
+                both regular and roated, as well as the station
+                data
+            station_dv: name of the column containing
+                station data in df
+            n: number of nearest neighbors to northern
+                most stations
+            ds: model xarray dataset
+            exact_values: whether to reproduce the
+                exact value of inputs
+        Returns:
+            field: kriged field
+    &#34;&#34;&#34;
+
+    dataframe_keys = [&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, station_dv]
+    check_df(df, dataframe_keys)
+
+    df = df[[&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, station_dv]]
+
+    ok = OrdinaryKriging(
+        df.rlon,
+        df.rlat,
+        df[station_dv],
+        exact_values=exact_values,
+        variogram_function=&#34;exponential&#34;,
+    )
+    z, ss = ok.execute(
+        &#34;grid&#34;, ds.rlon.values, ds.rlat.values, backend=&#34;C&#34;, n_closest_points=n
+    )
+
+    return z</code></pre>
+</details>
+</dd>
+<dt id="rkrig.rkrig_r"><code class="name flex">
+<span>def <span class="ident">rkrig_r</span></span>(<span>df: pandas.core.frame.DataFrame, n: int, ds: xarray.core.dataset.Dataset, min_size: int = 30)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Implements climpyricals moving window method.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>df</code></strong></dt>
+<dd>pandas dataframe containing the coordinates in
+both regular and roated, as well as the station
+data</dd>
+<dt><strong><code>n</code></strong></dt>
+<dd>number of nearest neighbors to northern
+most stations</dd>
+<dt><strong><code>ds</code></strong></dt>
+<dd>model xarray dataset</dd>
+<dt><strong><code>min_size</code></strong></dt>
+<dd>minimum number of grid cells in target res
+to include in the reconstruction. This number is
+used to calculate an equivalent minimum area
+that is compared to the polygon produced by
+the perimeter of stations in a nearest neighbor set</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>kriged field</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
+    &#34;&#34;&#34;Implements climpyricals moving window method.
+    Args:
+        df: pandas dataframe containing the coordinates in
+            both regular and roated, as well as the station
+            data
+        n: number of nearest neighbors to northern
+            most stations
+        ds: model xarray dataset
+        min_size: minimum number of grid cells in target res
+            to include in the reconstruction. This number is
+            used to calculate an equivalent minimum area
+            that is compared to the polygon produced by
+            the perimeter of stations in a nearest neighbor set
+    Returns:
+        kriged field
+    &#34;&#34;&#34;
+
+    dataframe_keys = [&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, &#34;ratio&#34;]
+    check_df(df, dataframe_keys)
+
+    X_distances = np.stack(
+        [np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)]
+    )
+    dx = (np.amax(ds.rlon.values) - np.amin(ds.rlon.values)) / ds.rlon.size
+    dy = (np.amax(ds.rlat.values) - np.amin(ds.rlat.values)) / ds.rlat.size
+    dA = dx * dy
+
+    xyr = df[[&#34;rlon&#34;, &#34;rlat&#34;, &#34;ratio&#34;]].values
+
+    # used to calculate average at end
+    field = np.ones((ds.rlat.size, ds.rlon.size))
+    field[:] = np.nan
+    # tracks the number of summations in each grid cell
+    nancount = np.zeros(field.shape)
+
+    with tqdm(total=len(df.ratio), position=0, leave=True) as pbar:
+        for i in range(df.ratio.size):
+            pbar.update()
+            nn = n
+
+            nbrs = NearestNeighbors(n_neighbors=nn, metric=&#34;haversine&#34;).fit(
+                X_distances.T
+            )
+            dist, ind = nbrs.kneighbors(X_distances.T)
+            temp_xyr = xyr[ind[i], :]
+
+            latlon = temp_xyr[:, :2]
+
+            try:
+                hull = ConvexHull(points=latlon)
+
+                while hull.area &lt; dA * min_size ** 2:
+                    nn += 1
+                    nbrs = NearestNeighbors(
+                        n_neighbors=nn, metric=&#34;haversine&#34;
+                    ).fit(X_distances.T)
+                    dist, ind = nbrs.kneighbors(X_distances.T)
+
+                    temp_xyr = xyr[ind[i], :]
+                    latlon = temp_xyr[:, :2]
+                    hull = ConvexHull(points=latlon.T)
+            except scipy.spatial.qhull.QhullError:
+                continue
+
+            try:
+                this_field = krig_at_field(ds, temp_xyr)
+                field = np.nansum([field, this_field], axis=0)
+                nancount[~np.isnan(this_field)] += 1
+
+            except rpy2.rinterface_lib.embedded.RRuntimeError:
+                continue
+
+        # taking this fraction computes the mean
+        return field / nancount</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="rkrig.check_df" href="#rkrig.check_df">check_df</a></code></li>
+<li><code><a title="rkrig.krig_at_field" href="#rkrig.krig_at_field">krig_at_field</a></code></li>
+<li><code><a title="rkrig.krigit_north" href="#rkrig.krigit_north">krigit_north</a></code></li>
+<li><code><a title="rkrig.rkrig_py" href="#rkrig.rkrig_py">rkrig_py</a></code></li>
+<li><code><a title="rkrig.rkrig_r" href="#rkrig.rkrig_r">rkrig_r</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+</footer>
+</body>
+</html>
