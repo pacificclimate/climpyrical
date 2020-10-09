@@ -1,6 +1,6 @@
-# Example
+# Climpyrical
 
-Links:
+Modules:
 - [`data`](https://pacificclimate.github.io/climpyrical/data.html)
 - [`gridding`](https://pacificclimate.github.io/climpyrical/gridding.html)
 - [`mask`](https://pacificclimate.github.io/climpyrical/mask.html)
