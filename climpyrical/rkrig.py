@@ -261,14 +261,13 @@ def krig_at_field(
     station_vals = temp_xyr[:, 3]
 
     start = np.mean(model_vals) / np.mean(station_vals)
-    tol = np.linspace(0.01, start * 10, 10000)
+    tol = np.linspace(0.01, start * 5, 50000)
 
     diff = np.array([np.mean(station_vals - model_vals / t) for t in tol])
 
     best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
-    # print(best_tol, np.mean(station_vals - model_vals / best_tol))
     assert np.isclose(
-        np.mean(station_vals - model_vals / best_tol), 0.0, atol=1
+        np.mean(station_vals - model_vals / best_tol), 0.0, atol=0.1
     )
 
     # stats = temp_xyr[:, 2]
