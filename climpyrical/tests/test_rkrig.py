@@ -58,11 +58,11 @@ def test_krigit_north(df, station_dv, n, ds):
 @pytest.mark.parametrize(
     "df, station_dv, n, ds",
     [
-        (df_, "TJan2.5 (degC)", 10, ds),
+        (df_, "TJan2.5 (degC)", 5, ds),
     ],
 )
 def test_rkrig_py(df, station_dv, n, ds):
-    result = rkrig_py(df.iloc[:100], station_dv, n, ds)
+    result = rkrig_py(df.iloc[::10], station_dv, n, ds)
 
     assert result.shape == (ds.rlat.size, ds.rlon.size)
     # results should not all be NaN
@@ -76,8 +76,8 @@ def test_rkrig_py(df, station_dv, n, ds):
 @pytest.mark.slow
 @pytest.mark.parametrize(
     "df, n, ds, station_dv, min_size",
-    [(df_, 30, ds, "TJan2.5 (degC)", 2),
-     (df_, 30, ds, "TJan2.5 (degC)", 200)],
+    [(df_.iloc[::10], 10, ds, "TJan2.5 (degC)", 2),
+     (df_.iloc[::10], 10, ds, "TJan2.5 (degC)", 200)],
 )
 def test_rkrig_r(df, n, ds, station_dv, min_size):
     result = rkrig_r(df, n, ds, station_dv, min_size)
