@@ -627,8 +627,6 @@ def rot2reg(
         ds.rlon.values, ds.rlat.values, xlon_rot, ylat_rot
     )
 
-    print(len(shape_of_field) == 2)
-
     if len(shape_of_field) == 2:
         newfield = ds[dv].values[iy, ix].reshape(shape_of_field)
         newds = xr.Dataset(
