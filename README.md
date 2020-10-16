@@ -106,5 +106,52 @@ They are meant to be completed in the following order, to acheive results. Pleas
 
 Additional steps have not been factored out further due to the ever-changing requirements of various design value fields. 
 
+# Setting up `climpyrical` for use with rot2reg on Lynx or Leopard
+One consistent problem encountered while working on this project, was working to understand the polar stereographic projection that CanRCM4 models are in. This offers several advantages, but can be difficult to understand. A technical overview of this is beyond the scope of this README, however, a guide is included below on how to use `climpyrical` to perform a transformation from polar stereographic to regular `EPSG:4326`/`WGS84` projection.
+
+This guide is tailored to PCIC internal servers `lynx` or `leopard` which has some specific installation features that may or may not be encountered on other machines.
+
+Start in a fresh directory and clone `climpyrical` into it:
+```bash
+git clone git clone https://github.com/pacificclimate/climpyrical.git 
+```
+
+Create a `python3` virtual environment and activate it:
+```bash
+python3 -m venv myvenv
+source myvenv/bin/activate
+```
+
+Load the `R` module into the environment. This step and the next `PYTHONPATH` steps may be unnecessary for your own machine. 
+```bash
+module load R
+```
+
+Loading the `R` module also loads gdal/2.2.3 which sets the PYTHONPATH env variable interfering with our virtual python environment. So it's important to unset `PYTHONPATH` before proceeding:
+```bash
+unset PYTHONPATH
+```
+
+Verify you are still in your virtual environment:
+```bash
+which python
+> ...myvenv/bin/python
+```
+
+Next install `climpyrical`'s requirements with:
+```bash
+pip install -r climpyrical/requirements.txt
+```
+
+Then finally install `climpyrical` with:
+```bash
+pip install climpyrical/
+```
+
+Now you can use `climpyrical`. To unrotate a CanRCM4 file and write it to a new `netCDF4` file, simply:
+```bash
+python climpyrical/climpyrical/rot2reg.py "path/to/input_CanRCM4.nc" "path/to/output_CanRCM4.nc"
+```
+
 ## Authors
 * **Nic Annau** - [Pacific Climate Impacts Consortium](https://www.pacificclimate.org/)
