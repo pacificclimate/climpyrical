@@ -12,7 +12,9 @@ from climpyrical.gridding import (
     find_nearest_index_value,
     regrid_ensemble,
     extend_north,
+    rot2reg,
 )
+import warnings
 from climpyrical.data import read_data, gen_dataset
 import pytest
 from pkg_resources import resource_filename
@@ -49,7 +51,7 @@ ds_mean = ds.mean(dim="level")
 ds_regridded_proper = read_data(
     resource_filename(
         "climpyrical", "tests/data/snw_regridded_test_ensemble.nc"
-    ),
+    )
 )
 # read grids with expected dimension and ranges
 xi, yi = ds.rlon.values, ds.rlat.values
@@ -371,3 +373,18 @@ def test_extend_north(ds, dv, amount, fill_val, error):
     else:
         with pytest.raises(error):
             extend_north(ds, dv, amount, fill_val)
+
+
+warnings.simplefilter("ignore", category=UserWarning)
+
+
+@pytest.mark.parametrize("ds,error", [(ds, None), (ds_mean, None)])
+def test_rot2reg(ds, error):
+    dv = list(ds.data_vars)[0]
+
+    if error is None:
+        newds = rot2reg(ds)
+        assert newds[dv].values.shape == ds[dv].values.shape
+    else:
+        with pytest.raises(error):
+            rot2reg(ds)
