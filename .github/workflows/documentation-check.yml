@@ -1,7 +1,9 @@
 name: Documentation Check
 
 on:
-  pull_request
+  pull_request:
+    branches:
+      - master
   push:
     branches:
       - master
