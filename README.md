@@ -114,7 +114,7 @@ This guide is tailored to PCIC internal servers `lynx` or `leopard` which has so
 
 Start in a fresh directory and clone `climpyrical` into it:
 ```bash
-git clone git clone https://github.com/pacificclimate/climpyrical.git 
+git clone https://github.com/pacificclimate/climpyrical.git 
 ```
 
 Create a `python3` virtual environment and activate it:
