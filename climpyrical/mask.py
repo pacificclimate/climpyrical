@@ -84,7 +84,6 @@ def check_polygon_before_projection(
                     warning2
                 )
             )
-
     return True
 
 
