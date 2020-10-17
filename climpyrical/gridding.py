@@ -1,4 +1,4 @@
-from climpyrical.data import check_valid_data, gen_dataset
+from climpyrical.data import check_valid_data, gen_dataset, check_valid_keys
 
 import warnings
 import numpy as np
@@ -567,3 +567,93 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
     final = field[y_i, x_i]
 
     return final
+
+
+def rot2reg(
+    ds: xr.Dataset,
+    target_crs: dict = {
+        "proj": "ob_tran",
+        "o_proj": "longlat",
+        "lon_0": -97,
+        "o_lat_p": 42.5,
+        "a": 6378137,
+        "to_meter": 0.0174532925199,
+        "no_defs": True,
+    },
+    source_crs: dict = {
+        "proj": "longlat",
+        "ellps": "WGS84",
+        "datum": "WGS84",
+        "no_defs": True,
+    },
+) -> xr.Dataset:
+    """Transform a CanRCM4 field from rotated coordinates
+    to regular coordinates or another projection. This
+    transformation implicitly calculates nearest neighbours
+    and does not employ any other interpolation. Projected
+    coordinates are same shape and size of input rlon and rlat
+    coordinates
+    Args:
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
+        target_crs (dict): proj4 dictionary defining target projection
+        source_crs (dict): proj4 dictionary defining source projection
+    Returns:
+        newds (xarray.core.dataset.Dataset): dataset in new projection
+    """
+    dv = list(ds.data_vars)[0]
+    key_list = list(ds.data_vars) + list(ds.coords)
+    required_keys = ["rlon", "rlat", "lat", "lon", dv]
+    check_valid_keys(key_list, required_keys)
+
+    shape_of_field = ds[dv].values.shape
+
+    # construct regular grid axis the same size and shape as the field
+    xlon = np.linspace(ds.lon.min(), ds.lon.max(), ds.rlon.size)
+    ylat = np.linspace(ds.lat.min(), ds.lat.max(), ds.rlat.size)
+
+    xx, yy = flatten_coords(xlon, ylat)
+
+    # convert regular grid axis to rotated (non regular) arrays
+    xlon_rot, ylat_rot = transform_coords(
+        xx.flatten(),
+        yy.flatten(),
+        source_crs=source_crs,
+        target_crs=target_crs,
+    )
+
+    # find value at nearest coordinate
+    ix, iy = find_element_wise_nearest_pos(
+        ds.rlon.values, ds.rlat.values, xlon_rot, ylat_rot
+    )
+
+    if len(shape_of_field) == 2:
+        newfield = ds[dv].values[iy, ix].reshape(shape_of_field)
+        newds = xr.Dataset(
+            {dv: (["lat", "lon"], newfield)},
+            coords={"lon": ("lon", xlon), "lat": ("lat", ylat)},
+        )
+    elif len(shape_of_field) == 3 and "time" in key_list:
+        newfield = ds[dv].values[:, iy, ix].reshape(shape_of_field)
+        newds = xr.Dataset(
+            {dv: (["time", "lat", "lon"], newfield)},
+            coords={
+                "time": ("time", ds.time),
+                "lon": ("lon", xlon),
+                "lat": ("lat", ylat),
+            },
+        )
+    elif len(shape_of_field) == 3 and "level" in key_list:
+        newfield = ds[dv].values[:, iy, ix].reshape(shape_of_field)
+        newds = xr.Dataset(
+            {dv: (["level", "lat", "lon"], newfield)},
+            coords={
+                "level": ("level", ds.level),
+                "lon": ("lon", xlon),
+                "lat": ("lat", ylat),
+            },
+        )
+    else:
+        raise ValueError("Dimenion of data not 2 or 3.")
+
+    return newds

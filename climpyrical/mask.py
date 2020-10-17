@@ -1,7 +1,4 @@
-from climpyrical.gridding import (
-    find_nearest_index,
-    flatten_coords,
-)
+from climpyrical.gridding import find_nearest_index, flatten_coords
 import warnings
 from typing import Union, Any
 from nptyping import NDArray
@@ -39,22 +36,55 @@ def check_polygon_before_projection(
     # check polygon validity
     check_polygon_validity(p)
 
+    warning1 = "Polygon provided is in unexpected projection. Expected epsg:4326.\
+                Other transformations are experimental and have not been tested."
+
+    warning2 = 'Neither init or datum found in proj4 data. Please provide initial \
+                        reference projection with Polygon.crs = "epsg:4326"'
+
     # is dict or not
-    if "datum" in p.crs.to_dict().keys():
-        if p.crs.to_dict()["datum"] != "WGS84":
+    if isinstance(p.crs, dict):
+        if "datum" in p.crs.keys():
+            if p.crs["datum"] != "WGS84":
+                warnings.warn(
+                    UserWarning(
+                        warning1
+                    )
+                )
+        else:
             warnings.warn(
                 UserWarning(
-                    f"Polygon provided is in unexpected projection. Expected epsg:4326.\
-                     Other transformations are experimental and have not been tested."
+                    warning2
+                )
+            )
+    elif isinstance(p.crs, str):
+        if "epsg:4326" in p.crs:
+            warnings.warn(
+                UserWarning(
+                    warning1
+                )
+            )
+        else:
+            warnings.warn(
+                UserWarning(
+                    warning2
                 )
             )
     else:
-        warnings.warn(
-            UserWarning(
-                'Neither init or datum found in proj4 data. Please provide initial \
-                    reference projection with Polygon.crs = "epsg:4326"'
+        print("CRS", p.crs)
+        if "datum" in p.crs.to_dict().keys():
+            if p.crs.to_dict()["datum"] != "WGS84":
+                warnings.warn(
+                    UserWarning(
+                        warning1
+                    )
+                )
+        else:
+            warnings.warn(
+                UserWarning(
+                    warning2
+                )
             )
-        )
 
     return True
 
