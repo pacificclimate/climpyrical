@@ -71,7 +71,6 @@ def check_polygon_before_projection(
                 )
             )
     else:
-        print("CRS", p.crs)
         if "datum" in p.crs.to_dict().keys():
             if p.crs.to_dict()["datum"] != "WGS84":
                 warnings.warn(
