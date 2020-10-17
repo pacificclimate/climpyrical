@@ -188,7 +188,7 @@ def rkrig_r(
     dy = (np.amax(ds.rlat.values) - np.amin(ds.rlat.values)) / ds.rlat.size
     dA = dx * dy
 
-    xyr = df[["rlon", "rlat", "model_vals", station_dv]].values
+    xyr = df[["rlon", "rlat", "ratio"]].values
 
     # used to calculate average at end
     field = np.ones((ds.rlat.size, ds.rlon.size))
@@ -257,22 +257,22 @@ def krig_at_field(
     ymin, ymax = temp_xyr[:, 1].min(), temp_xyr[:, 1].max()
 
     latlon = temp_xyr[:, :2].T
-    model_vals = temp_xyr[:, 2]
-    station_vals = temp_xyr[:, 3]
+    # model_vals = temp_xyr[:, 2]
+    # station_vals = temp_xyr[:, 3]
+# 
+    # start = np.mean(model_vals) / np.mean(station_vals)
+    # tol = np.linspace(0.01, start * 10, 10000)
 
-    start = np.mean(model_vals) / np.mean(station_vals)
-    tol = np.linspace(0.01, start * 10, 10000)
+    # diff = np.array([np.mean(station_vals - model_vals / t) for t in tol])
 
-    diff = np.array([np.mean(station_vals - model_vals / t) for t in tol])
+    # # best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
+    # # print(best_tol, np.mean(station_vals - model_vals / best_tol))
+    # assert np.isclose(
+    #     np.mean(station_vals - model_vals / best_tol), 0.0, atol=1
+    # )
 
-    best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
-    # print(best_tol, np.mean(station_vals - model_vals / best_tol))
-    assert np.isclose(
-        np.mean(station_vals - model_vals / best_tol), 0.0, atol=1
-    )
-
-    # stats = temp_xyr[:, 2]
-    stats = station_vals / (model_vals / best_tol)
+    stats = temp_xyr[:, 2]
+    # stats = station_vals / model_vals #(model_vals / best_tol)
 
     lw, u = (
         find_nearest_index(ds.rlat.values, ymin),
