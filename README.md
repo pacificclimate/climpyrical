@@ -150,7 +150,7 @@ pip install climpyrical/
 
 Now you can use `climpyrical`. To unrotate a CanRCM4 file and write it to a new `netCDF4` file, simply:
 ```bash
-python climpyrical/climpyrical/rot2reg.py "path/to/input_CanRCM4.nc" "path/to/output_CanRCM4.nc"
+python climpyrical/cmd/rot2reg.py "path/to/input_CanRCM4.nc" "path/to/output_CanRCM4.nc"
 ```
 
 ## Authors
