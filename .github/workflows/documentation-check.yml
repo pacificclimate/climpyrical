@@ -28,10 +28,9 @@ jobs:
         pip install -r requirements.txt
         pip install pdoc3==0.9.1
         pip install .
-        source r_install.sh
+        ./r_install.sh
     - name: Genereate docs
-      run: |
-        for file in climpyrical/*.py; do pdoc --html -o docs --force $file; done
+      run: pdoc --html -o docs --force climpyrical/*.py
     - name: Check for changes
       run: echo "::set-env name=CHANGES::$( git diff )"
     - name: Changes detected, run `make docs` to generate new documentation
