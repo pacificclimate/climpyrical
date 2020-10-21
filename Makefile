@@ -29,7 +29,7 @@ clean:
 .PHONY: docs
 docs: venv
 	${PIP} install pdoc3
-	for file in climpyrical/*.py; do pdoc --html -o docs --force $file; done
+	source ${VENV_PATH}/bin/activate &&	pdoc --html -o docs --force climpyrical/*.py
 
 .PHONY: install
 install: venv
