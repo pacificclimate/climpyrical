@@ -260,7 +260,7 @@ def krig_at_field(
 
     # model_vals = temp_xyr[:, 2]
     # station_vals = temp_xyr[:, 3]
-# 
+
     # start = np.mean(model_vals) / np.mean(station_vals)
     # tol = np.linspace(0.01, start * 10, 10000)
 
