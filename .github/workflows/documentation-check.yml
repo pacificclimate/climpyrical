@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-18.04, ubuntu-20.04]
 
     steps:
     - uses: actions/checkout@v2
@@ -25,12 +25,16 @@ jobs:
     - name: Install dependencies
       run : |
         sudo apt-get install -y proj-bin libproj-dev r-base
+        python3 -m venv venv
+        source venv/bin/activate
         pip install -r requirements.txt
         pip install pdoc3==0.9.1
         pip install .
-        ./r_install.sh
     - name: Genereate docs
-      run: pdoc --html -o docs --force climpyrical/*.py
+      run: |
+        source venv/bin/activate
+        source r_install.sh
+        pdoc --html -o docs --force climpyrical/*.py
     - name: Check for changes
       run: echo "::set-env name=CHANGES::$( git diff )"
     - name: Changes detected, run `make docs` to generate new documentation
