@@ -16,7 +16,12 @@ OUT_PATH = sys.argv[2]
 
 ds = read_data(IN_PATH)
 
-lonlat_proj = {"proj": "longlat", "ellps": "WGS84", "datum": "WGS84", "no_defs": True}
+lonlat_proj = {
+    "proj": "longlat",
+    "ellps": "WGS84",
+    "datum": "WGS84",
+    "no_defs": True,
+}
 
 rotated_proj = {
     "proj": "ob_tran",

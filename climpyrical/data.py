@@ -2,7 +2,6 @@ import xarray as xr
 import numpy as np
 from nptyping import NDArray
 from typing import Any, Union
-
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 
 
@@ -51,7 +50,7 @@ def check_valid_data(ds: xr.Dataset) -> bool:
                 "Coordinate axis are not monotonically increasing"
             )
 
-    if np.all(ds.to_array().isnull()).values:
+    if bool(np.all(ds.to_array().isnull()).values):
         raise ValueError("All values are NaN. Check input.")
 
     return True
@@ -59,7 +58,10 @@ def check_valid_data(ds: xr.Dataset) -> bool:
 
 def read_data(data_path: str, required_keys: list = None) -> xr.Dataset:
     """Load NetCDF4 file. Default checks are for CanRCM4 model keys.
-    ------------------------------
+
+    Note that 'rlat', 'lat', 'lon', 'rlon' are all required in addition
+    to a single data variable that contains a field of interest.
+    -----------------------------------------------------------------
     Args:
         data_path (Str): path to folder
             containing CanRCM4 ensemble
@@ -81,19 +83,42 @@ def read_data(data_path: str, required_keys: list = None) -> xr.Dataset:
         )
 
     if required_keys is None:
-        required_keys = ["rlat", "rlon"]
+        required_keys = ["rlat", "rlon", "lat", "lon"]
 
     with xr.open_dataset(data_path) as ds:
         all_keys = list(set(ds.variables).union(set(ds.dims)))
+
         check_valid_keys(all_keys, required_keys)
         check_valid_data(ds)
 
-        if "time" in ds.keys() and ds["time"].size <= 1:
-            ds = ds.squeeze("time").drop_vars("time")
-        if "time_bnds" in ds.keys():
-            ds = ds.drop_vars("time_bnds")
-        if "rotated_pole" in ds.keys():
-            ds = ds.drop_vars("rotated_pole")
+        good_keys = []
+        bad_keys = []
+        for key in all_keys:
+            if ds[key].size > 2:
+                good_keys.append(key)
+            else:
+                bad_keys.append(key)
+
+        dv = list(set(ds.data_vars) - set(bad_keys))
+        if len(dv) > 1 or len(dv) == 0:
+            raise KeyError(
+                "More than one variable data variable detected."
+                " Remove wrong one from file."
+            )
+
+        dv = dv[0]
+        dvfield = ds[dv].squeeze(drop=True)
+        ds = xr.Dataset(
+            {
+                dv: (["rlat", "rlon"], dvfield),
+            },
+            coords={
+                "lat": (["rlat", "rlon"], ds.lat),
+                "lon": (["rlat", "rlon"], ds.lon),
+                "rlon": ("rlon", ds.rlon),
+                "rlat": ("rlat", ds.rlat),
+            },
+        )
 
         return ds
 
@@ -101,9 +126,10 @@ def read_data(data_path: str, required_keys: list = None) -> xr.Dataset:
 def gen_dataset(
     dv: str,
     field: Union[NDArray[(Any, Any), Any], NDArray[(Any, Any, Any), Any]],
-    x: NDArray[(Any,), float],
-    y: NDArray[(Any,), float],
-    z: None = None,
+    rlat: NDArray[(Any,), float],
+    rlon: NDArray[(Any,), float],
+    lat: NDArray[(Any, Any), float],
+    lon: NDArray[(Any, Any), float],
 ) -> xr.Dataset:
     """Generates standard climpyrical xarray Dataset.
     ------------------------------
@@ -119,20 +145,16 @@ def gen_dataset(
     Raises:
         From xarray.Dataset
     """
-    if z is None:
-        ds = xr.Dataset(
-            {dv: (["rlat", "rlon"], field)},
-            coords={"rlon": ("rlon", x), "rlat": ("rlat", y)},
-        )
-    else:
-        ds = xr.Dataset(
-            {dv: (["level", "rlat", "rlon"], field)},
-            coords={
-                "rlon": ("rlon", x),
-                "rlat": ("rlat", y),
-                "level": ("level", z),
-            },
-        )
+
+    ds = xr.Dataset(
+        {dv: (["rlat", "rlon"], field)},
+        coords={
+            "lat": (["rlat", "rlon"], lat),
+            "lon": (["rlat", "rlon"], lon),
+            "rlon": ("rlon", rlon),
+            "rlat": ("rlat", rlat),
+        },
+    )
 
     return ds
 
