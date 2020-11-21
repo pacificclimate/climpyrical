@@ -28,7 +28,7 @@ def check_df(df, keys=["lat", "lon", "rlat", "rlon"]):
 
 
 def krigit_north(
-    df: pd.DataFrame, station_dv: str, n: int, ds: xr.Dataset
+    df: pd.DataFrame, station_dv: str, n: int, ds: xr.Dataset, extrap=True
 ) -> NDArray[(Any, Any), float]:
     """Krigs an extrapolated field for N nearest stations
     to the northernmost in the dataframe provided. Output is
@@ -90,7 +90,7 @@ def krigit_north(
     xlim = r - l
 
     # krig it
-    z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=True)
+    z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=extrap)
 
     field = np.ones((ds.rlat.size, ds.rlon.size))
     field[:, :] = np.nan

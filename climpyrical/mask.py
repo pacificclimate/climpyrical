@@ -1,11 +1,15 @@
 from climpyrical.gridding import find_nearest_index, flatten_coords
 import warnings
-from typing import Union, Any
+from typing import Union, Any, Tuple
 from nptyping import NDArray
 import numpy as np
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, MultiPolygon
+
 from tqdm import tqdm
 import geopandas as gpd
+
+# ignore this. The change quoted leads to CRS errror
+warnings.filterwarnings("ignore", category=FutureWarning, module="pyproj")
 
 
 def check_polygon_validity(p: Union[gpd.GeoSeries, gpd.GeoDataFrame]) -> bool:
@@ -18,6 +22,8 @@ def check_polygon_validity(p: Union[gpd.GeoSeries, gpd.GeoDataFrame]) -> bool:
 
     if not p.size > 0:
         raise ValueError("Empty data provided in polygons")
+    if p.isnull().values.any():
+        raise ValueError("Null data in polygons")
 
     return True
 
@@ -46,45 +52,21 @@ def check_polygon_before_projection(
     if isinstance(p.crs, dict):
         if "datum" in p.crs.keys():
             if p.crs["datum"] != "WGS84":
-                warnings.warn(
-                    UserWarning(
-                        warning1
-                    )
-                )
+                warnings.warn(UserWarning(warning1))
         else:
-            warnings.warn(
-                UserWarning(
-                    warning2
-                )
-            )
+            warnings.warn(UserWarning(warning2))
     elif isinstance(p.crs, str):
         if "epsg:4326" in p.crs:
-            warnings.warn(
-                UserWarning(
-                    warning1
-                )
-            )
+            warnings.warn(UserWarning(warning1))
         else:
-            warnings.warn(
-                UserWarning(
-                    warning2
-                )
-            )
+            warnings.warn(UserWarning(warning2))
     else:
         print("CRS", p.crs)
         if "datum" in p.crs.to_dict().keys():
             if p.crs.to_dict()["datum"] != "WGS84":
-                warnings.warn(
-                    UserWarning(
-                        warning1
-                    )
-                )
+                warnings.warn(UserWarning(warning1))
         else:
-            warnings.warn(
-                UserWarning(
-                    warning2
-                )
-            )
+            warnings.warn(UserWarning(warning2))
 
     return True
 
@@ -111,11 +93,38 @@ def rotate_shapefile(
             in new projection
     """
     # this checks polygon can be rotated
+    check_polygon_validity(p)
     check_polygon_before_projection(p)
 
     target = p.to_crs(crs)
 
     return target
+
+
+def stratify_coords(
+    canada: Union[gpd.GeoSeries, gpd.GeoDataFrame],
+) -> Tuple[NDArray[(Any,), np.float], NDArray[(Any,), np.float]]:
+    """Convert polygons to X and Y pairs.
+    Args:
+        canada (geopandas.GeoSeries object): polygons of Canada
+    Returns:
+        X, Y (numpy.ndarrays): Ordered pairs of coordinates of
+            each polygon
+    """
+    check_polygon_validity(canada)
+
+    pts = []
+    for poly in canada:
+        if isinstance(poly, MultiPolygon):
+            for p in poly:
+                pts.extend(p.exterior.coords)
+                pts.append([None, None])
+        else:
+            pts.extend(poly.exterior.coords)
+            pts.append([None, None])
+
+    X, Y = zip(*pts)
+    return np.array(X), np.array(Y)
 
 
 def make_box(x: float, y: float, dx: float, dy: float) -> Polygon:
@@ -203,3 +212,47 @@ def gen_raster_mask_from_vector(
     mask[icy1:icy2, icx1:icx2] = contained
 
     return mask == 1
+
+
+def to_polygons(geometries):
+    # yield polygons from geometry
+    for geometry in geometries:
+        if isinstance(geometry, Polygon):
+            yield geometry
+        else:
+            yield from geometry
+
+
+def gen_upper_archipelago_mask(canada, x, y, north_ext, upper_limit):
+    """Isolates the UAA and generates a raster mask containing only the UAA.
+    Args:
+        canada (geopandas.GeoSeries object): polygons of Canada
+        x, y (np.ndarray): Arrays containing the rlon and rlat of CanRCM4
+            grids
+        north_ext (int): number of grid cells to add to the nroth
+        upper_limit: the rotated latitude that polygons
+            need to be above to be in the UAA
+    Returns:
+        X, Y (numpy.ndarrays): Ordered pairs of coordinates of
+            each polygon
+    """
+    check_polygon_validity(canada)
+    mask = np.zeros((y.size, x.size))
+    canada_polygons = MultiPolygon(to_polygons(canada))
+
+    uaa = gpd.GeoSeries(
+        MultiPolygon(
+            [
+                P
+                for P in canada_polygons
+                if (P.is_valid and P.centroid.y + 1 >= upper_limit)
+            ]
+        )
+    )
+
+    northern_mask = np.zeros(mask.shape) == 1.0
+    northern_mask[-(north_ext + 50) :, :] = gen_raster_mask_from_vector(
+        x, y[-(north_ext + 50) :], uaa
+    )
+
+    return northern_mask

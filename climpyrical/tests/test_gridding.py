@@ -15,8 +15,7 @@ from climpyrical.gridding import (
     extend_north,
     rot2reg,
 )
-import warnings
-from climpyrical.data import read_data, gen_dataset
+from climpyrical.data import read_data
 import pytest
 from pkg_resources import resource_filename
 import numpy as np
@@ -30,23 +29,23 @@ from typing import Any
     [
         (np.linspace(1, 10, 10), np.linspace(1, 10, 10), None),
         (np.linspace(1, 10, 10), np.linspace(-5, 10, 10), "UserWarning"),
-        ([1, 10, np.nan], [1, 10, 100.], ValueError),
-        ([1, 10, 100.], [1, 10, np.nan], ValueError)
+        ([1, 10, np.nan], [1, 10, 100.0], ValueError),
+        ([1, 10, 100.0], [1, 10, np.nan], ValueError),
+        ([1, 0.0, 100.0], [1, 10, np.nan], ValueError),
     ],
 )
 def test_scale_model_obs(model_vals, station_vals, error):
     if error is None:
         ratio, best_tol = scale_model_obs(model_vals, station_vals)
-        assert np.all(ratio >= 0.)
-        assert np.all(ratio <= 25.)
-        assert np.all(best_tol > 0.) 
+        assert np.all(ratio >= 0.0)
+        assert np.all(ratio <= 25.0)
+        assert np.all(best_tol > 0.0)
     elif isinstance(error, type(ValueError)):
         with pytest.raises(error):
             scale_model_obs(model_vals, station_vals)
     else:
         with pytest.warns(UserWarning):
             scale_model_obs(model_vals, station_vals)
-
 
 
 @pytest.mark.parametrize(
@@ -69,17 +68,13 @@ def test_check_ndims(data, n, error):
 
 # load example ensemble dataset for testing
 # dv = "Rain-RL50"
-dv = 'snw'
-ds = read_data(
-    resource_filename("climpyrical", "tests/data/example2.nc")
-)
-
+dv = "snw"
+ds = read_data(resource_filename("climpyrical", "tests/data/example2.nc"))
 
 ds_regridded_proper = read_data(
-    resource_filename(
-        "climpyrical", "tests/data/snw_target_res.nc"
-    )
+    resource_filename("climpyrical", "tests/data/snw_target_res.nc")
 )
+
 
 @pytest.mark.parametrize(
     "ds,dv,n,keys,copy",
@@ -93,13 +88,13 @@ def test_regrid_ensemble(ds, dv, n, keys, copy):
     nds = regrid_ensemble(ds, dv, n, keys, copy)
     assert isinstance(nds[dv].values, NDArray[(Any,) * ndim, Any])
 
+
 # read grids with expected dimension and ranges
 xi, yi = ds.rlon.values, ds.rlat.values
 
 # extend coordinates in expected way
 xext_ex, yext_ex = np.tile(xi, yi.size), np.repeat(yi, xi.size)
 xext_bad, yext_bad = np.repeat(xi, yi.size), np.tile(yi, xi.size)
-
 
 
 @pytest.mark.parametrize(
@@ -359,18 +354,13 @@ ds_extnorth_bad = read_data(
     resource_filename("climpyrical", "tests/data/example2.nc")
 )
 
-nan_field = ds[dv].values
-nan_field[:] = np.nan
-ds_nan = gen_dataset(dv, nan_field, ds.rlat, ds.rlon, ds.lat, ds.lon)
-
 
 @pytest.mark.parametrize(
     "ds,dv,amount,fill_val,error",
     [
-        (ds_extnorth_bad, dv, "200", np.nan, TypeError),
-        (ds_extnorth_bad, dv, -1, np.nan, ValueError),
-        (ds_nan, dv, 20, np.nan, ValueError),
-        # (ds_mean, dv, 20, np.nan, None),
+        (ds, dv, "200", np.nan, TypeError),
+        (ds, dv, -1, np.nan, ValueError),
+        (ds, dv, 20, np.nan, None),
     ],
 )
 def test_extend_north(ds, dv, amount, fill_val, error):
@@ -383,6 +373,7 @@ def test_extend_north(ds, dv, amount, fill_val, error):
 
 
 ds3d = xr.open_dataset(resource_filename("climpyrical", "tests/data/snw.nc"))
+
 
 @pytest.mark.parametrize("ds,error", [(ds, None), (ds3d, ValueError)])
 def test_rot2reg(ds, error):
