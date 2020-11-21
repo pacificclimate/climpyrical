@@ -86,7 +86,7 @@ def test_rotate_shapefile(p, crs, expected):
 
 
 mask_ds = read_data(
-    resource_filename("climpyrical", "tests/data/canada_mask_rp.nc")
+    resource_filename("climpyrical", "nrc_data/processed/canada_mask_rp.nc")
 )
 
 
