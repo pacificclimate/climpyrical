@@ -76,8 +76,10 @@ def test_rkrig_py(df, station_dv, n, ds):
 @pytest.mark.slow
 @pytest.mark.parametrize(
     "df, n, ds, station_dv, min_size",
-    [(df_.iloc[::10], 10, ds, "TJan2.5 (degC)", 2),
-     (df_.iloc[::10], 10, ds, "TJan2.5 (degC)", 200)],
+    [
+        (df_.iloc[::10], 10, ds, "TJan2.5 (degC)", 2),
+        (df_.iloc[::10], 10, ds, "TJan2.5 (degC)", 200),
+    ],
 )
 def test_rkrig_r(df, n, ds, station_dv, min_size):
     result = rkrig_r(df, n, ds, station_dv, min_size)

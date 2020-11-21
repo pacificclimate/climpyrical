@@ -30,7 +30,9 @@ setup(
     scripts=[
         "climpyrical/gridding.py",
         "climpyrical/data.py",
-        "climpyrical/mask.py"
+        "climpyrical/mask.py",
+        "climpyrical/rkrig.py",
+        "climpyrical/spytialProcess.py",
     ],
     install_requires=["numpy", "shapely", "geopandas", "xarray"],
     tests_require=["pytest"],
