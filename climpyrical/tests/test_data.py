@@ -3,7 +3,7 @@ from climpyrical.data import (
     check_valid_data,
     read_data,
     interpolate_dataset,
-    gen_dataset
+    gen_dataset,
 )
 import pytest
 from pkg_resources import resource_filename
@@ -99,39 +99,39 @@ def test_valid_data(ds, error):
             resource_filename("climpyrical", "tests/data/snw.nc"),
             "snw",
             ["rlat", "rlon", "lat", "lon"],
-            KeyError
+            KeyError,
         ),
         (
             resource_filename("climpyrical", "tests/data/hdd.nc"),
             "heating_degree_days_per_time_period",
             ["rlat", "rlon", "lat", "lon", "extra"],
-            KeyError
+            KeyError,
         ),
         (
             resource_filename("climpyrical", "tests/data/example2.nc"),
             "snw",
             ["rlat", "rlon", "lat", "lon"],
-            (130, 155)
+            (130, 155),
         ),
         (
             resource_filename("climpyrical", "tests/data/example3.nc"),
             "tas",
             ["lat", "lon"],
-            KeyError
+            KeyError,
         ),
         (
             resource_filename("climpyrical", "tests/data/example4.nc"),
             "tos",
             ["lat", "lon"],
-            KeyError
-        )
+            KeyError,
+        ),
     ],
 )
 def test_shape(data_path, design_value_name, keys, expected):
     # tests that the function loads a variety of test data
     # properly
     print("EXPECTED", expected)
-    if isinstance(expected, tuple): 
+    if isinstance(expected, tuple):
         ds = read_data(data_path, keys)
         assert ds[design_value_name].shape == expected
     else:
@@ -187,17 +187,19 @@ def test_interpolate_dataset(points, values, target_points, method, error):
 
 
 test_field = np.ones((2, 2))
+
+
 @pytest.mark.parametrize(
     "dv, field, rlat, rlon, lat, lon",
     [
-        ('test', test_field, [0, 1], [0, 1], test_field, test_field),
+        ("test", test_field, [0, 1], [0, 1], test_field, test_field),
     ],
 )
 def test_gen_dataset(dv, field, rlat, rlon, lat, lon):
-     ds = gen_dataset(dv, field, rlat, rlon, lat, lon)
-     assert isinstance(ds, xr.Dataset)
-     assert ds[dv].values.shape == test_field.shape
-     assert lat.shape == test_field.shape
-     assert lon.shape == test_field.shape
-     assert len(rlat) == test_field.shape[0]
-     assert len(rlon) == test_field.shape[1]
+    ds = gen_dataset(dv, field, rlat, rlon, lat, lon)
+    assert isinstance(ds, xr.Dataset)
+    assert ds[dv].values.shape == test_field.shape
+    assert lat.shape == test_field.shape
+    assert lon.shape == test_field.shape
+    assert len(rlat) == test_field.shape[0]
+    assert len(rlon) == test_field.shape[1]
