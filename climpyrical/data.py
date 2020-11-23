@@ -91,6 +91,8 @@ def read_data(data_path: str, required_keys: list = None) -> xr.Dataset:
         check_valid_keys(all_keys, required_keys)
         check_valid_data(ds)
 
+        # keys with size > 2 are good, otherwise
+        # are superfluous (time, time_bnds, rotated_pole, etc)
         good_keys = []
         bad_keys = []
         for key in all_keys:
@@ -99,14 +101,22 @@ def read_data(data_path: str, required_keys: list = None) -> xr.Dataset:
             else:
                 bad_keys.append(key)
 
+        # check how many data variables with
+        # size > 2 are remaining. If more than one
+        # raise error as we can't distinguish from
+        # the intended variable.
         dv = list(set(ds.data_vars) - set(bad_keys))
         if len(dv) > 1 or len(dv) == 0:
             raise KeyError(
-                "More than one variable data variable detected."
-                " Remove wrong one from file."
+                "More than one data variable detected."
+                "Remove wrong one from file."
             )
 
+        # this should be safe, since any useless
+        # data variables should be detected
         dv = dv[0]
+
+        # drop an extra dimension if it snuck in
         dvfield = ds[dv].squeeze(drop=True)
         ds = xr.Dataset(
             {
