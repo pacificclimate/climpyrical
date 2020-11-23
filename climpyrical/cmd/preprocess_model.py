@@ -196,11 +196,10 @@ def run_processing(IN_PATH, OUT_PATH, fill_glacieres):
 
     # UAA "unfill"
     uaa_mask_path = resource_filename(
-        "climpyrical",
-        "tests/data/canada_mask_north_rp.nc"
+        "climpyrical", "tests/data/canada_mask_north_rp.nc"
     )
 
-    uaa_mask = read_data(uaa_mask_path)['mask']
+    uaa_mask = read_data(uaa_mask_path)["mask"]
     temp_field[uaa_mask] = np.nan
 
     # create final dataset
