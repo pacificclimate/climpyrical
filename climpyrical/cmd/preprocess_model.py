@@ -194,6 +194,15 @@ def run_processing(IN_PATH, OUT_PATH, fill_glacieres):
         points, target_values, target_points, "nearest"
     )
 
+    # UAA "unfill"
+    uaa_mask_path = resource_filename(
+        "climpyrical",
+        "tests/data/canada_mask_north_rp.nc"
+    )
+
+    uaa_mask = read_data(uaa_mask_path)['mask']
+    temp_field[uaa_mask] = np.nan
+
     # create final dataset
     ds_processed = gen_dataset(
         dv, temp_field, ds10.rlat, ds10.rlon, ds10.lat, ds10.lon
