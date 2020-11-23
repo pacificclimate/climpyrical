@@ -12,9 +12,13 @@ warnings.filterwarnings("ignore")
 
 
 """
-quick usage of climpyrical.rot2reg
+quick usage of climpyrical preprocess_mode.py
 usage:
-python rot2reg input.nc output.nc
+python preprocess_model.py -i input.nc -o output.nc -m True
+
+This script takes a CanRCM4 model at the native resolution and
+downscales from 50 km to  5 km and fills in missing land values
+using external masks. 
 """
 
 
