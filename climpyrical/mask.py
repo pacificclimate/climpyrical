@@ -223,7 +223,13 @@ def to_polygons(geometries):
             yield from geometry
 
 
-def gen_upper_archipelago_mask(canada, x, y, north_ext, upper_limit):
+def gen_upper_archipelago_mask(
+    canada: gpd.GeoSeries,
+    x: NDArray[(Any,), float],
+    y: NDArray[(Any,), float],
+    north_ext: int,
+    upper_limit: float,
+) -> NDArray[(Any, Any), Any]:
     """Isolates the UAA and generates a raster mask containing only the UAA.
     Args:
         canada (geopandas.GeoSeries object): polygons of Canada

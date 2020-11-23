@@ -161,7 +161,6 @@ mask_ds_ext = extend_north(mask_ds, "mask", 210, np.nan)
             210,
             30,
             None,
-
         ),
         (
             mask_ds_ext.rlon.values[::10],
