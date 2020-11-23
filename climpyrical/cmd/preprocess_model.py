@@ -54,19 +54,27 @@ def main():
         else:
             fill_glaciers = False
 
+    if not args.input_file.endswith(".nc") or not args.output_file.endswith(
+        ".nc"
+    ):
+        raise IOError("Please provide a .nc file.")
+
     run_processing(args.input_file, args.output_file, fill_glaciers)
 
 
 def run_processing(IN_PATH, OUT_PATH, fill_glacieres):
-    # import sys args
-    # IN_PATH = sys.argv[1]
-    # OUT_PATH = sys.argv[2]
-
-    # if sys.argv[3] is not None:
-    #     if sys.argv[3]:
-    #         fill_glaciers = True
-    #     else:
-    #         fill_glaciers = False
+    """Completes the preprocessing of the model required
+    for the NRC project.
+    Args:
+        IN_PATH, OUT_PATH (strings): directories of NetCDF4 file
+            input and output. Must give filename, too with extension
+            .nc. Overwites files with same name in same directory.
+        fill_glaciers (bool): whether to fill spurious glacier
+            points with preprocessed mask. Default is True.
+    Returns:
+        Creates a NetCDF4 file at OUT_PATH at target resolution
+            for
+    """
 
     ds = read_data(IN_PATH)
     dv = list(ds.data_vars)[0]
@@ -120,6 +128,7 @@ def run_processing(IN_PATH, OUT_PATH, fill_glacieres):
     target_values = mean[nanmask]
     target_points = np.stack([rlon[glaciermask], rlat[glaciermask]]).T
 
+    # interpolate NaN values using bilinear interpolation
     mean[glaciermask] = interpolate_dataset(
         points, target_values, target_points, "linear"
     )
@@ -158,7 +167,7 @@ def run_processing(IN_PATH, OUT_PATH, fill_glacieres):
 
     # load processed canada-only land mask
     canada_mask_path = resource_filename(
-        "climpyrical", "/nrc_data/processed/canada_mask_rp.nc"
+        "climpyrical", "/tests/data/canada_mask_rp.nc"
     )
 
     with read_data(canada_mask_path) as ds_canada:
