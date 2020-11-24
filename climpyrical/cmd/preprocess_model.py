@@ -1,16 +1,3 @@
-from climpyrical.data import read_data, gen_dataset, interpolate_dataset
-from climpyrical.gridding import regrid_ensemble, extend_north
-
-import os
-from pkg_resources import resource_filename
-from argparse import ArgumentParser
-
-import numpy as np
-import warnings
-
-warnings.filterwarnings("ignore")
-
-
 """
 quick usage of climpyrical preprocess_mode.py
 usage:
@@ -18,113 +5,88 @@ python preprocess_model.py -i input.nc -o output.nc -m True
 
 This script takes a CanRCM4 model at the native resolution and
 downscales from 50 km to  5 km and fills in missing land values
-using external masks. 
+using external masks.
 """
 
+from climpyrical.data import read_data, gen_dataset, interpolate_dataset
+from climpyrical.gridding import regrid_ensemble, extend_north
 
-def main():
-    desc = globals()["__doc__"]
-    parser = ArgumentParser(description=desc)
-    parser.add_argument(
-        "-i",
-        "--input_file",
-        help=(
-            "Path to intput CanRCM4 file "
-            "Note: must have lat, lon"
-            "rlat, rlon and a data variable."
-        ),
-    )
-    parser.add_argument(
-        "-o",
-        "--output_file",
-        help=(
-            "Path to store results."
-            "Caution! Overwrites existing"
-            "file in the directory."
-        ),
-    )
-    parser.add_argument(
-        "-m",
-        "--fill_glaciers",
-        default=True,
-        help=("Boolean, removes spurrious glacier" "points within model"),
-    )
+import click
+from pkg_resources import resource_filename
+import logging
 
-    args = parser.parse_args()
+import warnings
 
-    if args.fill_glaciers is not None:
-        if args.fill_glaciers:
-            fill_glaciers = True
-        else:
-            fill_glaciers = False
+import numpy as np
 
-    if not args.input_file.endswith(".nc") or not args.output_file.endswith(
-        ".nc"
-    ):
-        raise IOError("Please provide a .nc file.")
-
-    run_processing(args.input_file, args.output_file, fill_glaciers)
+warnings.filterwarnings("ignore")
 
 
-def run_processing(IN_PATH, OUT_PATH, fill_glacieres):
+@click.command()
+@click.option("-i", "--in-path", help="Input CanRCM4 file", required=True)
+@click.option("-o", "--out-path", help="Output file", required=True)
+@click.option(
+    "-m", "--fill-glaciers", help="Refill glacier points", default=True
+)
+@click.option(
+    "-l",
+    "--log-level",
+    help="Logging level",
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
+    default="INFO",
+)
+def run_processing(in_path, out_path, fill_glaciers, log_level):
     """Completes the preprocessing of the model required
     for the NRC project.
     Args:
-        IN_PATH, OUT_PATH (strings): directories of NetCDF4 file
+        in_path, out_path (strings): directories of NetCDF4 file
             input and output. Must give filename, too with extension
             .nc. Overwites files with same name in same directory.
         fill_glaciers (bool): whether to fill spurious glacier
             points with preprocessed mask. Default is True.
+        quiet (bool): whether to log quietly or not
     Returns:
-        Creates a NetCDF4 file at OUT_PATH at target resolution
-            for
+        Creates a NetCDF4 file at out_path at target resolution
     """
+    logging.basicConfig(level=log_level)
 
-    ds = read_data(IN_PATH)
+    ds = read_data(in_path)
     dv = list(ds.data_vars)[0]
 
-    # create handy 2D grids
     rlon, rlat = np.meshgrid(ds.rlon, ds.rlat)
-    # extract data field
     mean = ds[dv].values
+    kelvin = 273.15  # K
 
-    # Detect unit conversions
-    temp_dv_names = ["twb", "tas", "heating_degree_days_per_time_period"]
-    if dv in temp_dv_names:
+    logging.info("Detect unit conversions")
+    if dv in ["twb", "tas"]:
         print("Temperature field detected. Converting to Kelvin.")
-        mean = ds[dv].values + 273.15
-    else:
-        mean = ds[dv].values
+        mean += kelvin
 
-    # import path masks
-    # surface to land mask
-    PATH_MASK = resource_filename(
+    path_mask = resource_filename(
         "climpyrical", "nrc_data/land_mask_CanRCM4_sftlf.nc"
     )
 
-    # glacier point mask developed from SL50
-    PATH_GLACIER_MASK = resource_filename(
+    path_glacier_mask = resource_filename(
         "climpyrical", "nrc_data/glacier_mask.nc"
     )
 
-    # load mask data
-    mask = read_data(PATH_MASK)
-
-    # regrid dataset to target resolution
+    logging.info("Load and regrid file to target resolution")
+    mask = read_data(path_mask)
     mask = regrid_ensemble(mask, "sftlf", 10, copy=True)
-
-    # convert to boolean mask
     mask = mask["sftlf"] >= 1.0
 
-    # keep original mask, convert to boolean
-    mask_og = read_data(PATH_MASK)["sftlf"].values != 0.0
-    # load and convert glacier mask to boolean
-    glaciermask = read_data(PATH_GLACIER_MASK)["mask"].values != 0.0
+    logging.info("Load original reoslution mask for reference")
+    mask_og = read_data(path_mask)["sftlf"].values != 0.0
 
-    # insert NaN values into glacier points to fill
-    fill_glaciers = True
+    glaciermask = read_data(path_glacier_mask)["mask"].values != 0.0
+
+
+    logging.info(
+        "Insert NaN values into glacier points to fill"
+        "and interpolate if fill_galciers is set"
+    )
     if fill_glaciers:
-        print("Filling spurious glacier points.")
+        logging.info("Filling spurious glacier points.")
         mean[glaciermask] = np.nan
 
     nanmask = ~np.isnan(mean)
@@ -132,30 +94,23 @@ def run_processing(IN_PATH, OUT_PATH, fill_glacieres):
     target_values = mean[nanmask]
     target_points = np.stack([rlon[glaciermask], rlat[glaciermask]]).T
 
-    # interpolate NaN values using bilinear interpolation
     mean[glaciermask] = interpolate_dataset(
         points, target_values, target_points, "linear"
     )
-    ds = gen_dataset(dv, mean, ds.rlat, ds.rlon, ds.lat, ds.lon)
 
-    # nanmask = ~np.isnan(mean)
+    ds = gen_dataset(dv, mean, ds.rlat, ds.rlon, ds.lat, ds.lon)
     ds = ds.assign({dv: (["rlat", "rlon"], mean)})
 
-    # make all water values NaN at original resolution
+    logging.info("Remove water cells at original resolution")
     ds[dv].values[~mask_og] = np.nan
     nanmask = ~np.isnan(ds[dv].values)
 
-    # copy newly masked dv field to target resolution
     ds10 = regrid_ensemble(ds, dv, 10, copy=True)
-
-    # Mask out ocean values
     ds10[dv].values[~mask] = np.nan
     nrlon, nrlat = np.meshgrid(ds10.rlon, ds10.rlat)
     nanmask10 = ~np.isnan(ds10[dv].values)
 
-    print("Interpolating full grid.")
-
-    # bilinearly interpolate over non NaN grids
+    logging.info("Interpolating full remaining grid")
     points = np.stack([rlon[nanmask], rlat[nanmask]]).T
     target_points = np.stack([nrlon[nanmask10], nrlat[nanmask10]]).T
     values = ds[dv].values[nanmask]
@@ -163,13 +118,11 @@ def run_processing(IN_PATH, OUT_PATH, fill_glacieres):
         points, values, target_points, "linear"
     )
 
-    # extend the northern region
+    logging.info("Add northern domain to model")
     ds10 = extend_north(ds10, dv, 210, fill_val=np.nan)
 
-    # create nanmask for interpolation
     nanmask10 = ~np.isnan(ds10[dv].values)
 
-    # load processed canada-only land mask
     canada_mask_path = resource_filename(
         "climpyrical", "/tests/data/canada_mask_rp.nc"
     )
@@ -181,8 +134,9 @@ def run_processing(IN_PATH, OUT_PATH, fill_glacieres):
     # select NaN values within new mask
     ca_mask_or = ~np.logical_or(~ca_mask, nanmask10)
 
-    # Fill inconsistent points using closest neighbour.
-    # Not that the northern section will be filled later on
+    logging.info(
+        "Fill remaining missing points using closest neighbour."
+    )
     nrlon, nrlat = np.meshgrid(ds10.rlon.values, ds10.rlat.values)
 
     temp_field = ds10[dv].values
@@ -192,34 +146,27 @@ def run_processing(IN_PATH, OUT_PATH, fill_glacieres):
     target_values = ds10[dv].values[nanmask10]
     temp_field[~ca_mask] = np.nan
 
-    print("Detecting missing points from canada mask and filling.")
-
     temp_field[ca_mask_or] = interpolate_dataset(
         points, target_values, target_points, "nearest"
     )
 
-    # UAA "unfill"
+    logging.info("Remove the processed northern region.")
     uaa_mask_path = resource_filename(
         "climpyrical", "tests/data/canada_mask_north_rp.nc"
     )
-
     uaa_mask = read_data(uaa_mask_path)["mask"]
     temp_field[uaa_mask] = np.nan
 
-    # create final dataset
     ds_processed = gen_dataset(
         dv, temp_field, ds10.rlat, ds10.rlon, ds10.lat, ds10.lon
     )
 
-    print("Dataset generated and writing to file.")
+    logging.info("Dataset generated and writing to file.")
 
-    if os.path.exists(OUT_PATH):
-        os.remove(OUT_PATH)
+    ds_processed.to_netcdf(out_path, "w")
 
-    ds_processed.to_netcdf(OUT_PATH, "w")
-
-    print("Completed!")
+    logging.info("Completed!")
 
 
 if __name__ == "__main__":
-    main()
+    run_processing()

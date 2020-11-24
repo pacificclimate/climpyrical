@@ -19,7 +19,7 @@ def check_valid_keys(all_keys: list, required_keys: list) -> bool:
     if not set(required_keys).issubset(set(all_keys)):
         raise KeyError(
             "CanRCM4 ensemble is missing keys {}".format(
-                list(set(required_keys) - set(all_keys))
+                set(required_keys) - set(all_keys)
             )
         )
 
@@ -56,7 +56,9 @@ def check_valid_data(ds: xr.Dataset) -> bool:
     return True
 
 
-def read_data(data_path: str, required_keys: list = None) -> xr.Dataset:
+def read_data(
+    data_path: str, required_keys: list = ["rlat", "rlon", "lat", "lon"]
+) -> xr.Dataset:
     """Load NetCDF4 file. Default checks are for CanRCM4 model keys.
 
     Note that 'rlat', 'lat', 'lon', 'rlon' are all required in addition
@@ -82,9 +84,6 @@ def read_data(data_path: str, required_keys: list = None) -> xr.Dataset:
             "climpyrical requires a NetCDF4 file with extension .nc"
         )
 
-    if required_keys is None:
-        required_keys = ["rlat", "rlon", "lat", "lon"]
-
     with xr.open_dataset(data_path) as ds:
         all_keys = list(set(ds.variables).union(set(ds.dims)))
 
@@ -93,28 +92,20 @@ def read_data(data_path: str, required_keys: list = None) -> xr.Dataset:
 
         # keys with size > 2 are good, otherwise
         # are superfluous (time, time_bnds, rotated_pole, etc)
-        good_keys = []
-        bad_keys = []
-        for key in all_keys:
-            if ds[key].size > 2:
-                good_keys.append(key)
-            else:
-                bad_keys.append(key)
+        extra_keys = [key for key in all_keys if ds[key].size <= 2]
 
         # check how many data variables with
         # size > 2 are remaining. If more than one
         # raise error as we can't distinguish from
         # the intended variable.
-        dv = list(set(ds.data_vars) - set(bad_keys))
-        if len(dv) > 1 or len(dv) == 0:
+        dv = set(ds.data_vars) - set(extra_keys)
+        if len(dv) != 1:
             raise KeyError(
                 "More than one data variable detected."
                 "Remove wrong one from file."
             )
-
-        # this should be safe, since any useless
-        # data variables should be detected
-        dv = dv[0]
+        else:
+            (dv,) = dv
 
         # drop an extra dimension if it snuck in
         dvfield = ds[dv].squeeze(drop=True)
