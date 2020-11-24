@@ -80,7 +80,6 @@ def run_processing(in_path, out_path, fill_glaciers, log_level):
 
     glaciermask = read_data(path_glacier_mask)["mask"].values != 0.0
 
-
     logging.info(
         "Insert NaN values into glacier points to fill"
         "and interpolate if fill_galciers is set"
@@ -134,9 +133,7 @@ def run_processing(in_path, out_path, fill_glaciers, log_level):
     # select NaN values within new mask
     ca_mask_or = ~np.logical_or(~ca_mask, nanmask10)
 
-    logging.info(
-        "Fill remaining missing points using closest neighbour."
-    )
+    logging.info("Fill remaining missing points using closest neighbour.")
     nrlon, nrlat = np.meshgrid(ds10.rlon.values, ds10.rlat.values)
 
     temp_field = ds10[dv].values
