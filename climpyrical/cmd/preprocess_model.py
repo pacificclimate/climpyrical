@@ -71,8 +71,7 @@ def downscale_and_fill(in_path, out_path, fill_glaciers, log_level):
         mean += kelvin
         ds[dv].attrs["units"] = "K"
 
-    # if other units need converting in the future, add similar
-    # if statement here
+    # if other units need converting in the future, use pint
 
     path_mask = resource_filename("climpyrical", "nrc_data/land_mask_CanRCM4_sftlf.nc")
 
@@ -106,7 +105,6 @@ def downscale_and_fill(in_path, out_path, fill_glaciers, log_level):
     )
 
     ds = gen_dataset(dv, mean, ds.rlat, ds.rlon, ds.lat, ds.lon, unit)
-    # ds = ds.assign({dv: (["rlat", "rlon"], mean)})
 
     logging.info("Remove water cells at original resolution")
     ds[dv].values[~mask_og] = np.nan
