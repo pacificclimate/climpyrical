@@ -61,6 +61,7 @@ def gen_dataset(
     rlon: NDArray[(Any,), float],
     lat: NDArray[(Any, Any), float],
     lon: NDArray[(Any, Any), float],
+    unit: str = "",
 ) -> xr.Dataset:
     """Generates standard climpyrical xarray Dataset.
     ------------------------------
@@ -77,8 +78,10 @@ def gen_dataset(
         From xarray.Dataset
     """
 
+    dsarr = xr.DataArray(field, coords=[rlat, rlon], dims=["rlat", "rlon"])
+    dsarr.attrs["units"] = unit
     ds = xr.Dataset(
-        {dv: (["rlat", "rlon"], field)},
+        {dv: dsarr},
         coords={
             "lat": (["rlat", "rlon"], lat),
             "lon": (["rlat", "rlon"], lon),

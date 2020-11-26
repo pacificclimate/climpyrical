@@ -51,16 +51,28 @@ def downscale_and_fill(in_path, out_path, fill_glaciers, log_level):
     logging.basicConfig(level=log_level)
 
     ds = read_data(in_path)
-    dv = list(ds.data_vars)[0]
+    (dv,) = ds.data_vars
+    unit = ds[dv].attrs["units"]
 
     rlon, rlat = np.meshgrid(ds.rlon, ds.rlat)
     mean = ds[dv].values
-    kelvin = 273.15  # K
 
-    logging.info("Detect unit conversions")
-    if dv in ["twb", "tas"]:
-        print("Temperature field detected. Converting to Kelvin.")
+    accepted_units = ["kPa", "Pa", "degC", "mm", "unitless", "%"]
+
+    logging.info(f"Detect units: {unit}")
+    if unit not in accepted_units:
+        warnings.warn(
+            f"{unit} not recognized from list of accepted units: {accepted_units}"
+        )
+
+    if unit == "degC":
+        kelvin = 273.15  # K
+        logging.info("Temperature field detected. Converting to Kelvin.")
         mean += kelvin
+        ds[dv].attrs["units"] = "K"
+
+    # if other units need converting in the future, add similar
+    # if statement here
 
     path_mask = resource_filename("climpyrical", "nrc_data/land_mask_CanRCM4_sftlf.nc")
 
@@ -93,8 +105,8 @@ def downscale_and_fill(in_path, out_path, fill_glaciers, log_level):
         points, target_values, target_points, "linear"
     )
 
-    ds = gen_dataset(dv, mean, ds.rlat, ds.rlon, ds.lat, ds.lon)
-    ds = ds.assign({dv: (["rlat", "rlon"], mean)})
+    ds = gen_dataset(dv, mean, ds.rlat, ds.rlon, ds.lat, ds.lon, unit)
+    # ds = ds.assign({dv: (["rlat", "rlon"], mean)})
 
     logging.info("Remove water cells at original resolution")
     ds[dv].values[~mask_og] = np.nan
@@ -149,7 +161,9 @@ def downscale_and_fill(in_path, out_path, fill_glaciers, log_level):
     uaa_mask = read_data(uaa_mask_path)["mask"]
     temp_field[uaa_mask] = np.nan
 
-    ds_processed = gen_dataset(dv, temp_field, ds10.rlat, ds10.rlon, ds10.lat, ds10.lon)
+    ds_processed = gen_dataset(
+        dv, temp_field, ds10.rlat, ds10.rlon, ds10.lat, ds10.lon, unit
+    )
 
     logging.info("Dataset generated and writing to file.")
 
