@@ -19,7 +19,7 @@ class PyTest(TestCommand):
 
 setup(
     name="climpyrical",
-    description="A spatial basis pattern reconstruction tool",
+    description="A climate model hybrid reconstruction tool using station data",
     keywords="geography fields regression climate meteorology",
     packages=find_packages(),
     version="0.1dev",
@@ -30,7 +30,10 @@ setup(
     scripts=[
         "climpyrical/gridding.py",
         "climpyrical/data.py",
-        "climpyrical/mask.py"
+        "climpyrical/mask.py",
+        "climpyrical/rkrig.py",
+        "climpyrical/spytialProcess.py",
+        "climpyrical/cmd/preprocess_model.py"
     ],
     install_requires=["numpy", "shapely", "geopandas", "xarray"],
     tests_require=["pytest"],

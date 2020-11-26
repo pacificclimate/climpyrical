@@ -1,4 +1,4 @@
-from climpyrical.data import check_valid_data, gen_dataset, check_valid_keys
+from climpyrical.data import gen_dataset, check_valid_keys
 
 import warnings
 import numpy as np
@@ -7,6 +7,54 @@ from scipy.interpolate import NearestNDInterpolator
 from pyproj import Transformer, Proj
 from nptyping import NDArray
 from typing import Any, Tuple
+
+
+def scale_model_obs(
+    model_vals: NDArray[(Any, Any), float],
+    station_vals: NDArray[(Any,), float],
+) -> Tuple[NDArray[(Any,), float], float]:
+    """Returns the ratio of station values to scaled model values.
+    scaled model values are scaled by a factor that minimizes the
+    mean difference of the station values and model values at
+    station locations.
+    Args:
+        model_vals (np.ndarray): Array of model values
+            corresponding to station locations
+        station_vals (np.ndarray): station values
+    Returns:
+        ratio (np.ndarray): Ratio of station values
+            to a corrected mean scaled as described above
+        best_tol (float): Best scaling tolerance found
+    """
+    if np.any(np.isclose(model_vals, 0.0)):
+        raise ValueError("Model values must not have zeros")
+    if np.any(np.isnan(model_vals)):
+        raise ValueError("NaN model value encountered.")
+    if np.any(np.isnan(station_vals)):
+        raise ValueError("NaN model value encountered.")
+
+    # choose starting value
+    start = np.nanmean(model_vals) / np.nanmean(station_vals)
+
+    # enter scaling tolerances
+    tol = np.linspace(0.1, start * 3, 10000)
+    diff = np.array([np.nanmean((station_vals - model_vals / t)) for t in tol])
+
+    # find where the scaling tolerance changes the sign of
+    # station_vals - model_vals average. This scaling parameter
+    # is different from simple ratio of the means.
+    best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
+
+    # apply correction
+    model_vals_corrected = model_vals / best_tol
+
+    # calculate ratios with applied correction
+    ratio = station_vals / model_vals_corrected
+
+    if np.any(ratio < 0.0):
+        warnings.warn(UserWarning("Negative ratio encountered."))
+
+    return ratio, best_tol
 
 
 def check_ndims(data, n):
@@ -95,7 +143,11 @@ def check_input_coords(x, y, ds):
 
 
 def regrid_ensemble(
-    ds: xr.Dataset, dv: str, n: int, keys: list = ["rlat", "rlon"], copy=True
+    ds: xr.Dataset,
+    dv: str,
+    n: int,
+    required_keys: list = ["rlat", "rlon", "lat", "lon"],
+    copy=True,
 ) -> xr.Dataset:
     """Re-grids a regional model to have n^2 times the
     native number of grid cells (n times in each axis).
@@ -118,6 +170,9 @@ def regrid_ensemble(
 
     # calculate the size of each grid cell
     # see #20 for more information
+    all_keys = list(set(ds.variables).union(set(ds.dims)))
+
+    check_valid_keys(all_keys, required_keys)
 
     xx, yy = np.meshgrid(ds.rlon, ds.rlat)
 
@@ -139,32 +194,34 @@ def regrid_ensemble(
 
     new_xx, new_yy = np.meshgrid(new_x, new_y)
 
+    lon, lat = transform_coords(
+        new_xx.flatten(),
+        new_yy.flatten(),
+        target_crs={"init": "epsg:4326"},
+        source_crs={
+            "proj": "ob_tran",
+            "o_proj": "longlat",
+            "lon_0": -97,
+            "o_lat_p": 42.5,
+            "a": 6378137,
+            "to_meter": 0.0174532925199,
+            "no_defs": True,
+        },
+    )
+
+    lon += 360
+    lon = lon % 360
+    lon = lon.reshape(new_xx.shape)
+    lat = lat.reshape(new_yy.shape)
+
     if copy:
         # re-create design value field on newly gridded size
-        # 3D version
-        if "level" in keys:
-            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
-            regridded_ds = gen_dataset(
-                dv, new_ds, new_x, new_y, ds.level.values.astype(int)
-            )
-        # 2D version
-        else:
-            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
-            regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
+        new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
+        regridded_ds = gen_dataset(dv, new_ds, new_y, new_x, lat, lon)
     else:
-        # re-create design value field on newly gridded size
-        # 3D version
-        if "level" in keys:
-            new_ds = np.zeros(
-                (ds.level.size, ds.rlat.size * n, ds.rlon.size * n)
-            )
-            regridded_ds = gen_dataset(
-                dv, new_ds, new_x, new_y, ds.level.values.astype(int)
-            )
-        # 2D version
-        else:
-            new_ds = np.zeros((ds.rlat.size * n, ds.rlon.size * n))
-            regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
+        # re-create design value field full of zeros on newly gridded size
+        new_ds = np.zeros((ds.rlat.size * n, ds.rlon.size * n))
+        regridded_ds = gen_dataset(dv, new_ds, new_y, new_x, lat, lon)
 
     return regridded_ds
 
@@ -183,7 +240,6 @@ def extend_north(
     Return:
         xarray Dataset containing extended coordinates and region to the north
     """
-    check_valid_data(ds)
 
     if not isinstance(amount, int):
         raise TypeError(
@@ -205,7 +261,29 @@ def extend_north(
     )
     nrlon = ds.rlon.copy()
 
-    new_ds = gen_dataset(dv, grid, nrlon, nrlat)
+    new_xx, new_yy = np.meshgrid(nrlon, nrlat)
+
+    lon, lat = transform_coords(
+        new_xx.flatten(),
+        new_yy.flatten(),
+        target_crs={"init": "epsg:4326"},
+        source_crs={
+            "proj": "ob_tran",
+            "o_proj": "longlat",
+            "lon_0": -97,
+            "o_lat_p": 42.5,
+            "a": 6378137,
+            "to_meter": 0.0174532925199,
+            "no_defs": True,
+        },
+    )
+
+    lon += 360
+    lon = lon % 360
+    lon = lon.reshape(new_xx.shape)
+    lat = lat.reshape(new_yy.shape)
+
+    new_ds = gen_dataset(dv, grid, nrlat, nrlon, lat, lon)
 
     return new_ds
 
@@ -344,12 +422,6 @@ def check_find_nearest_index_inputs(data, val):
 
     if not isinstance(val, float):
         raise TypeError(f"Please provide a value of type {float}")
-
-    if val > data.max() or val < data.min():
-        warnings.warn(
-            f"{val} is outside of array's domain between {data.min()} and {data.max()}. \
-            A station is outside of the CanRCM4 model grid space."
-        )
 
 
 def find_nearest_index(data, val):
@@ -601,7 +673,9 @@ def rot2reg(
     Returns:
         newds (xarray.core.dataset.Dataset): dataset in new projection
     """
-    dv = list(ds.data_vars)[0]
+    dvmax = np.argmax([ds[key].size for key in list(ds.data_vars)])
+    dv = list(ds.data_vars)[dvmax]
+
     key_list = list(ds.data_vars) + list(ds.coords)
     required_keys = ["rlon", "rlat", "lat", "lon", dv]
     check_valid_keys(key_list, required_keys)
@@ -627,33 +701,15 @@ def rot2reg(
         ds.rlon.values, ds.rlat.values, xlon_rot, ylat_rot
     )
 
+    print("SHAPE OF FIELD", shape_of_field)
+
     if len(shape_of_field) == 2:
         newfield = ds[dv].values[iy, ix].reshape(shape_of_field)
         newds = xr.Dataset(
             {dv: (["lat", "lon"], newfield)},
             coords={"lon": ("lon", xlon), "lat": ("lat", ylat)},
         )
-    elif len(shape_of_field) == 3 and "time" in key_list:
-        newfield = ds[dv].values[:, iy, ix].reshape(shape_of_field)
-        newds = xr.Dataset(
-            {dv: (["time", "lat", "lon"], newfield)},
-            coords={
-                "time": ("time", ds.time),
-                "lon": ("lon", xlon),
-                "lat": ("lat", ylat),
-            },
-        )
-    elif len(shape_of_field) == 3 and "level" in key_list:
-        newfield = ds[dv].values[:, iy, ix].reshape(shape_of_field)
-        newds = xr.Dataset(
-            {dv: (["level", "lat", "lon"], newfield)},
-            coords={
-                "level": ("level", ds.level),
-                "lon": ("lon", xlon),
-                "lat": ("lat", ylat),
-            },
-        )
     else:
-        raise ValueError("Dimenion of data not 2 or 3.")
+        raise ValueError("Dimenion of data not 2.")
 
     return newds
