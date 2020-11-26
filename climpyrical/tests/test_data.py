@@ -3,6 +3,7 @@ from climpyrical.data import (
     check_valid_data,
     read_data,
     interpolate_dataset,
+    gen_dataset,
 )
 import pytest
 from pkg_resources import resource_filename
@@ -92,51 +93,50 @@ def test_valid_data(ds, error):
 
 @pytest.mark.slow
 @pytest.mark.parametrize(
-    "data_path,design_value_name,keys,shape",
+    "data_path,design_value_name,keys,expected",
     [
         (
             resource_filename("climpyrical", "tests/data/snw.nc"),
             "snw",
             ["rlat", "rlon", "lat", "lon"],
-            (66, 130, 155),
+            KeyError,
         ),
         (
             resource_filename("climpyrical", "tests/data/hdd.nc"),
             "heating_degree_days_per_time_period",
-            ["rlat", "rlon", "lat", "lon", "level"],
-            (35, 130, 155),
+            ["rlat", "rlon", "lat", "lon", "extra"],
+            KeyError,
         ),
-        # (
-        #     resource_filename("climpyrical", "tests/data/example1.nc"),
-        #     "hyai",
-        #     ["lon", "lat"],
-        #     (27,),
-        # ),
         (
             resource_filename("climpyrical", "tests/data/example2.nc"),
-            "tas",
-            ["lat", "lon"],
+            "snw",
+            ["rlat", "rlon", "lat", "lon"],
             (130, 155),
         ),
         (
             resource_filename("climpyrical", "tests/data/example3.nc"),
             "tas",
             ["lat", "lon"],
-            (128, 256),
+            KeyError,
         ),
         (
             resource_filename("climpyrical", "tests/data/example4.nc"),
             "tos",
             ["lat", "lon"],
-            (24, 170, 180),
+            KeyError,
         ),
     ],
 )
-def test_shape(data_path, design_value_name, keys, shape):
+def test_shape(data_path, design_value_name, keys, expected):
     # tests that the function loads a variety of test data
     # properly
-    ds = read_data(data_path, keys)
-    assert ds[design_value_name].shape == shape
+    print("EXPECTED", expected)
+    if isinstance(expected, tuple):
+        ds = read_data(data_path, keys)
+        assert ds[design_value_name].shape == expected
+    else:
+        with pytest.raises(expected):
+            read_data(data_path)
 
 
 @pytest.mark.parametrize(
@@ -146,7 +146,7 @@ def test_shape(data_path, design_value_name, keys, shape):
             resource_filename("climpyrical", "tests/data/world.geojson"),
             TypeError,
         ),
-        (resource_filename("climpyrical", "tests/data/hdd.nc"), None),
+        (resource_filename("climpyrical", "tests/data/example2.nc"), None),
     ],
 )
 def test_path(data_path, error):
@@ -184,3 +184,22 @@ def test_interpolate_dataset(points, values, target_points, method, error):
     else:
         with pytest.raises(error):
             interpolate_dataset(points, values, target_points, method)
+
+
+test_field = np.ones((2, 2))
+
+
+@pytest.mark.parametrize(
+    "dv, field, rlat, rlon, lat, lon",
+    [
+        ("test", test_field, [0, 1], [0, 1], test_field, test_field),
+    ],
+)
+def test_gen_dataset(dv, field, rlat, rlon, lat, lon):
+    ds = gen_dataset(dv, field, rlat, rlon, lat, lon)
+    assert isinstance(ds, xr.Dataset)
+    assert ds[dv].values.shape == test_field.shape
+    assert lat.shape == test_field.shape
+    assert lon.shape == test_field.shape
+    assert len(rlat) == test_field.shape[0]
+    assert len(rlon) == test_field.shape[1]

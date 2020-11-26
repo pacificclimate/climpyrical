@@ -1,4 +1,5 @@
 from climpyrical.gridding import (
+    scale_model_obs,
     check_input_coords,
     check_transform_coords_inputs,
     flatten_coords,
@@ -14,13 +15,37 @@ from climpyrical.gridding import (
     extend_north,
     rot2reg,
 )
-import warnings
-from climpyrical.data import read_data, gen_dataset
+from climpyrical.data import read_data
 import pytest
 from pkg_resources import resource_filename
 import numpy as np
+import xarray as xr
 from nptyping import NDArray
 from typing import Any
+
+
+@pytest.mark.parametrize(
+    "model_vals, station_vals, error",
+    [
+        (np.linspace(1, 10, 10), np.linspace(1, 10, 10), None),
+        (np.linspace(1, 10, 10), np.linspace(-5, 10, 10), "UserWarning"),
+        ([1, 10, np.nan], [1, 10, 100.0], ValueError),
+        ([1, 10, 100.0], [1, 10, np.nan], ValueError),
+        ([1, 0.0, 100.0], [1, 10, np.nan], ValueError),
+    ],
+)
+def test_scale_model_obs(model_vals, station_vals, error):
+    if error is None:
+        ratio, best_tol = scale_model_obs(model_vals, station_vals)
+        assert np.all(ratio >= 0.0)
+        assert np.all(ratio <= 25.0)
+        assert np.all(best_tol > 0.0)
+    elif isinstance(error, type(ValueError)):
+        with pytest.raises(error):
+            scale_model_obs(model_vals, station_vals)
+    else:
+        with pytest.warns(UserWarning):
+            scale_model_obs(model_vals, station_vals)
 
 
 @pytest.mark.parametrize(
@@ -42,57 +67,34 @@ def test_check_ndims(data, n, error):
 
 
 # load example ensemble dataset for testing
-dv = "Rain-RL50"
-ds = read_data(
-    resource_filename("climpyrical", "tests/data/snw_test_ensemble.nc")
-)
+# dv = "Rain-RL50"
+dv = "snw"
+ds = read_data(resource_filename("climpyrical", "tests/data/example2.nc"))
 
-ds_mean = ds.mean(dim="level")
 ds_regridded_proper = read_data(
-    resource_filename(
-        "climpyrical", "tests/data/snw_regridded_test_ensemble.nc"
-    )
+    resource_filename("climpyrical", "tests/data/snw_target_res.nc")
 )
-# read grids with expected dimension and ranges
-xi, yi = ds.rlon.values, ds.rlat.values
-
-# extend coordinates in expected way
-xext_ex, yext_ex = np.tile(xi, yi.size), np.repeat(yi, xi.size)
-xext_bad, yext_bad = np.repeat(xi, yi.size), np.tile(yi, xi.size)
-
-"""
-@pytest.mark.parametrize(
-    "ds,dv,n,keys,error",
-    [
-        (ds, dv, 3, ["p"], KeyError),
-        (3, dv, 3, ["rlat", "rlon", "lon", "lat", "level"], TypeError),
-        (ds, 3, 3, ["rlat", "rlon", "lon", "lat", "level"], TypeError),
-        (ds, dv, "4", ["rlat", "rlon", "lon", "lat", "level"], TypeError),
-        (ds, dv, 3, ["rlat", "rlon", "lon", "lat", "level"], None),
-    ],
-)
-def test_check_regrid_ensemble_inputs(ds, dv, n, keys, error):
-    if error is None:
-        check_regrid_ensemble_inputs(ds, dv, n, keys)
-    else:
-        with pytest.raises(error):
-            check_regrid_ensemble_inputs(ds, dv, n, keys)
-"""
 
 
 @pytest.mark.parametrize(
     "ds,dv,n,keys,copy",
     [
-        (ds, dv, 3, ["rlat", "rlon", "level"], True),
-        (ds_mean, dv, 3, ["rlat", "rlon"], True),
-        (ds, dv, 3, ["rlat", "rlon", "level"], False),
-        (ds_mean, dv, 3, ["rlat", "rlon"], False),
+        (ds, dv, 3, ["rlon", "rlat", "lon", "lat"], True),
+        (ds, dv, 3, ["rlon", "rlat", "lon", "lat"], False),
     ],
 )
 def test_regrid_ensemble(ds, dv, n, keys, copy):
     ndim = np.ndim(ds[dv].values)
     nds = regrid_ensemble(ds, dv, n, keys, copy)
     assert isinstance(nds[dv].values, NDArray[(Any,) * ndim, Any])
+
+
+# read grids with expected dimension and ranges
+xi, yi = ds.rlon.values, ds.rlat.values
+
+# extend coordinates in expected way
+xext_ex, yext_ex = np.tile(xi, yi.size), np.repeat(yi, xi.size)
+xext_bad, yext_bad = np.repeat(xi, yi.size), np.tile(yi, xi.size)
 
 
 @pytest.mark.parametrize(
@@ -213,15 +215,15 @@ def test_check_find_nearest_index_inputs(data, val, error):
             check_find_nearest_index_inputs(data, val)
 
 
-@pytest.mark.parametrize(
-    "data,val,warning",
-    [(data, 25.0, None), (data, 35.0, UserWarning)],
-)
-def test_check_find_nearest_index_inputs_warnings(data, val, warning):
-    if warning is None:
-        check_find_nearest_index_inputs(data, val)
-    with pytest.warns(warning):
-        check_find_nearest_index_inputs(data, val)
+# @pytest.mark.parametrize(
+#     "data,val,warning",
+#     [(data, 25.0, None), (data, 35.0, UserWarning)],
+# )
+# def test_check_find_nearest_index_inputs_warnings(data, val, warning):
+#     if warning is None:
+#         check_find_nearest_index_inputs(data, val)
+#     with pytest.warns(warning):
+#         check_find_nearest_index_inputs(data, val)
 
 
 @pytest.mark.parametrize(
@@ -347,14 +349,10 @@ def test_find_nearest_index_value(x, y, x_i, y_i, field, mask, expected):
     assert truth is False
 
 
-dv = "Rain-RL50"
-ds = read_data(
-    resource_filename("climpyrical", "tests/data/snw_test_ensemble.nc")
+dv = "snw"
+ds_extnorth_bad = read_data(
+    resource_filename("climpyrical", "tests/data/example2.nc")
 )
-
-nan_field = ds[dv].values[0, ...]
-nan_field[:] = np.nan
-ds_nan = gen_dataset(dv, nan_field, ds.rlon, ds.rlat)
 
 
 @pytest.mark.parametrize(
@@ -362,8 +360,7 @@ ds_nan = gen_dataset(dv, nan_field, ds.rlon, ds.rlat)
     [
         (ds, dv, "200", np.nan, TypeError),
         (ds, dv, -1, np.nan, ValueError),
-        (ds_nan, dv, 20, np.nan, ValueError),
-        (ds_mean, dv, 20, np.nan, None),
+        (ds, dv, 20, np.nan, None),
     ],
 )
 def test_extend_north(ds, dv, amount, fill_val, error):
@@ -375,10 +372,10 @@ def test_extend_north(ds, dv, amount, fill_val, error):
             extend_north(ds, dv, amount, fill_val)
 
 
-warnings.simplefilter("ignore", category=UserWarning)
+ds3d = xr.open_dataset(resource_filename("climpyrical", "tests/data/snw.nc"))
 
 
-@pytest.mark.parametrize("ds,error", [(ds, None), (ds_mean, None)])
+@pytest.mark.parametrize("ds,error", [(ds, None), (ds3d, ValueError)])
 def test_rot2reg(ds, error):
     dv = list(ds.data_vars)[0]
 
