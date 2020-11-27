@@ -27,9 +27,9 @@ jobs:
       run: |
         for file in climpyrical/*.py; do pdoc --html -o docs --force $file; done
     - name: Check for changes
-      run: echo "::set-env name=CHANGES::$( git diff )"
+      run: echo "CHANGES = $(git diff)" >> $GITHUB_ENV
     - name: Changes detected, run `make docs` to generate new documentation
       run: exit 1
-      if: env.CHANGES != ''
+      if: $CHANGES != ''
     - run: echo "No changes detected"
-      if: env.CHANGES == ''
+      if: $CHANGES == ''
