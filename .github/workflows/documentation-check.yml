@@ -30,6 +30,6 @@ jobs:
       run: echo "CHANGES = $(git diff)" >> $GITHUB_ENV
     - name: Changes detected, run `make docs` to generate new documentation
       run: exit 1
-      if: $CHANGES != ''
+      if: env.CHANGES != ''
     - run: echo "No changes detected"
-      if: $CHANGES == ''
+      if: env.CHANGES == ''
