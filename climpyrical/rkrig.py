@@ -62,9 +62,7 @@ def krigit_north(
     # rather than rotated coordinates, was that this particular haversine
     # implementation gives incorrect values for rotated lon and rotated lat.
     # it does give correct distances for regular lat and lon.
-    nbrs = NearestNeighbors(n_neighbors=n, metric="haversine").fit(
-        regular_points
-    )
+    nbrs = NearestNeighbors(n_neighbors=n, metric="haversine").fit(regular_points)
     dist, ind = nbrs.kneighbors(regular_points)
     imax = np.argmax(df.rlat.values)  # idxmax(axis=0, skipna=True)
     temp_df = df.iloc[ind[imax]]
@@ -147,11 +145,7 @@ def rkrig_py(
 
 
 def rkrig_r(
-    df: pd.DataFrame,
-    n: int,
-    ds: xr.Dataset,
-    station_dv: str,
-    min_size: int = 30,
+    df: pd.DataFrame, n: int, ds: xr.Dataset, station_dv: str, min_size: int = 30
 ):
     """Implements climpyricals moving window method.
     Args:
@@ -170,20 +164,10 @@ def rkrig_r(
         kriged field
     """
 
-    dataframe_keys = [
-        "lat",
-        "lon",
-        "rlat",
-        "rlon",
-        station_dv,
-        "model_vals",
-        "ratio",
-    ]
+    dataframe_keys = ["lat", "lon", "rlat", "rlon", station_dv, "model_vals", "ratio"]
     check_df(df, dataframe_keys)
 
-    X_distances = np.stack(
-        [np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)]
-    )
+    X_distances = np.stack([np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)])
     dx = (np.amax(ds.rlon.values) - np.amin(ds.rlon.values)) / ds.rlon.size
     dy = (np.amax(ds.rlat.values) - np.amin(ds.rlat.values)) / ds.rlat.size
     dA = dx * dy
@@ -214,9 +198,9 @@ def rkrig_r(
 
                 while hull.area < dA * min_size ** 2:
                     nn += 1
-                    nbrs = NearestNeighbors(
-                        n_neighbors=nn, metric="haversine"
-                    ).fit(X_distances.T)
+                    nbrs = NearestNeighbors(n_neighbors=nn, metric="haversine").fit(
+                        X_distances.T
+                    )
                     dist, ind = nbrs.kneighbors(X_distances.T)
 
                     temp_xyr = xyr[ind[i], :]
@@ -246,7 +230,7 @@ def krig_at_field(
     windows in the moving window algorithm.
         Args:
             ds: model xarray dataset
-            temp_xyr: subset of station ratios/station values
+            temp_xyr: subset of station ratios
                 from which the kriging is calculated. This array
                 must contain [longitudes, latitudes, ratios]
         Returns:
@@ -257,21 +241,8 @@ def krig_at_field(
     ymin, ymax = temp_xyr[:, 1].min(), temp_xyr[:, 1].max()
 
     latlon = temp_xyr[:, :2].T
-    model_vals = temp_xyr[:, 2]
-    station_vals = temp_xyr[:, 3]
 
-    start = np.mean(model_vals) / np.mean(station_vals)
-    tol = np.linspace(0.01, start * 5, 50000)
-
-    diff = np.array([np.mean(station_vals - model_vals / t) for t in tol])
-
-    best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
-    assert np.isclose(
-        np.mean(station_vals - model_vals / best_tol), 0.0, atol=0.1
-    )
-
-    # stats = temp_xyr[:, 2]
-    stats = station_vals / (model_vals / best_tol)
+    stats = temp_xyr[:, 2]
 
     lw, u = (
         find_nearest_index(ds.rlat.values, ymin),
