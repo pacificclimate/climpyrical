@@ -19,7 +19,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        sudo apt-get install -y proj-bin libproj-dev r-base
+        sudo apt-get install -y proj-bin libproj-dev libharfbuzz-dev libfribidi-dev libcurl4-openssl-dev  r-base
         pip install -r requirements.txt -r test_requirements.txt
         pip install .
 	Rscript install_pkgs.R r_requirements.txt
