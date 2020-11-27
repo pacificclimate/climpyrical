@@ -22,7 +22,7 @@ jobs:
         sudo apt-get install -y proj-bin libproj-dev r-base
         pip install -r requirements.txt -r test_requirements.txt
         pip install .
-	Rscript install_pkgs.R r_requirements.txt
+        Rscript install_pkgs.R r_requirements.txt
       env:
         PIP_INDEX_URL: https://pypi.pacificclimate.org/simple
     - name: Test with pytest (full)
