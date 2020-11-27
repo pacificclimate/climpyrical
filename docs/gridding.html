@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-<meta name="generator" content="pdoc 0.9.1" />
+<meta name="generator" content="pdoc 0.9.2" />
 <title>gridding API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
@@ -26,7 +26,7 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from climpyrical.data import check_valid_data, gen_dataset
+<pre><code class="python">from climpyrical.data import gen_dataset, check_valid_keys
 
 import warnings
 import numpy as np
@@ -35,6 +35,54 @@ from scipy.interpolate import NearestNDInterpolator
 from pyproj import Transformer, Proj
 from nptyping import NDArray
 from typing import Any, Tuple
+
+
+def scale_model_obs(
+    model_vals: NDArray[(Any, Any), float],
+    station_vals: NDArray[(Any,), float],
+) -&gt; Tuple[NDArray[(Any,), float], float]:
+    &#34;&#34;&#34;Returns the ratio of station values to scaled model values.
+    scaled model values are scaled by a factor that minimizes the
+    mean difference of the station values and model values at
+    station locations.
+    Args:
+        model_vals (np.ndarray): Array of model values
+            corresponding to station locations
+        station_vals (np.ndarray): station values
+    Returns:
+        ratio (np.ndarray): Ratio of station values
+            to a corrected mean scaled as described above
+        best_tol (float): Best scaling tolerance found
+    &#34;&#34;&#34;
+    if np.any(np.isclose(model_vals, 0.0)):
+        raise ValueError(&#34;Model values must not have zeros&#34;)
+    if np.any(np.isnan(model_vals)):
+        raise ValueError(&#34;NaN model value encountered.&#34;)
+    if np.any(np.isnan(station_vals)):
+        raise ValueError(&#34;NaN model value encountered.&#34;)
+
+    # choose starting value
+    start = np.nanmean(model_vals) / np.nanmean(station_vals)
+
+    # enter scaling tolerances
+    tol = np.linspace(0.1, start * 3, 10000)
+    diff = np.array([np.nanmean((station_vals - model_vals / t)) for t in tol])
+
+    # find where the scaling tolerance changes the sign of
+    # station_vals - model_vals average. This scaling parameter
+    # is different from simple ratio of the means.
+    best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
+
+    # apply correction
+    model_vals_corrected = model_vals / best_tol
+
+    # calculate ratios with applied correction
+    ratio = station_vals / model_vals_corrected
+
+    if np.any(ratio &lt; 0.0):
+        warnings.warn(UserWarning(&#34;Negative ratio encountered.&#34;))
+
+    return ratio, best_tol
 
 
 def check_ndims(data, n):
@@ -123,7 +171,11 @@ def check_input_coords(x, y, ds):
 
 
 def regrid_ensemble(
-    ds: xr.Dataset, dv: str, n: int, keys: list = [&#34;rlat&#34;, &#34;rlon&#34;], copy=True
+    ds: xr.Dataset,
+    dv: str,
+    n: int,
+    required_keys: list = [&#34;rlat&#34;, &#34;rlon&#34;, &#34;lat&#34;, &#34;lon&#34;],
+    copy=True,
 ) -&gt; xr.Dataset:
     &#34;&#34;&#34;Re-grids a regional model to have n^2 times the
     native number of grid cells (n times in each axis).
@@ -146,6 +198,9 @@ def regrid_ensemble(
 
     # calculate the size of each grid cell
     # see #20 for more information
+    all_keys = list(set(ds.variables).union(set(ds.dims)))
+
+    check_valid_keys(all_keys, required_keys)
 
     xx, yy = np.meshgrid(ds.rlon, ds.rlat)
 
@@ -167,32 +222,34 @@ def regrid_ensemble(
 
     new_xx, new_yy = np.meshgrid(new_x, new_y)
 
+    lon, lat = transform_coords(
+        new_xx.flatten(),
+        new_yy.flatten(),
+        target_crs={&#34;init&#34;: &#34;epsg:4326&#34;},
+        source_crs={
+            &#34;proj&#34;: &#34;ob_tran&#34;,
+            &#34;o_proj&#34;: &#34;longlat&#34;,
+            &#34;lon_0&#34;: -97,
+            &#34;o_lat_p&#34;: 42.5,
+            &#34;a&#34;: 6378137,
+            &#34;to_meter&#34;: 0.0174532925199,
+            &#34;no_defs&#34;: True,
+        },
+    )
+
+    lon += 360
+    lon = lon % 360
+    lon = lon.reshape(new_xx.shape)
+    lat = lat.reshape(new_yy.shape)
+
     if copy:
         # re-create design value field on newly gridded size
-        # 3D version
-        if &#34;level&#34; in keys:
-            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
-            regridded_ds = gen_dataset(
-                dv, new_ds, new_x, new_y, ds.level.values.astype(int)
-            )
-        # 2D version
-        else:
-            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
-            regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
+        new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
+        regridded_ds = gen_dataset(dv, new_ds, new_y, new_x, lat, lon)
     else:
-        # re-create design value field on newly gridded size
-        # 3D version
-        if &#34;level&#34; in keys:
-            new_ds = np.zeros(
-                (ds.level.size, ds.rlat.size * n, ds.rlon.size * n)
-            )
-            regridded_ds = gen_dataset(
-                dv, new_ds, new_x, new_y, ds.level.values.astype(int)
-            )
-        # 2D version
-        else:
-            new_ds = np.zeros((ds.rlat.size * n, ds.rlon.size * n))
-            regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
+        # re-create design value field full of zeros on newly gridded size
+        new_ds = np.zeros((ds.rlat.size * n, ds.rlon.size * n))
+        regridded_ds = gen_dataset(dv, new_ds, new_y, new_x, lat, lon)
 
     return regridded_ds
 
@@ -211,7 +268,6 @@ def extend_north(
     Return:
         xarray Dataset containing extended coordinates and region to the north
     &#34;&#34;&#34;
-    check_valid_data(ds)
 
     if not isinstance(amount, int):
         raise TypeError(
@@ -233,7 +289,29 @@ def extend_north(
     )
     nrlon = ds.rlon.copy()
 
-    new_ds = gen_dataset(dv, grid, nrlon, nrlat)
+    new_xx, new_yy = np.meshgrid(nrlon, nrlat)
+
+    lon, lat = transform_coords(
+        new_xx.flatten(),
+        new_yy.flatten(),
+        target_crs={&#34;init&#34;: &#34;epsg:4326&#34;},
+        source_crs={
+            &#34;proj&#34;: &#34;ob_tran&#34;,
+            &#34;o_proj&#34;: &#34;longlat&#34;,
+            &#34;lon_0&#34;: -97,
+            &#34;o_lat_p&#34;: 42.5,
+            &#34;a&#34;: 6378137,
+            &#34;to_meter&#34;: 0.0174532925199,
+            &#34;no_defs&#34;: True,
+        },
+    )
+
+    lon += 360
+    lon = lon % 360
+    lon = lon.reshape(new_xx.shape)
+    lat = lat.reshape(new_yy.shape)
+
+    new_ds = gen_dataset(dv, grid, nrlat, nrlon, lat, lon)
 
     return new_ds
 
@@ -372,12 +450,6 @@ def check_find_nearest_index_inputs(data, val):
 
     if not isinstance(val, float):
         raise TypeError(f&#34;Please provide a value of type {float}&#34;)
-
-    if val &gt; data.max() or val &lt; data.min():
-        warnings.warn(
-            f&#34;{val} is outside of array&#39;s domain between {data.min()} and {data.max()}. \
-            A station is outside of the CanRCM4 model grid space.&#34;
-        )
 
 
 def find_nearest_index(data, val):
@@ -594,7 +666,81 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
     # including any replaced NaN values if program found it neccessary
     final = field[y_i, x_i]
 
-    return final</code></pre>
+    return final
+
+
+def rot2reg(
+    ds: xr.Dataset,
+    target_crs: dict = {
+        &#34;proj&#34;: &#34;ob_tran&#34;,
+        &#34;o_proj&#34;: &#34;longlat&#34;,
+        &#34;lon_0&#34;: -97,
+        &#34;o_lat_p&#34;: 42.5,
+        &#34;a&#34;: 6378137,
+        &#34;to_meter&#34;: 0.0174532925199,
+        &#34;no_defs&#34;: True,
+    },
+    source_crs: dict = {
+        &#34;proj&#34;: &#34;longlat&#34;,
+        &#34;ellps&#34;: &#34;WGS84&#34;,
+        &#34;datum&#34;: &#34;WGS84&#34;,
+        &#34;no_defs&#34;: True,
+    },
+) -&gt; xr.Dataset:
+    &#34;&#34;&#34;Transform a CanRCM4 field from rotated coordinates
+    to regular coordinates or another projection. This
+    transformation implicitly calculates nearest neighbours
+    and does not employ any other interpolation. Projected
+    coordinates are same shape and size of input rlon and rlat
+    coordinates
+    Args:
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
+        target_crs (dict): proj4 dictionary defining target projection
+        source_crs (dict): proj4 dictionary defining source projection
+    Returns:
+        newds (xarray.core.dataset.Dataset): dataset in new projection
+    &#34;&#34;&#34;
+    dvmax = np.argmax([ds[key].size for key in list(ds.data_vars)])
+    dv = list(ds.data_vars)[dvmax]
+
+    key_list = list(ds.data_vars) + list(ds.coords)
+    required_keys = [&#34;rlon&#34;, &#34;rlat&#34;, &#34;lat&#34;, &#34;lon&#34;, dv]
+    check_valid_keys(key_list, required_keys)
+
+    shape_of_field = ds[dv].values.shape
+
+    # construct regular grid axis the same size and shape as the field
+    xlon = np.linspace(ds.lon.min(), ds.lon.max(), ds.rlon.size)
+    ylat = np.linspace(ds.lat.min(), ds.lat.max(), ds.rlat.size)
+
+    xx, yy = flatten_coords(xlon, ylat)
+
+    # convert regular grid axis to rotated (non regular) arrays
+    xlon_rot, ylat_rot = transform_coords(
+        xx.flatten(),
+        yy.flatten(),
+        source_crs=source_crs,
+        target_crs=target_crs,
+    )
+
+    # find value at nearest coordinate
+    ix, iy = find_element_wise_nearest_pos(
+        ds.rlon.values, ds.rlat.values, xlon_rot, ylat_rot
+    )
+
+    print(&#34;SHAPE OF FIELD&#34;, shape_of_field)
+
+    if len(shape_of_field) == 2:
+        newfield = ds[dv].values[iy, ix].reshape(shape_of_field)
+        newds = xr.Dataset(
+            {dv: ([&#34;lat&#34;, &#34;lon&#34;], newfield)},
+            coords={&#34;lon&#34;: (&#34;lon&#34;, xlon), &#34;lat&#34;: (&#34;lat&#34;, ylat)},
+        )
+    else:
+        raise ValueError(&#34;Dimenion of data not 2.&#34;)
+
+    return newds</code></pre>
 </details>
 </section>
 <section>
@@ -700,13 +846,7 @@ If val is not within data's range of values</p></div>
         raise ValueError(&#34;Array size must be greater than 1&#34;)
 
     if not isinstance(val, float):
-        raise TypeError(f&#34;Please provide a value of type {float}&#34;)
-
-    if val &gt; data.max() or val &lt; data.min():
-        warnings.warn(
-            f&#34;{val} is outside of array&#39;s domain between {data.min()} and {data.max()}. \
-            A station is outside of the CanRCM4 model grid space.&#34;
-        )</code></pre>
+        raise TypeError(f&#34;Please provide a value of type {float}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="gridding.check_find_nearest_value_inputs"><code class="name flex">
@@ -1038,7 +1178,6 @@ these northern regions.</p>
     Return:
         xarray Dataset containing extended coordinates and region to the north
     &#34;&#34;&#34;
-    check_valid_data(ds)
 
     if not isinstance(amount, int):
         raise TypeError(
@@ -1060,7 +1199,29 @@ these northern regions.</p>
     )
     nrlon = ds.rlon.copy()
 
-    new_ds = gen_dataset(dv, grid, nrlon, nrlat)
+    new_xx, new_yy = np.meshgrid(nrlon, nrlat)
+
+    lon, lat = transform_coords(
+        new_xx.flatten(),
+        new_yy.flatten(),
+        target_crs={&#34;init&#34;: &#34;epsg:4326&#34;},
+        source_crs={
+            &#34;proj&#34;: &#34;ob_tran&#34;,
+            &#34;o_proj&#34;: &#34;longlat&#34;,
+            &#34;lon_0&#34;: -97,
+            &#34;o_lat_p&#34;: 42.5,
+            &#34;a&#34;: 6378137,
+            &#34;to_meter&#34;: 0.0174532925199,
+            &#34;no_defs&#34;: True,
+        },
+    )
+
+    lon += 360
+    lon = lon % 360
+    lon = lon.reshape(new_xx.shape)
+    lat = lat.reshape(new_yy.shape)
+
+    new_ds = gen_dataset(dv, grid, nrlat, nrlon, lat, lon)
 
     return new_ds</code></pre>
 </details>
@@ -1308,7 +1469,7 @@ If all values in x_i or y_i are not integers</p></div>
 </details>
 </dd>
 <dt id="gridding.flatten_coords"><code class="name flex">
-<span>def <span class="ident">flatten_coords</span></span>(<span>x: nptyping.types._ndarray.NDArray, y: nptyping.types._ndarray.NDArray) ‑> Tuple[nptypes._ndarray.NDArray, nptypes._ndarray.NDArray]</span>
+<span>def <span class="ident">flatten_coords</span></span>(<span>x: NDArray[(typing.Any,), Float[64]], y: NDArray[(typing.Any,), Float[64]]) ‑> Tuple[nptypes._ndarray.NDArray, nptypes._ndarray.NDArray]</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Takes the rlat and rlon 1D arrays from the
@@ -1363,7 +1524,7 @@ ensemble size.</p></div>
 </details>
 </dd>
 <dt id="gridding.regrid_ensemble"><code class="name flex">
-<span>def <span class="ident">regrid_ensemble</span></span>(<span>ds: xarray.core.dataset.Dataset, dv: str, n: int, keys: list = ['rlat', 'rlon'], copy=True) ‑> xarray.core.dataset.Dataset</span>
+<span>def <span class="ident">regrid_ensemble</span></span>(<span>ds: xarray.core.dataset.Dataset, dv: str, n: int, required_keys: list = ['rlat', 'rlon', 'lat', 'lon'], copy=True) ‑> xarray.core.dataset.Dataset</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Re-grids a regional model to have n^2 times the
@@ -1399,7 +1560,11 @@ are not of expected range</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def regrid_ensemble(
-    ds: xr.Dataset, dv: str, n: int, keys: list = [&#34;rlat&#34;, &#34;rlon&#34;], copy=True
+    ds: xr.Dataset,
+    dv: str,
+    n: int,
+    required_keys: list = [&#34;rlat&#34;, &#34;rlon&#34;, &#34;lat&#34;, &#34;lon&#34;],
+    copy=True,
 ) -&gt; xr.Dataset:
     &#34;&#34;&#34;Re-grids a regional model to have n^2 times the
     native number of grid cells (n times in each axis).
@@ -1422,6 +1587,9 @@ are not of expected range</dd>
 
     # calculate the size of each grid cell
     # see #20 for more information
+    all_keys = list(set(ds.variables).union(set(ds.dims)))
+
+    check_valid_keys(all_keys, required_keys)
 
     xx, yy = np.meshgrid(ds.rlon, ds.rlat)
 
@@ -1443,34 +1611,208 @@ are not of expected range</dd>
 
     new_xx, new_yy = np.meshgrid(new_x, new_y)
 
+    lon, lat = transform_coords(
+        new_xx.flatten(),
+        new_yy.flatten(),
+        target_crs={&#34;init&#34;: &#34;epsg:4326&#34;},
+        source_crs={
+            &#34;proj&#34;: &#34;ob_tran&#34;,
+            &#34;o_proj&#34;: &#34;longlat&#34;,
+            &#34;lon_0&#34;: -97,
+            &#34;o_lat_p&#34;: 42.5,
+            &#34;a&#34;: 6378137,
+            &#34;to_meter&#34;: 0.0174532925199,
+            &#34;no_defs&#34;: True,
+        },
+    )
+
+    lon += 360
+    lon = lon % 360
+    lon = lon.reshape(new_xx.shape)
+    lat = lat.reshape(new_yy.shape)
+
     if copy:
         # re-create design value field on newly gridded size
-        # 3D version
-        if &#34;level&#34; in keys:
-            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=1), n, axis=2)
-            regridded_ds = gen_dataset(
-                dv, new_ds, new_x, new_y, ds.level.values.astype(int)
-            )
-        # 2D version
-        else:
-            new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
-            regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
+        new_ds = np.repeat(np.repeat(ds[dv].values, n, axis=0), n, axis=1)
+        regridded_ds = gen_dataset(dv, new_ds, new_y, new_x, lat, lon)
     else:
-        # re-create design value field on newly gridded size
-        # 3D version
-        if &#34;level&#34; in keys:
-            new_ds = np.zeros(
-                (ds.level.size, ds.rlat.size * n, ds.rlon.size * n)
-            )
-            regridded_ds = gen_dataset(
-                dv, new_ds, new_x, new_y, ds.level.values.astype(int)
-            )
-        # 2D version
-        else:
-            new_ds = np.zeros((ds.rlat.size * n, ds.rlon.size * n))
-            regridded_ds = gen_dataset(dv, new_ds, new_x, new_y)
+        # re-create design value field full of zeros on newly gridded size
+        new_ds = np.zeros((ds.rlat.size * n, ds.rlon.size * n))
+        regridded_ds = gen_dataset(dv, new_ds, new_y, new_x, lat, lon)
 
     return regridded_ds</code></pre>
+</details>
+</dd>
+<dt id="gridding.rot2reg"><code class="name flex">
+<span>def <span class="ident">rot2reg</span></span>(<span>ds: xarray.core.dataset.Dataset, target_crs: dict = {'proj': 'ob_tran', 'o_proj': 'longlat', 'lon_0': -97, 'o_lat_p': 42.5, 'a': 6378137, 'to_meter': 0.0174532925199, 'no_defs': True}, source_crs: dict = {'proj': 'longlat', 'ellps': 'WGS84', 'datum': 'WGS84', 'no_defs': True}) ‑> xarray.core.dataset.Dataset</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Transform a CanRCM4 field from rotated coordinates
+to regular coordinates or another projection. This
+transformation implicitly calculates nearest neighbours
+and does not employ any other interpolation. Projected
+coordinates are same shape and size of input rlon and rlat
+coordinates</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>ds</code></strong> :&ensp;<code>xarray.core.dataset.Dataset</code></dt>
+<dd>dataset containing the ensemble for
+checking consistency with ensemble</dd>
+<dt><strong><code>target_crs</code></strong> :&ensp;<code>dict</code></dt>
+<dd>proj4 dictionary defining target projection</dd>
+<dt><strong><code>source_crs</code></strong> :&ensp;<code>dict</code></dt>
+<dd>proj4 dictionary defining source projection</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>newds (xarray.core.dataset.Dataset): dataset in new projection</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rot2reg(
+    ds: xr.Dataset,
+    target_crs: dict = {
+        &#34;proj&#34;: &#34;ob_tran&#34;,
+        &#34;o_proj&#34;: &#34;longlat&#34;,
+        &#34;lon_0&#34;: -97,
+        &#34;o_lat_p&#34;: 42.5,
+        &#34;a&#34;: 6378137,
+        &#34;to_meter&#34;: 0.0174532925199,
+        &#34;no_defs&#34;: True,
+    },
+    source_crs: dict = {
+        &#34;proj&#34;: &#34;longlat&#34;,
+        &#34;ellps&#34;: &#34;WGS84&#34;,
+        &#34;datum&#34;: &#34;WGS84&#34;,
+        &#34;no_defs&#34;: True,
+    },
+) -&gt; xr.Dataset:
+    &#34;&#34;&#34;Transform a CanRCM4 field from rotated coordinates
+    to regular coordinates or another projection. This
+    transformation implicitly calculates nearest neighbours
+    and does not employ any other interpolation. Projected
+    coordinates are same shape and size of input rlon and rlat
+    coordinates
+    Args:
+        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
+            checking consistency with ensemble
+        target_crs (dict): proj4 dictionary defining target projection
+        source_crs (dict): proj4 dictionary defining source projection
+    Returns:
+        newds (xarray.core.dataset.Dataset): dataset in new projection
+    &#34;&#34;&#34;
+    dvmax = np.argmax([ds[key].size for key in list(ds.data_vars)])
+    dv = list(ds.data_vars)[dvmax]
+
+    key_list = list(ds.data_vars) + list(ds.coords)
+    required_keys = [&#34;rlon&#34;, &#34;rlat&#34;, &#34;lat&#34;, &#34;lon&#34;, dv]
+    check_valid_keys(key_list, required_keys)
+
+    shape_of_field = ds[dv].values.shape
+
+    # construct regular grid axis the same size and shape as the field
+    xlon = np.linspace(ds.lon.min(), ds.lon.max(), ds.rlon.size)
+    ylat = np.linspace(ds.lat.min(), ds.lat.max(), ds.rlat.size)
+
+    xx, yy = flatten_coords(xlon, ylat)
+
+    # convert regular grid axis to rotated (non regular) arrays
+    xlon_rot, ylat_rot = transform_coords(
+        xx.flatten(),
+        yy.flatten(),
+        source_crs=source_crs,
+        target_crs=target_crs,
+    )
+
+    # find value at nearest coordinate
+    ix, iy = find_element_wise_nearest_pos(
+        ds.rlon.values, ds.rlat.values, xlon_rot, ylat_rot
+    )
+
+    print(&#34;SHAPE OF FIELD&#34;, shape_of_field)
+
+    if len(shape_of_field) == 2:
+        newfield = ds[dv].values[iy, ix].reshape(shape_of_field)
+        newds = xr.Dataset(
+            {dv: ([&#34;lat&#34;, &#34;lon&#34;], newfield)},
+            coords={&#34;lon&#34;: (&#34;lon&#34;, xlon), &#34;lat&#34;: (&#34;lat&#34;, ylat)},
+        )
+    else:
+        raise ValueError(&#34;Dimenion of data not 2.&#34;)
+
+    return newds</code></pre>
+</details>
+</dd>
+<dt id="gridding.scale_model_obs"><code class="name flex">
+<span>def <span class="ident">scale_model_obs</span></span>(<span>model_vals: NDArray[(typing.Any, typing.Any), Float[64]], station_vals: NDArray[(typing.Any,), Float[64]]) ‑> Tuple[nptypes._ndarray.NDArray, float]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns the ratio of station values to scaled model values.
+scaled model values are scaled by a factor that minimizes the
+mean difference of the station values and model values at
+station locations.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>model_vals</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>Array of model values
+corresponding to station locations</dd>
+<dt><strong><code>station_vals</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>station values</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>ratio (np.ndarray): Ratio of station values
+to a corrected mean scaled as described above
+best_tol (float): Best scaling tolerance found</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def scale_model_obs(
+    model_vals: NDArray[(Any, Any), float],
+    station_vals: NDArray[(Any,), float],
+) -&gt; Tuple[NDArray[(Any,), float], float]:
+    &#34;&#34;&#34;Returns the ratio of station values to scaled model values.
+    scaled model values are scaled by a factor that minimizes the
+    mean difference of the station values and model values at
+    station locations.
+    Args:
+        model_vals (np.ndarray): Array of model values
+            corresponding to station locations
+        station_vals (np.ndarray): station values
+    Returns:
+        ratio (np.ndarray): Ratio of station values
+            to a corrected mean scaled as described above
+        best_tol (float): Best scaling tolerance found
+    &#34;&#34;&#34;
+    if np.any(np.isclose(model_vals, 0.0)):
+        raise ValueError(&#34;Model values must not have zeros&#34;)
+    if np.any(np.isnan(model_vals)):
+        raise ValueError(&#34;NaN model value encountered.&#34;)
+    if np.any(np.isnan(station_vals)):
+        raise ValueError(&#34;NaN model value encountered.&#34;)
+
+    # choose starting value
+    start = np.nanmean(model_vals) / np.nanmean(station_vals)
+
+    # enter scaling tolerances
+    tol = np.linspace(0.1, start * 3, 10000)
+    diff = np.array([np.nanmean((station_vals - model_vals / t)) for t in tol])
+
+    # find where the scaling tolerance changes the sign of
+    # station_vals - model_vals average. This scaling parameter
+    # is different from simple ratio of the means.
+    best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
+
+    # apply correction
+    model_vals_corrected = model_vals / best_tol
+
+    # calculate ratios with applied correction
+    ratio = station_vals / model_vals_corrected
+
+    if np.any(ratio &lt; 0.0):
+        warnings.warn(UserWarning(&#34;Negative ratio encountered.&#34;))
+
+    return ratio, best_tol</code></pre>
 </details>
 </dd>
 <dt id="gridding.transform_coords"><code class="name flex">
@@ -1577,6 +1919,8 @@ in WGS84</p></div>
 <li><code><a title="gridding.find_nearest_index_value" href="#gridding.find_nearest_index_value">find_nearest_index_value</a></code></li>
 <li><code><a title="gridding.flatten_coords" href="#gridding.flatten_coords">flatten_coords</a></code></li>
 <li><code><a title="gridding.regrid_ensemble" href="#gridding.regrid_ensemble">regrid_ensemble</a></code></li>
+<li><code><a title="gridding.rot2reg" href="#gridding.rot2reg">rot2reg</a></code></li>
+<li><code><a title="gridding.scale_model_obs" href="#gridding.scale_model_obs">scale_model_obs</a></code></li>
 <li><code><a title="gridding.transform_coords" href="#gridding.transform_coords">transform_coords</a></code></li>
 </ul>
 </li>
@@ -1584,7 +1928,7 @@ in WGS84</p></div>
 </nav>
 </main>
 <footer id="footer">
-<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.1</a>.</p>
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
 </footer>
 </body>
 </html>
