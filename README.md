@@ -126,6 +126,7 @@ source myvenv/bin/activate
 Load the `R` module into the environment. This step and the next `PYTHONPATH` steps may be unnecessary for your own machine. 
 ```bash
 module load R
+module load proj/7.2.0
 ```
 
 Loading the `R` module also loads gdal/2.2.3 which sets the PYTHONPATH env variable interfering with our virtual python environment. So it's important to unset `PYTHONPATH` before proceeding:
@@ -141,12 +142,13 @@ which python
 
 Next install `climpyrical`'s requirements with:
 ```bash
+pip install cython
 pip install -r climpyrical/requirements.txt
 ```
 
 Then finally install `climpyrical` with:
 ```bash
-pip install climpyrical/
+pip install -e climpyrical/
 ```
 
 Now you can use `climpyrical`. To unrotate a CanRCM4 file and write it to a new `netCDF4` file, simply:
