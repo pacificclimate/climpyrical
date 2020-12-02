@@ -26,8 +26,8 @@ jobs:
     - name: Check for changes
       run: |
         echo "CHANGES='$(echo $(git diff))'" >> $GITHUB_ENV
+        echo ${{ env.CHANGES }}
     - name: Changes detected, run `make docs` to generate new documentation
       run: exit 1
-      if: ${{ env.CHANGES }} != ''
+      if: contains(env.CHANGES, 'diff')
     - run: echo "No changes detected"
-      if: ${{ env.CHANGES }} == ''
