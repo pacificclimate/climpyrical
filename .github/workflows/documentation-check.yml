@@ -22,7 +22,7 @@ jobs:
         pip install pdoc3==0.9.1
     - name: Genereate docs
       run: |
-        for file in climpyrical/*.py; do pdoc --html -o docs --force $file; done
+        pdoc --html -o docs --force climpyrical/*.py
     - name: Check for changes
       run: |
         echo "CHANGES='$(echo $(git diff))'" >> $GITHUB_ENV
