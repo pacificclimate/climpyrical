@@ -164,7 +164,7 @@ def rkrig_r(
         kriged field
     """
 
-    dataframe_keys = ["lat", "lon", "rlat", "rlon", station_dv, "model_vals", "ratio"]
+    dataframe_keys = ["lat", "lon", "rlat", "rlon", "ratio"]
     check_df(df, dataframe_keys)
 
     X_distances = np.stack([np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)])
@@ -172,7 +172,7 @@ def rkrig_r(
     dy = (np.amax(ds.rlat.values) - np.amin(ds.rlat.values)) / ds.rlat.size
     dA = dx * dy
 
-    xyr = df[["rlon", "rlat", "model_vals", station_dv]].values
+    xyr = df[["rlon", "rlat", "ratio"]].values
 
     # used to calculate average at end
     field = np.ones((ds.rlat.size, ds.rlon.size))
