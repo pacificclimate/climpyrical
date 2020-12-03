@@ -26,17 +26,18 @@ apt:
 clean:
 	rm -rf $(VENV_PATH)
 
-.PHONY: docs
-docs: venv
-	${PIP} install pdoc3
-	for file in climpyrical/*.py; do pdoc --html -o docs --force $file; done
-
 .PHONY: install
 install: venv
 	${PIP} install -U pip
 	${PIP} install -r requirements.txt -r test_requirements.txt
 	${PIP} install -e .
-	./r_install.sh
+	Rscript install_pkgs.R r_requirements.txt
+
+.PHONY: docs
+docs: venv
+	${PIP} install pdoc3==0.9.1
+	source ${VENV_PATH}/bin/activate && \
+	pdoc --html -o docs --force climpyrical/*.py
 
 .PHONY: test
 test: venv

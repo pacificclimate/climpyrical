@@ -5,31 +5,29 @@ on: pull_request
 jobs:
   check:
 
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-18.04, ubuntu-20.04]
+    runs-on: ubuntu-20.04
 
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.6'
+        python-version: '3.8'
     - name: Install dependencies
       run : |
-        sudo apt-get install -y proj-bin libproj-dev r-base
+        sudo apt-get install -y proj-bin libproj-dev libharfbuzz-dev libfribidi-dev libcurl4-openssl-dev r-base
         pip install -r requirements.txt
         pip install .
-        source r_install.sh
+        Rscript install_pkgs.R r_requirements.txt
         pip install pdoc3==0.9.1
     - name: Genereate docs
       run: |
-        for file in climpyrical/*.py; do pdoc --html -o docs --force $file; done
+        pdoc --html -o docs --force climpyrical/*.py
     - name: Check for changes
-      run: echo "::set-env name=CHANGES::$( git diff )"
+      run: |
+        echo "CHANGES='$(echo $(git diff))'" >> $GITHUB_ENV
+        echo ${{ env.CHANGES }}
     - name: Changes detected, run `make docs` to generate new documentation
       run: exit 1
-      if: env.CHANGES != ''
+      if: contains(env.CHANGES, 'diff')
     - run: echo "No changes detected"
-      if: env.CHANGES == ''

@@ -5,11 +5,10 @@ on: push
 jobs:
   build:
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        os: [ubuntu-18.04, ubuntu-20.04]
-        python-version: [3.6, 3.7]
+        python-version: [3.6, 3.7, 3.8]
 
     steps:
     - uses: actions/checkout@v2
@@ -19,10 +18,10 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
-        sudo apt-get install -y proj-bin libproj-dev r-base
+        sudo apt-get install -y proj-bin libproj-dev libharfbuzz-dev libfribidi-dev libcurl4-openssl-dev  r-base
         pip install -r requirements.txt -r test_requirements.txt
         pip install .
-        source r_install.sh
+        Rscript install_pkgs.R r_requirements.txt
       env:
         PIP_INDEX_URL: https://pypi.pacificclimate.org/simple
     - name: Test with pytest (full)

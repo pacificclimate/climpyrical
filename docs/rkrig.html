@@ -43,6 +43,11 @@ import scipy
 import numpy as np
 import pandas as pd
 
+import warnings
+from rpy2.rinterface import RRuntimeWarning
+
+warnings.filterwarnings(&#34;ignore&#34;, category=RRuntimeWarning)
+
 
 def check_df(df, keys=[&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;]):
     contains_keys = [key not in df.columns for key in keys]
@@ -51,7 +56,7 @@ def check_df(df, keys=[&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#
 
 
 def krigit_north(
-    df: pd.DataFrame, station_dv: str, n: int, ds: xr.Dataset
+    df: pd.DataFrame, station_dv: str, n: int, ds: xr.Dataset, extrap=True
 ) -&gt; NDArray[(Any, Any), float]:
     &#34;&#34;&#34;Krigs an extrapolated field for N nearest stations
     to the northernmost in the dataframe provided. Output is
@@ -113,7 +118,7 @@ def krigit_north(
     xlim = r - l
 
     # krig it
-    z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=True)
+    z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=extrap)
 
     field = np.ones((ds.rlat.size, ds.rlon.size))
     field[:, :] = np.nan
@@ -169,7 +174,13 @@ def rkrig_py(
     return z
 
 
-def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
+def rkrig_r(
+    df: pd.DataFrame,
+    n: int,
+    ds: xr.Dataset,
+    station_dv: str,
+    min_size: int = 30,
+):
     &#34;&#34;&#34;Implements climpyricals moving window method.
     Args:
         df: pandas dataframe containing the coordinates in
@@ -187,7 +198,15 @@ def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
         kriged field
     &#34;&#34;&#34;
 
-    dataframe_keys = [&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, &#34;ratio&#34;]
+    dataframe_keys = [
+        &#34;lat&#34;,
+        &#34;lon&#34;,
+        &#34;rlat&#34;,
+        &#34;rlon&#34;,
+        station_dv,
+        &#34;model_vals&#34;,
+        &#34;ratio&#34;,
+    ]
     check_df(df, dataframe_keys)
 
     X_distances = np.stack(
@@ -197,7 +216,7 @@ def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
     dy = (np.amax(ds.rlat.values) - np.amin(ds.rlat.values)) / ds.rlat.size
     dA = dx * dy
 
-    xyr = df[[&#34;rlon&#34;, &#34;rlat&#34;, &#34;ratio&#34;]].values
+    xyr = df[[&#34;rlon&#34;, &#34;rlat&#34;, &#34;model_vals&#34;, station_dv]].values
 
     # used to calculate average at end
     field = np.ones((ds.rlat.size, ds.rlon.size))
@@ -247,7 +266,7 @@ def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
 
 
 def krig_at_field(
-    ds: xr.Dataset, temp_xyr: NDArray[(Any, 3), float]
+    ds: xr.Dataset, temp_xyr: NDArray[(Any, 4), float]
 ) -&gt; NDArray[(Any, Any), float]:
     &#34;&#34;&#34;Matches the output of spytialProcess to the dataset provided
     and returns a 2D array of the krigged field with same dimensions
@@ -266,7 +285,21 @@ def krig_at_field(
     ymin, ymax = temp_xyr[:, 1].min(), temp_xyr[:, 1].max()
 
     latlon = temp_xyr[:, :2].T
-    stats = temp_xyr[:, 2]
+    model_vals = temp_xyr[:, 2]
+    station_vals = temp_xyr[:, 3]
+
+    start = np.mean(model_vals) / np.mean(station_vals)
+    tol = np.linspace(0.01, start * 5, 50000)
+
+    diff = np.array([np.mean(station_vals - model_vals / t) for t in tol])
+
+    best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
+    assert np.isclose(
+        np.mean(station_vals - model_vals / best_tol), 0.0, atol=0.1
+    )
+
+    # stats = temp_xyr[:, 2]
+    stats = station_vals / (model_vals / best_tol)
 
     lw, u = (
         find_nearest_index(ds.rlat.values, ymin),
@@ -331,7 +364,7 @@ kriged subset field</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def krig_at_field(
-    ds: xr.Dataset, temp_xyr: NDArray[(Any, 3), float]
+    ds: xr.Dataset, temp_xyr: NDArray[(Any, 4), float]
 ) -&gt; NDArray[(Any, Any), float]:
     &#34;&#34;&#34;Matches the output of spytialProcess to the dataset provided
     and returns a 2D array of the krigged field with same dimensions
@@ -350,7 +383,21 @@ kriged subset field</p></div>
     ymin, ymax = temp_xyr[:, 1].min(), temp_xyr[:, 1].max()
 
     latlon = temp_xyr[:, :2].T
-    stats = temp_xyr[:, 2]
+    model_vals = temp_xyr[:, 2]
+    station_vals = temp_xyr[:, 3]
+
+    start = np.mean(model_vals) / np.mean(station_vals)
+    tol = np.linspace(0.01, start * 5, 50000)
+
+    diff = np.array([np.mean(station_vals - model_vals / t) for t in tol])
+
+    best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
+    assert np.isclose(
+        np.mean(station_vals - model_vals / best_tol), 0.0, atol=0.1
+    )
+
+    # stats = temp_xyr[:, 2]
+    stats = station_vals / (model_vals / best_tol)
 
     lw, u = (
         find_nearest_index(ds.rlat.values, ymin),
@@ -374,7 +421,7 @@ kriged subset field</p></div>
 </details>
 </dd>
 <dt id="rkrig.krigit_north"><code class="name flex">
-<span>def <span class="ident">krigit_north</span></span>(<span>df: pandas.core.frame.DataFrame, station_dv: str, n: int, ds: xarray.core.dataset.Dataset) ‑> nptyping.types._ndarray.NDArray</span>
+<span>def <span class="ident">krigit_north</span></span>(<span>df: pandas.core.frame.DataFrame, station_dv: str, n: int, ds: xarray.core.dataset.Dataset, extrap=True) ‑> nptyping.types._ndarray.NDArray</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Krigs an extrapolated field for N nearest stations
@@ -397,7 +444,7 @@ field: kriged field for the north</p></div>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def krigit_north(
-    df: pd.DataFrame, station_dv: str, n: int, ds: xr.Dataset
+    df: pd.DataFrame, station_dv: str, n: int, ds: xr.Dataset, extrap=True
 ) -&gt; NDArray[(Any, Any), float]:
     &#34;&#34;&#34;Krigs an extrapolated field for N nearest stations
     to the northernmost in the dataframe provided. Output is
@@ -459,7 +506,7 @@ field: kriged field for the north</p></div>
     xlim = r - l
 
     # krig it
-    z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=True)
+    z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=extrap)
 
     field = np.ones((ds.rlat.size, ds.rlon.size))
     field[:, :] = np.nan
@@ -543,7 +590,7 @@ field: kriged field</p></div>
 </details>
 </dd>
 <dt id="rkrig.rkrig_r"><code class="name flex">
-<span>def <span class="ident">rkrig_r</span></span>(<span>df: pandas.core.frame.DataFrame, n: int, ds: xarray.core.dataset.Dataset, min_size: int = 30)</span>
+<span>def <span class="ident">rkrig_r</span></span>(<span>df: pandas.core.frame.DataFrame, n: int, ds: xarray.core.dataset.Dataset, station_dv: str, min_size: int = 30)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Implements climpyricals moving window method.</p>
@@ -571,7 +618,13 @@ the perimeter of stations in a nearest neighbor set</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def rkrig_r(df: pd.DataFrame, n: int, ds: xr.Dataset, min_size: int = 30):
+<pre><code class="python">def rkrig_r(
+    df: pd.DataFrame,
+    n: int,
+    ds: xr.Dataset,
+    station_dv: str,
+    min_size: int = 30,
+):
     &#34;&#34;&#34;Implements climpyricals moving window method.
     Args:
         df: pandas dataframe containing the coordinates in
@@ -589,7 +642,15 @@ the perimeter of stations in a nearest neighbor set</dd>
         kriged field
     &#34;&#34;&#34;
 
-    dataframe_keys = [&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, &#34;ratio&#34;]
+    dataframe_keys = [
+        &#34;lat&#34;,
+        &#34;lon&#34;,
+        &#34;rlat&#34;,
+        &#34;rlon&#34;,
+        station_dv,
+        &#34;model_vals&#34;,
+        &#34;ratio&#34;,
+    ]
     check_df(df, dataframe_keys)
 
     X_distances = np.stack(
@@ -599,7 +660,7 @@ the perimeter of stations in a nearest neighbor set</dd>
     dy = (np.amax(ds.rlat.values) - np.amin(ds.rlat.values)) / ds.rlat.size
     dA = dx * dy
 
-    xyr = df[[&#34;rlon&#34;, &#34;rlat&#34;, &#34;ratio&#34;]].values
+    xyr = df[[&#34;rlon&#34;, &#34;rlat&#34;, &#34;model_vals&#34;, station_dv]].values
 
     # used to calculate average at end
     field = np.ones((ds.rlat.size, ds.rlon.size))

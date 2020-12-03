@@ -1,4 +1,4 @@
-dotCall64_1.0-0
-spam_2.5-1
-maps_3.3.0
-Archive/fields/fields_11.4
+dotCall64==1.0-0
+spam==2.5-1
+maps==3.3.0
+fields==11.4

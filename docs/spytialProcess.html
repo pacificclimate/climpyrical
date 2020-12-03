@@ -38,22 +38,10 @@ from rpy2 import robjects
 
 import rpy2.robjects.packages as rpackages
 
-# from rpy2.robjects.vectors import StrVector
 
 utils = rpackages.importr(&#34;utils&#34;)
-utils.install_packages(&#34;fields&#34;, version=&#34;11.3&#34;)
-
-
-# utils.chooseCRANmirror(ind=1) # select the first mirror in the list
-
-# utils.install_packages(StrVector((&#34;fields&#34;)), &#34;../r-library&#34;)
-# utils.install_packages(StrVector((&#34;sp&#34;)), &#34;../r-library&#34;)
-# utils.install_packages(StrVector((&#34;gstat&#34;)), &#34;../r-library&#34;)
-
-# print(&#34;FIELDS&#34;)
+robjects.r(&#34;.libPaths(Sys.getenv(&#39;R_LIBS_USER&#39;))&#34;)
 importr(&#34;fields&#34;)
-# importr(&#34;sp&#34;)
-# importr(&#34;gstat&#34;)
 
 
 def fit(

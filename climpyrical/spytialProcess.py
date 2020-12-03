@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from pkg_resources import resource_string, resource_filename
+from pkg_resources import resource_string
 
 from nptyping import NDArray
 from typing import Any, Tuple
@@ -12,12 +12,8 @@ import rpy2.robjects.packages as rpackages
 
 
 utils = rpackages.importr("utils")
-
-rpath = resource_filename("climpyrical", "/r-library")
-libPath = robjects.r(".libPaths")
-libPath(rpath)
-
-importr("fields", rpath)
+robjects.r(".libPaths(Sys.getenv('R_LIBS_USER'))")
+importr("fields")
 
 
 def fit(

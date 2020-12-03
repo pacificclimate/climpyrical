@@ -30,7 +30,6 @@
 import numpy as np
 from nptyping import NDArray
 from typing import Any, Union
-
 from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator
 
 
@@ -48,7 +47,7 @@ def check_valid_keys(all_keys: list, required_keys: list) -&gt; bool:
     if not set(required_keys).issubset(set(all_keys)):
         raise KeyError(
             &#34;CanRCM4 ensemble is missing keys {}&#34;.format(
-                list(set(required_keys) - set(all_keys))
+                set(required_keys) - set(all_keys)
             )
         )
 
@@ -75,19 +74,61 @@ def check_valid_data(ds: xr.Dataset) -&gt; bool:
         if (np.any(np.diff(ds.rlat.values) &lt; 0)) or np.any(
             (np.diff(ds.rlon.values) &lt; 0)
         ):
-            raise ValueError(
-                &#34;Coordinate axis are not monotonically increasing&#34;
-            )
+            raise ValueError(&#34;Coordinate axis are not monotonically increasing&#34;)
 
-    if np.all(ds.to_array().isnull()).values:
+    if bool(np.all(ds.to_array().isnull()).values):
         raise ValueError(&#34;All values are NaN. Check input.&#34;)
 
     return True
 
 
-def read_data(data_path: str, required_keys: list = None) -&gt; xr.Dataset:
-    &#34;&#34;&#34;Load NetCDF4 file. Default checks are for CanRCM4 model keys.
+def gen_dataset(
+    dv: str,
+    field: Union[NDArray[(Any, Any), Any], NDArray[(Any, Any, Any), Any]],
+    rlat: NDArray[(Any,), float],
+    rlon: NDArray[(Any,), float],
+    lat: NDArray[(Any, Any), float],
+    lon: NDArray[(Any, Any), float],
+    unit: str = &#34;&#34;,
+) -&gt; xr.Dataset:
+    &#34;&#34;&#34;Generates standard climpyrical xarray Dataset.
     ------------------------------
+    Args:
+        dv (Str): key name of design value
+        field (np.ndarray): 2D array of design value field
+        x,y (np.ndarray, np.ndarray): coordinates along
+            each axis of design value field
+        z (np.ndarray or None): optional level/z coordinates
+    Returns:
+        ds (xarray Dataset): dataset with new keys
+            and design value field
+    Raises:
+        From xarray.Dataset
+    &#34;&#34;&#34;
+
+    dsarr = xr.DataArray(field, coords=[rlat, rlon], dims=[&#34;rlat&#34;, &#34;rlon&#34;])
+    dsarr.attrs[&#34;units&#34;] = unit
+    ds = xr.Dataset(
+        {dv: dsarr},
+        coords={
+            &#34;lat&#34;: ([&#34;rlat&#34;, &#34;rlon&#34;], lat),
+            &#34;lon&#34;: ([&#34;rlat&#34;, &#34;rlon&#34;], lon),
+            &#34;rlon&#34;: (&#34;rlon&#34;, rlon),
+            &#34;rlat&#34;: (&#34;rlat&#34;, rlat),
+        },
+    )
+
+    return ds
+
+
+def read_data(
+    data_path: str, required_keys: list = [&#34;rlat&#34;, &#34;rlon&#34;, &#34;lat&#34;, &#34;lon&#34;]
+) -&gt; xr.Dataset:
+    &#34;&#34;&#34;Load NetCDF4 file. Default checks are for CanRCM4 model keys.
+
+    Note that &#39;rlat&#39;, &#39;lat&#39;, &#39;lon&#39;, &#39;rlon&#39; are all required in addition
+    to a single data variable that contains a field of interest.
+    -----------------------------------------------------------------
     Args:
         data_path (Str): path to folder
             containing CanRCM4 ensemble
@@ -104,65 +145,51 @@ def read_data(data_path: str, required_keys: list = None) -&gt; xr.Dataset:
     &#34;&#34;&#34;
 
     if not data_path.endswith(&#34;.nc&#34;):
-        raise TypeError(
-            &#34;climpyrical requires a NetCDF4 file with extension .nc&#34;
-        )
-
-    if required_keys is None:
-        required_keys = [&#34;rlat&#34;, &#34;rlon&#34;]
+        raise TypeError(&#34;climpyrical requires a NetCDF4 file with extension .nc&#34;)
 
     with xr.open_dataset(data_path) as ds:
-        all_keys = list(set(ds.variables).union(set(ds.dims)))
+        all_keys = set(ds.variables).union(set(ds.dims))
+
         check_valid_keys(all_keys, required_keys)
         check_valid_data(ds)
 
-        if &#34;time&#34; in ds.keys() and ds[&#34;time&#34;].size &lt;= 1:
-            ds = ds.squeeze(&#34;time&#34;).drop_vars(&#34;time&#34;)
-        if &#34;time_bnds&#34; in ds.keys():
-            ds = ds.drop_vars(&#34;time_bnds&#34;)
-        if &#34;rotated_pole&#34; in ds.keys():
-            ds = ds.drop_vars(&#34;rotated_pole&#34;)
+        # keys with size &gt; 2 are good, otherwise
+        # are superfluous (time, time_bnds, rotated_pole, etc)
+        extra_keys = [key for key in all_keys if ds[key].size &lt;= 2]
 
-        return ds
+        # check how many data variables with
+        # size &gt; 2 are remaining. If more than one
+        # raise error as we can&#39;t distinguish from
+        # the intended variable.
+        dv = set(ds.data_vars) - set(extra_keys)
+        if len(dv) != 1:
+            raise KeyError(
+                &#34;Too many data variables detected.&#34;
+                f&#34;Found {dv}, please remove the&#34;
+                &#34;field that is not of interest.&#34;
+            )
+        else:
+            (dv,) = dv
 
+        # drop an extra dimension if it snuck in
+        dvfield = ds[dv].squeeze(drop=True)
 
-def gen_dataset(
-    dv: str,
-    field: Union[NDArray[(Any, Any), Any], NDArray[(Any, Any, Any), Any]],
-    x: NDArray[(Any,), float],
-    y: NDArray[(Any,), float],
-    z: None = None,
-) -&gt; xr.Dataset:
-    &#34;&#34;&#34;Generates standard climpyrical xarray Dataset.
-    ------------------------------
-    Args:
-        dv (Str): key name of design value
-        field (np.ndarray): 2D array of design value field
-        x,y (np.ndarray, np.ndarray): coordinates along
-            each axis of design value field
-        z (np.ndarray or None): optional level/z coordinates
-    Returns:
-        ds (xarray Dataset): dataset with new keys
-            and design value field
-    Raises:
-        From xarray.Dataset
-    &#34;&#34;&#34;
-    if z is None:
-        ds = xr.Dataset(
-            {dv: ([&#34;rlat&#34;, &#34;rlon&#34;], field)},
-            coords={&#34;rlon&#34;: (&#34;rlon&#34;, x), &#34;rlat&#34;: (&#34;rlat&#34;, y)},
-        )
-    else:
-        ds = xr.Dataset(
-            {dv: ([&#34;level&#34;, &#34;rlat&#34;, &#34;rlon&#34;], field)},
-            coords={
-                &#34;rlon&#34;: (&#34;rlon&#34;, x),
-                &#34;rlat&#34;: (&#34;rlat&#34;, y),
-                &#34;level&#34;: (&#34;level&#34;, z),
-            },
-        )
+        ds_new = gen_dataset(dv, dvfield, ds.rlat, ds.rlon, ds.lat, ds.lon)
 
-    return ds
+        if ds.attrs:
+            all_keys = set(ds_new.variables).union(set(ds_new.dims))
+            for key in all_keys:
+                ds_new[key].attrs = ds[key].attrs
+            attr_dict = ds.attrs
+            attr_dict[&#34;Climpyrical&#34;] = (
+                &#34;CanRCM4 Reconstruction contains&#34;
+                &#34;hybrid station and model data using&#34;
+                &#34;Climpyrical (https://github.com/pacificclimate/climpyrical)&#34;
+            )
+
+            ds_new.attrs = attr_dict
+
+        return ds_new
 
 
 def interpolate_dataset(
@@ -250,11 +277,9 @@ in the NetCDF4 file</dd>
         if (np.any(np.diff(ds.rlat.values) &lt; 0)) or np.any(
             (np.diff(ds.rlon.values) &lt; 0)
         ):
-            raise ValueError(
-                &#34;Coordinate axis are not monotonically increasing&#34;
-            )
+            raise ValueError(&#34;Coordinate axis are not monotonically increasing&#34;)
 
-    if np.all(ds.to_array().isnull()).values:
+    if bool(np.all(ds.to_array().isnull()).values):
         raise ValueError(&#34;All values are NaN. Check input.&#34;)
 
     return True</code></pre>
@@ -298,7 +323,7 @@ that make sense for the climpyrical analyses</dd>
     if not set(required_keys).issubset(set(all_keys)):
         raise KeyError(
             &#34;CanRCM4 ensemble is missing keys {}&#34;.format(
-                list(set(required_keys) - set(all_keys))
+                set(required_keys) - set(all_keys)
             )
         )
 
@@ -306,7 +331,7 @@ that make sense for the climpyrical analyses</dd>
 </details>
 </dd>
 <dt id="data.gen_dataset"><code class="name flex">
-<span>def <span class="ident">gen_dataset</span></span>(<span>dv: str, field: Union[nptypes._ndarray.NDArray, nptypes._ndarray.NDArray], x: nptyping.types._ndarray.NDArray, y: nptyping.types._ndarray.NDArray, z: None = None) ‑> xarray.core.dataset.Dataset</span>
+<span>def <span class="ident">gen_dataset</span></span>(<span>dv: str, field: Union[nptypes._ndarray.NDArray, nptypes._ndarray.NDArray], rlat: nptyping.types._ndarray.NDArray, rlon: nptyping.types._ndarray.NDArray, lat: nptyping.types._ndarray.NDArray, lon: nptyping.types._ndarray.NDArray, unit: str = '') ‑> xarray.core.dataset.Dataset</span>
 </code></dt>
 <dd>
 <div class="desc"><h2 id="generates-standard-climpyrical-xarray-dataset">Generates standard climpyrical xarray Dataset.</h2>
@@ -333,9 +358,11 @@ and design value field</p>
 <pre><code class="python">def gen_dataset(
     dv: str,
     field: Union[NDArray[(Any, Any), Any], NDArray[(Any, Any, Any), Any]],
-    x: NDArray[(Any,), float],
-    y: NDArray[(Any,), float],
-    z: None = None,
+    rlat: NDArray[(Any,), float],
+    rlon: NDArray[(Any,), float],
+    lat: NDArray[(Any, Any), float],
+    lon: NDArray[(Any, Any), float],
+    unit: str = &#34;&#34;,
 ) -&gt; xr.Dataset:
     &#34;&#34;&#34;Generates standard climpyrical xarray Dataset.
     ------------------------------
@@ -351,20 +378,18 @@ and design value field</p>
     Raises:
         From xarray.Dataset
     &#34;&#34;&#34;
-    if z is None:
-        ds = xr.Dataset(
-            {dv: ([&#34;rlat&#34;, &#34;rlon&#34;], field)},
-            coords={&#34;rlon&#34;: (&#34;rlon&#34;, x), &#34;rlat&#34;: (&#34;rlat&#34;, y)},
-        )
-    else:
-        ds = xr.Dataset(
-            {dv: ([&#34;level&#34;, &#34;rlat&#34;, &#34;rlon&#34;], field)},
-            coords={
-                &#34;rlon&#34;: (&#34;rlon&#34;, x),
-                &#34;rlat&#34;: (&#34;rlat&#34;, y),
-                &#34;level&#34;: (&#34;level&#34;, z),
-            },
-        )
+
+    dsarr = xr.DataArray(field, coords=[rlat, rlon], dims=[&#34;rlat&#34;, &#34;rlon&#34;])
+    dsarr.attrs[&#34;units&#34;] = unit
+    ds = xr.Dataset(
+        {dv: dsarr},
+        coords={
+            &#34;lat&#34;: ([&#34;rlat&#34;, &#34;rlon&#34;], lat),
+            &#34;lon&#34;: ([&#34;rlat&#34;, &#34;rlon&#34;], lon),
+            &#34;rlon&#34;: (&#34;rlon&#34;, rlon),
+            &#34;rlat&#34;: (&#34;rlat&#34;, rlat),
+        },
+    )
 
     return ds</code></pre>
 </details>
@@ -429,10 +454,13 @@ from target grid</dd>
 </details>
 </dd>
 <dt id="data.read_data"><code class="name flex">
-<span>def <span class="ident">read_data</span></span>(<span>data_path: str, required_keys: list = None) ‑> xarray.core.dataset.Dataset</span>
+<span>def <span class="ident">read_data</span></span>(<span>data_path: str, required_keys: list = ['rlat', 'rlon', 'lat', 'lon']) ‑> xarray.core.dataset.Dataset</span>
 </code></dt>
 <dd>
-<div class="desc"><h2 id="load-netcdf4-file-default-checks-are-for-canrcm4-model-keys">Load NetCDF4 file. Default checks are for CanRCM4 model keys.</h2>
+<div class="desc"><p>Load NetCDF4 file. Default checks are for CanRCM4 model keys.</p>
+<p>Note that 'rlat', 'lat', 'lon', 'rlon' are all required in addition
+to a single data variable that contains a field of interest.</p>
+<hr>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>data_path</code></strong> :&ensp;<code>Str</code></dt>
@@ -458,9 +486,14 @@ TypeError if path provided is invalid</p></div>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def read_data(data_path: str, required_keys: list = None) -&gt; xr.Dataset:
+<pre><code class="python">def read_data(
+    data_path: str, required_keys: list = [&#34;rlat&#34;, &#34;rlon&#34;, &#34;lat&#34;, &#34;lon&#34;]
+) -&gt; xr.Dataset:
     &#34;&#34;&#34;Load NetCDF4 file. Default checks are for CanRCM4 model keys.
-    ------------------------------
+
+    Note that &#39;rlat&#39;, &#39;lat&#39;, &#39;lon&#39;, &#39;rlon&#39; are all required in addition
+    to a single data variable that contains a field of interest.
+    -----------------------------------------------------------------
     Args:
         data_path (Str): path to folder
             containing CanRCM4 ensemble
@@ -477,26 +510,51 @@ TypeError if path provided is invalid</p></div>
     &#34;&#34;&#34;
 
     if not data_path.endswith(&#34;.nc&#34;):
-        raise TypeError(
-            &#34;climpyrical requires a NetCDF4 file with extension .nc&#34;
-        )
-
-    if required_keys is None:
-        required_keys = [&#34;rlat&#34;, &#34;rlon&#34;]
+        raise TypeError(&#34;climpyrical requires a NetCDF4 file with extension .nc&#34;)
 
     with xr.open_dataset(data_path) as ds:
-        all_keys = list(set(ds.variables).union(set(ds.dims)))
+        all_keys = set(ds.variables).union(set(ds.dims))
+
         check_valid_keys(all_keys, required_keys)
         check_valid_data(ds)
 
-        if &#34;time&#34; in ds.keys() and ds[&#34;time&#34;].size &lt;= 1:
-            ds = ds.squeeze(&#34;time&#34;).drop_vars(&#34;time&#34;)
-        if &#34;time_bnds&#34; in ds.keys():
-            ds = ds.drop_vars(&#34;time_bnds&#34;)
-        if &#34;rotated_pole&#34; in ds.keys():
-            ds = ds.drop_vars(&#34;rotated_pole&#34;)
+        # keys with size &gt; 2 are good, otherwise
+        # are superfluous (time, time_bnds, rotated_pole, etc)
+        extra_keys = [key for key in all_keys if ds[key].size &lt;= 2]
 
-        return ds</code></pre>
+        # check how many data variables with
+        # size &gt; 2 are remaining. If more than one
+        # raise error as we can&#39;t distinguish from
+        # the intended variable.
+        dv = set(ds.data_vars) - set(extra_keys)
+        if len(dv) != 1:
+            raise KeyError(
+                &#34;Too many data variables detected.&#34;
+                f&#34;Found {dv}, please remove the&#34;
+                &#34;field that is not of interest.&#34;
+            )
+        else:
+            (dv,) = dv
+
+        # drop an extra dimension if it snuck in
+        dvfield = ds[dv].squeeze(drop=True)
+
+        ds_new = gen_dataset(dv, dvfield, ds.rlat, ds.rlon, ds.lat, ds.lon)
+
+        if ds.attrs:
+            all_keys = set(ds_new.variables).union(set(ds_new.dims))
+            for key in all_keys:
+                ds_new[key].attrs = ds[key].attrs
+            attr_dict = ds.attrs
+            attr_dict[&#34;Climpyrical&#34;] = (
+                &#34;CanRCM4 Reconstruction contains&#34;
+                &#34;hybrid station and model data using&#34;
+                &#34;Climpyrical (https://github.com/pacificclimate/climpyrical)&#34;
+            )
+
+            ds_new.attrs = attr_dict
+
+        return ds_new</code></pre>
 </details>
 </dd>
 </dl>

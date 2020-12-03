@@ -26,17 +26,18 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from climpyrical.gridding import (
-    find_nearest_index,
-    flatten_coords,
-)
+<pre><code class="python">from climpyrical.gridding import find_nearest_index, flatten_coords
 import warnings
-from typing import Union, Any
+from typing import Union, Any, Tuple
 from nptyping import NDArray
 import numpy as np
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, MultiPolygon
+
 from tqdm import tqdm
 import geopandas as gpd
+
+# ignore this. The change quoted leads to CRS errror
+warnings.filterwarnings(&#34;ignore&#34;, category=FutureWarning, module=&#34;pyproj&#34;)
 
 
 def check_polygon_validity(p: Union[gpd.GeoSeries, gpd.GeoDataFrame]) -&gt; bool:
@@ -49,6 +50,8 @@ def check_polygon_validity(p: Union[gpd.GeoSeries, gpd.GeoDataFrame]) -&gt; bool
 
     if not p.size &gt; 0:
         raise ValueError(&#34;Empty data provided in polygons&#34;)
+    if p.isnull().values.any():
+        raise ValueError(&#34;Null data in polygons&#34;)
 
     return True
 
@@ -67,22 +70,31 @@ def check_polygon_before_projection(
     # check polygon validity
     check_polygon_validity(p)
 
+    warning1 = &#34;Polygon provided is in unexpected projection. Expected epsg:4326.\
+                Other transformations are experimental and have not been tested.&#34;
+
+    warning2 = &#39;Neither init or datum found in proj4 data. Please provide initial \
+                        reference projection with Polygon.crs = &#34;epsg:4326&#34;&#39;
+
     # is dict or not
-    if &#34;datum&#34; in p.crs.to_dict().keys():
-        if p.crs.to_dict()[&#34;datum&#34;] != &#34;WGS84&#34;:
-            warnings.warn(
-                UserWarning(
-                    f&#34;Polygon provided is in unexpected projection. Expected epsg:4326.\
-                     Other transformations are experimental and have not been tested.&#34;
-                )
-            )
+    if isinstance(p.crs, dict):
+        if &#34;datum&#34; in p.crs.keys():
+            if p.crs[&#34;datum&#34;] != &#34;WGS84&#34;:
+                warnings.warn(UserWarning(warning1))
+        else:
+            warnings.warn(UserWarning(warning2))
+    elif isinstance(p.crs, str):
+        if &#34;epsg:4326&#34; in p.crs:
+            warnings.warn(UserWarning(warning1))
+        else:
+            warnings.warn(UserWarning(warning2))
     else:
-        warnings.warn(
-            UserWarning(
-                &#39;Neither init or datum found in proj4 data. Please provide initial \
-                    reference projection with Polygon.crs = &#34;epsg:4326&#34;&#39;
-            )
-        )
+        print(&#34;CRS&#34;, p.crs)
+        if &#34;datum&#34; in p.crs.to_dict().keys():
+            if p.crs.to_dict()[&#34;datum&#34;] != &#34;WGS84&#34;:
+                warnings.warn(UserWarning(warning1))
+        else:
+            warnings.warn(UserWarning(warning2))
 
     return True
 
@@ -109,11 +121,38 @@ def rotate_shapefile(
             in new projection
     &#34;&#34;&#34;
     # this checks polygon can be rotated
+    check_polygon_validity(p)
     check_polygon_before_projection(p)
 
     target = p.to_crs(crs)
 
     return target
+
+
+def stratify_coords(
+    canada: Union[gpd.GeoSeries, gpd.GeoDataFrame],
+) -&gt; Tuple[NDArray[(Any,), np.float], NDArray[(Any,), np.float]]:
+    &#34;&#34;&#34;Convert polygons to X and Y pairs.
+    Args:
+        canada (geopandas.GeoSeries object): polygons of Canada
+    Returns:
+        X, Y (numpy.ndarrays): Ordered pairs of coordinates of
+            each polygon
+    &#34;&#34;&#34;
+    check_polygon_validity(canada)
+
+    pts = []
+    for poly in canada:
+        if isinstance(poly, MultiPolygon):
+            for p in poly:
+                pts.extend(p.exterior.coords)
+                pts.append([None, None])
+        else:
+            pts.extend(poly.exterior.coords)
+            pts.append([None, None])
+
+    X, Y = zip(*pts)
+    return np.array(X), np.array(Y)
 
 
 def make_box(x: float, y: float, dx: float, dy: float) -&gt; Polygon:
@@ -200,7 +239,57 @@ def gen_raster_mask_from_vector(
     mask = np.zeros((y.size, x.size))
     mask[icy1:icy2, icx1:icx2] = contained
 
-    return mask == 1</code></pre>
+    return mask == 1
+
+
+def to_polygons(geometries):
+    # yield polygons from geometry
+    for geometry in geometries:
+        if isinstance(geometry, Polygon):
+            yield geometry
+        else:
+            yield from geometry
+
+
+def gen_upper_archipelago_mask(
+    canada: gpd.GeoSeries,
+    x: NDArray[(Any,), float],
+    y: NDArray[(Any,), float],
+    north_ext: int,
+    upper_limit: float,
+) -&gt; NDArray[(Any, Any), Any]:
+    &#34;&#34;&#34;Isolates the UAA and generates a raster mask containing only the UAA.
+    Args:
+        canada (geopandas.GeoSeries object): polygons of Canada
+        x, y (np.ndarray): Arrays containing the rlon and rlat of CanRCM4
+            grids
+        north_ext (int): number of grid cells to add to the nroth
+        upper_limit: the rotated latitude that polygons
+            need to be above to be in the UAA
+    Returns:
+        X, Y (numpy.ndarrays): Ordered pairs of coordinates of
+            each polygon
+    &#34;&#34;&#34;
+    check_polygon_validity(canada)
+    mask = np.zeros((y.size, x.size))
+    canada_polygons = MultiPolygon(to_polygons(canada))
+
+    uaa = gpd.GeoSeries(
+        MultiPolygon(
+            [
+                P
+                for P in canada_polygons
+                if (P.is_valid and P.centroid.y + 1 &gt;= upper_limit)
+            ]
+        )
+    )
+
+    northern_mask = np.zeros(mask.shape) == 1.0
+    northern_mask[-(north_ext + 50) :, :] = gen_raster_mask_from_vector(
+        x, y[-(north_ext + 50) :], uaa
+    )
+
+    return northern_mask</code></pre>
 </details>
 </section>
 <section>
@@ -242,22 +331,31 @@ code from running</p>
     # check polygon validity
     check_polygon_validity(p)
 
+    warning1 = &#34;Polygon provided is in unexpected projection. Expected epsg:4326.\
+                Other transformations are experimental and have not been tested.&#34;
+
+    warning2 = &#39;Neither init or datum found in proj4 data. Please provide initial \
+                        reference projection with Polygon.crs = &#34;epsg:4326&#34;&#39;
+
     # is dict or not
-    if &#34;datum&#34; in p.crs.to_dict().keys():
-        if p.crs.to_dict()[&#34;datum&#34;] != &#34;WGS84&#34;:
-            warnings.warn(
-                UserWarning(
-                    f&#34;Polygon provided is in unexpected projection. Expected epsg:4326.\
-                     Other transformations are experimental and have not been tested.&#34;
-                )
-            )
+    if isinstance(p.crs, dict):
+        if &#34;datum&#34; in p.crs.keys():
+            if p.crs[&#34;datum&#34;] != &#34;WGS84&#34;:
+                warnings.warn(UserWarning(warning1))
+        else:
+            warnings.warn(UserWarning(warning2))
+    elif isinstance(p.crs, str):
+        if &#34;epsg:4326&#34; in p.crs:
+            warnings.warn(UserWarning(warning1))
+        else:
+            warnings.warn(UserWarning(warning2))
     else:
-        warnings.warn(
-            UserWarning(
-                &#39;Neither init or datum found in proj4 data. Please provide initial \
-                    reference projection with Polygon.crs = &#34;epsg:4326&#34;&#39;
-            )
-        )
+        print(&#34;CRS&#34;, p.crs)
+        if &#34;datum&#34; in p.crs.to_dict().keys():
+            if p.crs.to_dict()[&#34;datum&#34;] != &#34;WGS84&#34;:
+                warnings.warn(UserWarning(warning1))
+        else:
+            warnings.warn(UserWarning(warning2))
 
     return True</code></pre>
 </details>
@@ -291,6 +389,8 @@ code from running</p>
 
     if not p.size &gt; 0:
         raise ValueError(&#34;Empty data provided in polygons&#34;)
+    if p.isnull().values.any():
+        raise ValueError(&#34;Null data in polygons&#34;)
 
     return True</code></pre>
 </details>
@@ -383,6 +483,71 @@ based on polygon boundaries</p></div>
     return mask == 1</code></pre>
 </details>
 </dd>
+<dt id="mask.gen_upper_archipelago_mask"><code class="name flex">
+<span>def <span class="ident">gen_upper_archipelago_mask</span></span>(<span>canada: geopandas.geoseries.GeoSeries, x: nptyping.types._ndarray.NDArray, y: nptyping.types._ndarray.NDArray, north_ext: int, upper_limit: float) ‑> nptyping.types._ndarray.NDArray</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Isolates the UAA and generates a raster mask containing only the UAA.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>canada</code></strong> :&ensp;<code>geopandas.GeoSeries object</code></dt>
+<dd>polygons of Canada</dd>
+<dt>x, y (np.ndarray): Arrays containing the rlon and rlat of CanRCM4</dt>
+<dt>grids</dt>
+<dt><strong><code>north_ext</code></strong> :&ensp;<code>int</code></dt>
+<dd>number of grid cells to add to the nroth</dd>
+<dt><strong><code>upper_limit</code></strong></dt>
+<dd>the rotated latitude that polygons
+need to be above to be in the UAA</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>X, Y (numpy.ndarrays): Ordered pairs of coordinates of
+each polygon</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def gen_upper_archipelago_mask(
+    canada: gpd.GeoSeries,
+    x: NDArray[(Any,), float],
+    y: NDArray[(Any,), float],
+    north_ext: int,
+    upper_limit: float,
+) -&gt; NDArray[(Any, Any), Any]:
+    &#34;&#34;&#34;Isolates the UAA and generates a raster mask containing only the UAA.
+    Args:
+        canada (geopandas.GeoSeries object): polygons of Canada
+        x, y (np.ndarray): Arrays containing the rlon and rlat of CanRCM4
+            grids
+        north_ext (int): number of grid cells to add to the nroth
+        upper_limit: the rotated latitude that polygons
+            need to be above to be in the UAA
+    Returns:
+        X, Y (numpy.ndarrays): Ordered pairs of coordinates of
+            each polygon
+    &#34;&#34;&#34;
+    check_polygon_validity(canada)
+    mask = np.zeros((y.size, x.size))
+    canada_polygons = MultiPolygon(to_polygons(canada))
+
+    uaa = gpd.GeoSeries(
+        MultiPolygon(
+            [
+                P
+                for P in canada_polygons
+                if (P.is_valid and P.centroid.y + 1 &gt;= upper_limit)
+            ]
+        )
+    )
+
+    northern_mask = np.zeros(mask.shape) == 1.0
+    northern_mask[-(north_ext + 50) :, :] = gen_raster_mask_from_vector(
+        x, y[-(north_ext + 50) :], uaa
+    )
+
+    return northern_mask</code></pre>
+</details>
+</dd>
 <dt id="mask.make_box"><code class="name flex">
 <span>def <span class="ident">make_box</span></span>(<span>x: float, y: float, dx: float, dy: float) ‑> shapely.geometry.polygon.Polygon</span>
 </code></dt>
@@ -462,11 +627,73 @@ in new projection</p></div>
             in new projection
     &#34;&#34;&#34;
     # this checks polygon can be rotated
+    check_polygon_validity(p)
     check_polygon_before_projection(p)
 
     target = p.to_crs(crs)
 
     return target</code></pre>
+</details>
+</dd>
+<dt id="mask.stratify_coords"><code class="name flex">
+<span>def <span class="ident">stratify_coords</span></span>(<span>canada: Union[geopandas.geoseries.GeoSeries, geopandas.geodataframe.GeoDataFrame]) ‑> Tuple[nptypes._ndarray.NDArray, nptypes._ndarray.NDArray]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Convert polygons to X and Y pairs.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>canada</code></strong> :&ensp;<code>geopandas.GeoSeries object</code></dt>
+<dd>polygons of Canada</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>X, Y (numpy.ndarrays): Ordered pairs of coordinates of
+each polygon</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def stratify_coords(
+    canada: Union[gpd.GeoSeries, gpd.GeoDataFrame],
+) -&gt; Tuple[NDArray[(Any,), np.float], NDArray[(Any,), np.float]]:
+    &#34;&#34;&#34;Convert polygons to X and Y pairs.
+    Args:
+        canada (geopandas.GeoSeries object): polygons of Canada
+    Returns:
+        X, Y (numpy.ndarrays): Ordered pairs of coordinates of
+            each polygon
+    &#34;&#34;&#34;
+    check_polygon_validity(canada)
+
+    pts = []
+    for poly in canada:
+        if isinstance(poly, MultiPolygon):
+            for p in poly:
+                pts.extend(p.exterior.coords)
+                pts.append([None, None])
+        else:
+            pts.extend(poly.exterior.coords)
+            pts.append([None, None])
+
+    X, Y = zip(*pts)
+    return np.array(X), np.array(Y)</code></pre>
+</details>
+</dd>
+<dt id="mask.to_polygons"><code class="name flex">
+<span>def <span class="ident">to_polygons</span></span>(<span>geometries)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def to_polygons(geometries):
+    # yield polygons from geometry
+    for geometry in geometries:
+        if isinstance(geometry, Polygon):
+            yield geometry
+        else:
+            yield from geometry</code></pre>
 </details>
 </dd>
 </dl>
@@ -485,8 +712,11 @@ in new projection</p></div>
 <li><code><a title="mask.check_polygon_before_projection" href="#mask.check_polygon_before_projection">check_polygon_before_projection</a></code></li>
 <li><code><a title="mask.check_polygon_validity" href="#mask.check_polygon_validity">check_polygon_validity</a></code></li>
 <li><code><a title="mask.gen_raster_mask_from_vector" href="#mask.gen_raster_mask_from_vector">gen_raster_mask_from_vector</a></code></li>
+<li><code><a title="mask.gen_upper_archipelago_mask" href="#mask.gen_upper_archipelago_mask">gen_upper_archipelago_mask</a></code></li>
 <li><code><a title="mask.make_box" href="#mask.make_box">make_box</a></code></li>
 <li><code><a title="mask.rotate_shapefile" href="#mask.rotate_shapefile">rotate_shapefile</a></code></li>
+<li><code><a title="mask.stratify_coords" href="#mask.stratify_coords">stratify_coords</a></code></li>
+<li><code><a title="mask.to_polygons" href="#mask.to_polygons">to_polygons</a></code></li>
 </ul>
 </li>
 </ul>
