@@ -303,23 +303,21 @@ bad_idx = np.array([10, 12, 200])
 
 
 @pytest.mark.parametrize(
-    "x,y,x_i,y_i,field,mask,error",
+    "x,y,x_i,y_i,field,error",
     [
-        (x, y, idx, idx, good_field, mask, None),
-        (x, y, "x", "y", good_field, mask, TypeError),
-        (idx, idx, x, y, good_field, bad_mask, ValueError),
-        (x, y, idx, idx, bad_field, mask, ValueError),
-        (x, y, idx, idx, good_field, bad_mask, ValueError),
-        (x, y, bad_idx, bad_idx, good_field, bad_mask, ValueError),
-        (x, y, idx, idx, good_field_nan, mask, None),
+        (x, y, idx, idx, good_field, None),
+        (x, y, "x", "y", good_field, TypeError),
+        (x, y, idx, idx, bad_field, ValueError),
+        (x, y, bad_idx, bad_idx, good_field, ValueError),
+        (x, y, idx, idx, good_field_nan, None),
     ],
 )
-def test_check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask, error):
+def test_check_find_nearest_value_inputs(x, y, x_i, y_i, field, error):
     if error is None:
-        check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
+        check_find_nearest_value_inputs(x, y, x_i, y_i, field)
     else:
         with pytest.raises(error):
-            check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
+            check_find_nearest_value_inputs(x, y, x_i, y_i, field)
 
 
 x_i = np.arange(20)
@@ -331,14 +329,14 @@ good_field_nan[idx, idx] = np.nan
 
 
 @pytest.mark.parametrize(
-    "x,y,x_i,y_i,field,mask,expected",
+    "x,y,x_i,y_i,field,expected",
     [
-        (x, y, idx, idx, good_field, mask, np.ones(idx.size) * np.pi),
-        (x, y, idx, idx, good_field_nan, mask, np.ones(idx.size) * np.pi),
+        (x, y, idx, idx, good_field, np.ones(idx.size) * np.pi),
+        (x, y, idx, idx, good_field_nan, np.ones(idx.size) * np.pi),
     ],
 )
-def test_find_nearest_index_value(x, y, x_i, y_i, field, mask, expected):
-    final = find_nearest_index_value(x, y, x_i, y_i, field, mask, ds)
+def test_find_nearest_index_value(x, y, x_i, y_i, field, expected):
+    final = find_nearest_index_value(x, y, x_i, y_i, field)
     truth = (
         np.any(np.isnan(final))
         or final.size != x_i.size
