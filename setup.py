@@ -33,7 +33,8 @@ setup(
         "climpyrical/mask.py",
         "climpyrical/rkrig.py",
         "climpyrical/spytialProcess.py",
-        "climpyrical/cmd/preprocess_model.py"
+        "climpyrical/cmd/preprocess_model.py",
+        "climpyrical/cmd/find_matched_model_vals.py",
     ],
     install_requires=["numpy", "shapely", "geopandas", "xarray"],
     tests_require=["pytest"],
