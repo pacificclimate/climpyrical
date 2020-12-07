@@ -26,7 +26,9 @@ import pandas as pd
 warnings.filterwarnings("ignore")
 
 
-def add_model_values(model_path, stations_path=None, df=None, model_dv="model_values", log_level="INFO"):
+def add_model_values(
+    model_path, stations_path=None, df=None, model_dv="model_values", log_level="INFO"
+):
     """Locates the model value that's spatially closest to a station
     Args:
         model_path, stations_path (strings): directories of NetCDF4 file
@@ -123,12 +125,7 @@ def add_model_values(model_path, stations_path=None, df=None, model_dv="model_va
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
     default="INFO",
 )
-def write_to_file(
-    model_path,
-    stations_path,
-    out_path,
-    model_dv,
-    log_level):
+def write_to_file(model_path, stations_path, out_path, model_dv, log_level):
     df = add_model_values(model_path, stations_path, model_dv, log_level)
     df.to_csv(out_path)
 

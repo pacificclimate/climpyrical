@@ -275,9 +275,7 @@ def test_check_find_element_wise_nearest_pos_inputs(x, y, x_obs, y_obs, error):
         )
     ],
 )
-def test_find_element_wise_nearest_pos(
-    x, y, x_obs, y_obs, expected_x, expected_y
-):
+def test_find_element_wise_nearest_pos(x, y, x_obs, y_obs, expected_x, expected_y):
     xclose, yclose = find_element_wise_nearest_pos(x, y, x_obs, y_obs)
     xclose_truth = np.allclose(xclose, expected_x)
     yclose_truth = np.allclose(yclose, expected_y)
@@ -348,9 +346,7 @@ def test_find_nearest_index_value(x, y, x_i, y_i, field, expected):
 
 
 dv = "snw"
-ds_extnorth_bad = read_data(
-    resource_filename("climpyrical", "tests/data/example2.nc")
-)
+ds_extnorth_bad = read_data(resource_filename("climpyrical", "tests/data/example2.nc"))
 
 
 @pytest.mark.parametrize(
