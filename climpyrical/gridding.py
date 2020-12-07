@@ -295,7 +295,6 @@ def flatten_coords(
     NetCDF files for each ensemble member, and creates
     an ordered pairing of each grid cell coordinate in
     rotated pole (rlat, rlon).
-
     Args:
         x (numpy.ndarray): 1D array containing
             the locations of the rotated latitude
@@ -521,7 +520,7 @@ def find_element_wise_nearest_pos(x, y, x_obs, y_obs):
     return x_i, y_i
 
 
-def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
+def check_find_nearest_value_inputs(x, y, x_i, y_i, field):
     """Checks find_nearest_value() inputs.
     Args:
         x, y (np.ndarray): monotonically increasing array of column
@@ -530,8 +529,6 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
             of the closest grid to stations
         field (np.ndarray): 2 dimensional field array containing
             the CanRCM4 field
-        mask (np.ndarray of bool): 2 dimensional mask array matching field
-            with a boolean mask of accepted values for analyses
     Raises:
         ValueError:
                 If field provided is not made of x and y coordinates
@@ -559,15 +556,9 @@ def check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask):
             Recevied field shape {field.shape}, expected shape \
             ({y.size},{x.size}})"
         )
-    # mask same shape as field
-    if field.shape != mask.shape:
-        raise ValueError(
-            "Field and mask are not the same shape. Received field shape \
-            {field.shape} and mask shape {mask.shape}."
-        )
 
 
-def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
+def find_nearest_index_value(x, y, x_i, y_i, field):
     """Finds the nearest model value to a station location in the CanRCM4
     grid space
     Args:
@@ -577,10 +568,6 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
             of the closest grid to stations
         field (np.ndarray): 2 dimensional field array containing
             the CanRCM4 field
-        mask (np.ndarray of bool): 2 dimensional mask array matching field
-            with a boolean mask of accepted values for analyses
-        ds (xarray.core.dataset.Dataset): dataset containing the ensemble for
-            checking consistency with ensemble
     Raises:
         TypeError, ValueError in check_find_nearest_value_inputs
         TypeError:
@@ -594,7 +581,7 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
                     of the expected grid space
                 If all values in x_i or y_i are not integers
     """
-    check_find_nearest_value_inputs(x, y, x_i, y_i, field, mask)
+    check_find_nearest_value_inputs(x, y, x_i, y_i, field)
 
     # find any stations that have a NaN corresponding grid cell
     nanloc = np.isnan(field[y_i, x_i])
@@ -602,7 +589,7 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
     # combine mask and nan locations in field to
     # create a master mask of eligible grid cells
     # for interpolation
-    master_mask = np.logical_and(mask, ~np.isnan(field))
+    mask = ~np.isnan(field)
 
     # if any NaN values found over station values,
     # perform a nearest neighbour interpolation to get
@@ -620,7 +607,7 @@ def find_nearest_index_value(x, y, x_i, y_i, field, mask, ds):
         # create interpolation function for every point
         # except the locations of the NaN values
         f = NearestNDInterpolator(
-            pairs[master_mask.flatten()], field[master_mask]
+            pairs[mask.flatten()], field[mask]
         )
 
         # get the rlon and rlat locations of the NaN values
