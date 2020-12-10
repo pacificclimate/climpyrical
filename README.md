@@ -12,7 +12,6 @@ A Python tool for spatially downscaling and reconstructing design value fields u
 TODO: Add links here
 
 # Setup
----
 ```bash
 git clone https://github.com/pacificclimate/climpyrical/
 ```
@@ -39,8 +38,6 @@ Rscript install_pkgs.R r_requirements.txt
 ```
 
 # Getting started
----
-
 The first step to running the pipeline is configuring it. Various configurations also need to be added to `config.py`. These contain design value specific information, such as paths to input station and model files, plotting parameters, and output filenames. 
 
 ```python
@@ -98,9 +95,27 @@ The processing notebooks can be found in the following directory:
 
 Open `README.ipynb` with Jupyter to view detailed instructions on how to reproduce. The notebooks generate a series of files (including intermediate logs) that are laid out in detail in the aforementioned `README.ipynb` and in `pipeline.ipynb`.
 
+### Option 2: From the command line (server use)
 
-### Option 2:
+Since the notebooks are parameterized, they can be run from the command line with Papermill. Papermill produces a log of the notebook once it has been executed. Note that no parameters, other than a configured `config.py` file are necessary for pipeline.ipynb
 
+```bash
+$ papermill climpyrical/interactive/pipeline.ipynb climpyrical/data/results/interactive/notebooks/pipeline.ipynb
+```
+Model preprocessing:
+```bash
+$ papermill climpyrical/interactive/preprocess_model.ipynb \
+            climpyrical/data/results/interactive/notebooks/output_preprocess_model.ipynb \
+            -p station_dv "RL50 (kPa)" \
+            -p model_input_path "data/model_inputs/snw_rain_CanRCM4-LE_ens35_1951-2016_max_rl50_load_ensmean.nc") \
+            -p name "RL50" \
+            -p fill_glaciers True \
+            -p processed_model_output_path "/data/results/intermediate/preprocessed_models/default.nc"
+```
+Station preprocessing:
+Ratio reconstruction:
+Plot generation:
+TableC2 generation:
 
 ### Reading Data --> Put into API documentation
 Load an ensemble of climate models using `climpyrical`'s `read_data` function. `read_data` creates an `xarray` dataset containing the fields defined by `keys` and by the design value key as found in the climate model.
