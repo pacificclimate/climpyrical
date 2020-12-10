@@ -53,6 +53,7 @@ lmap = ['#B544A6', '#884DB2', '#5856AF', '#6089AC', '#6AA8A2', '#64AE90', '#62B0
 custom_cmap = matplotlib.colors.ListedColormap(lmap)
 
 # Set up the plotting dictionary
+# station_dv: (custom colormap to use, whether to use log colorscale, number of decimals to round to) 
 plot_dict = {
     'RL50 (kPa)': (custom_cmap, True, 2),
 }
