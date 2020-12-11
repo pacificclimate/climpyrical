@@ -33,7 +33,7 @@ station_dvs = [
     "DRWP-RL5 (Pa)",
     "annual_pr (mm)",
     "annual_rain (mm)",
-    "RL50 (mm)",
+    "1day rain RL50 (mm)",
     "Gum-LM RL10 (mm)"
 ]
 
@@ -54,7 +54,7 @@ filenames = {
     "DRWP-RL5 (Pa)": "DRWP5",
     "annual_pr (mm)": "PAnn",
     "annual_rain (mm)": "RAnn",
-    "RL50 (mm)": "R1d50",
+    "1day rain RL50 (mm)": "R1d50",
     "moisture_index": "MI",
     "Gum-LM RL10 (mm)": "R15m10"
 }
@@ -72,11 +72,12 @@ model_paths = {
     'Tmin (degC)': 'data/model_inputs/tas_CanRCM4-LE_ens35_1951-2016_ann_min_ensmean.nc',
     'TwJul2.5 (degC)': 'data/model_inputs/twb_CanRCM4-LE_ens35_1951-2016_1hr_jul97.5p_ensmean.nc',
     'TJul2.5 (degC)': 'data/model_inputs/tas_CanRCM4-LE_ens35_1951-2016_1hr_jul97.5p_ensmean.nc',
-    'DRWP-RL5 (Pa)': 'data/model_inputs/DRWP_CanRCM4-LE_ens15_1951-2016_RL5_ensmean.nc',
+    'DRWP-RL5 (Pa)': 'data/model_inputs/drwp_CanRCM4-LE_ens15_1951-2016_rl5_ensmean.nc',
     'annual_pr (mm)': 'data/model_inputs/pr_CanRCM4-LE_ens35_1951-2016_ann_sum_ensmean.nc',
     'annual_rain (mm)': 'data/model_inputs/rain_CanRCM4-LE_ens35_1951-2016_ann_sum_ensmean.nc',
-    'RL50 (mm)': 'data/model_inputs/rain_CanRCM4-LE_ens35_1951-2016_annmax_rl50_ensmean.nc',
-    "moisture_index": "data/model_inputs/moisture_index_CanRCM4-LE_ens15_1951-2016_ensmean.nc"
+    '1day rain RL50 (mm)': 'data/model_inputs/rain_CanRCM4-LE_ens35_1951-2016_max1day_rl50_gum_lm_ensmean.nc',
+    "moisture_index": "data/model_inputs/moisture_index_CanRCM4-LE_ens15_1951-2016_ensmean.nc",
+    "Gum-LM RL10 (mm)": "data/model_inputs/rain_CanRCM4-LE_ens15_1951-2016_max1hr_rl10_gum_lm_ensmean.nc"
 }
 
 station_paths = {
@@ -88,15 +89,16 @@ station_paths = {
     'WP50': 'data/station_inputs/wpress_stations_rl10_rl50_for_maps.csv',
     'TJan2.5 (degC)': 'data/station_inputs/janT2.5p_T1.0p_allstations_v3_min8yr_for_maps.csv',
     'TJan1.0 (degC)': 'data/station_inputs/janT2.5p_T1.0p_allstations_v3_min8yr_for_maps.csv',
-    'Tmin (degC)': 'data/station_inputs/Interim_hdd_Tmax_Tmin_delivered.csv',
-    'Tmax (degC)': 'data/station_inputs/Interim_hdd_Tmax_Tmin_delivered.csv',
+    'Tmin (degC)': 'data/station_inputs/hdd_Tmax_Tmin_allstations_v3_for_maps.csv',
+    'Tmax (degC)': 'data/station_inputs/hdd_Tmax_Tmin_allstations_v3_for_maps.csv',
     'TJul2.5 (degC)': 'data/station_inputs/julT97.5p_allstations_v3_min8yr_for_maps.csv',
     'TwJul2.5 (degC)': 'data/station_inputs/julTwb97.5p_allstations_v3_for_maps.csv',
     'DRWP-RL5 (Pa)': 'data/station_inputs/drwp_rl5_for_maps.csv',
     'annual_pr (mm)': 'data/station_inputs/pr_annual_mean_doy_MSC_25yr_for_maps.csv',
     'annual_rain (mm)': 'data/station_inputs/rain_annual_mean_doy_MSC_25yr_for_maps.csv',
-    'RL50 (mm)':'data/station_inputs/Interim_snow_rain_load_LR_composite_stations_tbd_v4.csv',
-    'moisture_index':'data/station_inputs/moisture_index_for_maps.csv'
+    '1day rain RL50 (mm)':'data/station_inputs/1day_rain_rl50_for_maps.csv',
+    'moisture_index':'data/station_inputs/moisture_index_for_maps.csv',
+    "Gum-LM RL10 (mm)": "data/station_inputs/15min_rain_rl10_for_maps.csv"
 }
 
 plot_dict = {
@@ -115,7 +117,7 @@ plot_dict = {
     'annual_rain (mm)': (custom_cmap, True, 0),
     'annual_pr (mm)': (custom_cmap, True, 0),
     'DRWP-RL5 (Pa)': (custom_cmap, False, 0),
-    'RL50 (mm)': (custom_cmap, True, 0),
+    '1day rain RL50 (mm)': (custom_cmap, True, 0),
     'moisture_index': (custom_cmap, False, 2),
     "Gum-LM RL10 (mm)": (custom_cmap, True, 1)
 }
