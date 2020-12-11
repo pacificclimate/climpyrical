@@ -138,7 +138,7 @@ def add_model_values(
     "-o", "--out-path", help="Output csv file with matched vals", required=True
 )
 @click.option(
-    "-dv", "--station-dv", help="Output csv file with matched vals", required=True
+    "-dv", "--model-dv", help="Output csv file with matched vals", required=True
 )
 @click.option(
     "-l",
@@ -148,7 +148,7 @@ def add_model_values(
     default="INFO",
 )
 def write_to_file(model_path, stations_path, out_path, model_dv, log_level):
-    df = add_model_values(model_path, stations_path, model_dv, log_level)
+    df = add_model_values(model_path, stations_path, None, model_dv, log_level)
     df.to_csv(out_path)
 
 
