@@ -72,6 +72,28 @@ def add_model_values(
     if stations_path is None and df is None:
         raise ValueError("Must provide either stations_path or pandas.Dataframe")
 
+
+    if 'longitude' in df.columns:
+        df=df.rename(columns={'longitude': 'lon'})
+    if 'Lon' in df.columns:
+        df=df.rename(columns={'Lon': 'lon'})
+    if 'Lat' in df.columns:
+        df=df.rename(columns={'Lat': 'lat'})
+    if 'long' in df.columns:
+        df=df.rename(columns={'long': 'lon'})
+    if 'latitude' in df.columns:
+        df=df.rename(columns={'latitude': 'lat'})
+    if 'name' in df.columns:
+        df=df.rename(columns={'name': 'station_name'})
+    if 'Name' in df.columns:
+        df=df.rename(columns={'Name': 'station_name'})
+    if "prov" in df.columns:
+        df=df.rename(columns={"prov": "province"})
+    if "elev" in df.columns:
+        df=df.rename(columns={"elev": "elev (m)"})
+    if "elevation (m)" in df.columns:
+        df=df.rename(columns={"elevation (m)": "elev (m)"})
+
     keys = ["lat", "lon"]
     contains_keys = [key not in df.columns for key in keys]
     if np.any(contains_keys):
