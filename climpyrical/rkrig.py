@@ -232,14 +232,15 @@ def rkrig_r(
     violate_area = []
     with tqdm(total=len(df.ratio), position=0, leave=True) as pbar:
         for i in range(df.ratio.size):
-            pbar.update()
             nn = n
+            pbar.update()
             if station_dv == 'RL50 (kPa)' and df.iloc[i].lat >= 60.:
                 nn = 40
-            elif "province" in df.columns:
+
+            if "province" in df.columns:
                 WPcond = (
-                    ((station_dv == "WP10") or
-                    (station_dv == "WP50")) and
+                    (station_dv == "WP10" or
+                    station_dv == "WP50") and
                     (
                         (df.iloc[i].province == "QC") or
                         (df.iloc[i].province == "NL") or
@@ -247,11 +248,9 @@ def rkrig_r(
                     ) and
                     (df.iloc[i].lat >= 52.0) 
                 )
-
                 if WPcond:
                     nn = 10
-            else:
-                nn = n
+
 
             nbrs = NearestNeighbors(n_neighbors=nn, metric="haversine").fit(
                 X_distances.T
