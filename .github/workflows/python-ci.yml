@@ -17,14 +17,16 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
-      run: |
-        sudo apt-get install -y build-essential libcurl4-gnutls-dev libxml2-dev libssl-dev
-        sudo apt-get install -y proj-bin libproj-dev libharfbuzz-dev libfribidi-dev libcurl4-openssl-dev  r-base
-        pip install -r requirements.txt -r test_requirements.txt
-        pip install .
-        Rscript install_pkgs.R r_requirements.txt
       env:
         PIP_INDEX_URL: https://pypi.pacificclimate.org/simple
+      run: |
+        pip install -r requirements.txt -r test_requirements.txt
+        pip install .
+    - name: Install R dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install --fix-missing libgit2-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev libcurl4-openssl-dev libssl-dev
+        Rscript install_pkgs.R r_requirements.txt
     - name: Test with pytest (full)
       if: github.ref == 'refs/heads/master'
       run: |
