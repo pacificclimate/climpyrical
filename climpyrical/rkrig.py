@@ -186,7 +186,7 @@ def krig_at_field(
     z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=False)
 
     final = np.ones((ds.rlat.size, ds.rlon.size), dtype=np.float16)
-    final[:] = np.nan
+    final[:, :] = np.nan
     final[lw:u, l:r] = z.T
 
     return final
@@ -225,7 +225,7 @@ def rkrig_r(
 
     # used to calculate average at end
     field = np.ones((ds.rlat.size, ds.rlon.size))
-    field[:] = np.nan
+    field[:, :] = np.nan
 
     # tracks the number of summations in each grid cell
     nancount = np.zeros(field.shape)
