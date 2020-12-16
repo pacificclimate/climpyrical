@@ -14,16 +14,12 @@ import scipy
 
 import numpy as np
 import pandas as pd
-import psutil
-import dask.array as da
+
 
 import warnings
 from rpy2.rinterface import RRuntimeWarning
 
 warnings.filterwarnings("ignore", category=RRuntimeWarning)
-num_cpus = psutil.cpu_count(logical=False)
-# ray.shutdown()
-# ray.init(num_cpus=num_cpus)
 
 def check_df(df, keys=["lat", "lon", "rlat", "rlon"]):
     contains_keys = [key not in df.columns for key in keys]
@@ -224,7 +220,7 @@ def rkrig_r(
     xyr = df[["rlon", "rlat", "ratio"]].values
 
     # used to calculate average at end
-    field = np.ones((ds.rlat.size, ds.rlon.size))
+    field = np.zeros((ds.rlat.size, ds.rlon.size))
     field[:, :] = np.nan
 
     # tracks the number of summations in each grid cell
