@@ -38,10 +38,10 @@ from tqdm import tqdm
 
 from scipy.spatial import ConvexHull
 import rpy2
-import scipy
 
 import numpy as np
 import pandas as pd
+
 
 import warnings
 from rpy2.rinterface import RRuntimeWarning
@@ -90,7 +90,9 @@ def krigit_north(
     # rather than rotated coordinates, was that this particular haversine
     # implementation gives incorrect values for rotated lon and rotated lat.
     # it does give correct distances for regular lat and lon.
-    nbrs = NearestNeighbors(n_neighbors=n, metric=&#34;haversine&#34;).fit(regular_points)
+    nbrs = NearestNeighbors(n_neighbors=n, metric=&#34;haversine&#34;).fit(
+        regular_points
+    )
     dist, ind = nbrs.kneighbors(regular_points)
     imax = np.argmax(df.rlat.values)  # idxmax(axis=0, skipna=True)
     temp_df = df.iloc[ind[imax]]
@@ -172,83 +174,6 @@ def rkrig_py(
     return z
 
 
-def rkrig_r(
-    df: pd.DataFrame, n: int, ds: xr.Dataset, station_dv: str, min_size: int = 30
-):
-    &#34;&#34;&#34;Implements climpyricals moving window method.
-    Args:
-        df: pandas dataframe containing the coordinates in
-            both regular and roated, as well as the station
-            data
-        n: number of nearest neighbors to northern
-            most stations
-        ds: model xarray dataset
-        min_size: minimum number of grid cells in target res
-            to include in the reconstruction. This number is
-            used to calculate an equivalent minimum area
-            that is compared to the polygon produced by
-            the perimeter of stations in a nearest neighbor set
-    Returns:
-        kriged field
-    &#34;&#34;&#34;
-
-    dataframe_keys = [&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, &#34;ratio&#34;]
-    check_df(df, dataframe_keys)
-
-    X_distances = np.stack([np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)])
-    dx = (np.amax(ds.rlon.values) - np.amin(ds.rlon.values)) / ds.rlon.size
-    dy = (np.amax(ds.rlat.values) - np.amin(ds.rlat.values)) / ds.rlat.size
-    dA = dx * dy
-
-    xyr = df[[&#34;rlon&#34;, &#34;rlat&#34;, &#34;ratio&#34;]].values
-
-    # used to calculate average at end
-    field = np.ones((ds.rlat.size, ds.rlon.size))
-    field[:] = np.nan
-    # tracks the number of summations in each grid cell
-    nancount = np.zeros(field.shape)
-
-    with tqdm(total=len(df.ratio), position=0, leave=True) as pbar:
-        for i in range(df.ratio.size):
-            pbar.update()
-            nn = n
-
-            nbrs = NearestNeighbors(n_neighbors=nn, metric=&#34;haversine&#34;).fit(
-                X_distances.T
-            )
-            dist, ind = nbrs.kneighbors(X_distances.T)
-            temp_xyr = xyr[ind[i], :]
-
-            latlon = temp_xyr[:, :2]
-
-            try:
-                hull = ConvexHull(points=latlon)
-
-                while hull.area &lt; dA * min_size ** 2:
-                    nn += 1
-                    nbrs = NearestNeighbors(n_neighbors=nn, metric=&#34;haversine&#34;).fit(
-                        X_distances.T
-                    )
-                    dist, ind = nbrs.kneighbors(X_distances.T)
-
-                    temp_xyr = xyr[ind[i], :]
-                    latlon = temp_xyr[:, :2]
-                    hull = ConvexHull(points=latlon.T)
-            except scipy.spatial.qhull.QhullError:
-                continue
-
-            try:
-                this_field = krig_at_field(ds, temp_xyr)
-                field = np.nansum([field, this_field], axis=0)
-                nancount[~np.isnan(this_field)] += 1
-
-            except rpy2.rinterface_lib.embedded.RRuntimeError:
-                continue
-
-        # taking this fraction computes the mean
-        return field / nancount
-
-
 def krig_at_field(
     ds: xr.Dataset, temp_xyr: NDArray[(Any, 4), float]
 ) -&gt; NDArray[(Any, Any), float]:
@@ -287,10 +212,105 @@ def krig_at_field(
     z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=False)
 
     final = np.ones((ds.rlat.size, ds.rlon.size), dtype=np.float16)
-    final[:] = np.nan
+    final[:, :] = np.nan
     final[lw:u, l:r] = z.T
 
-    return final</code></pre>
+    return final
+
+
+def rkrig_r(
+    df: pd.DataFrame,
+    n: int,
+    ds: xr.Dataset,
+    station_dv: str,
+    min_size: int = 30,
+):
+    &#34;&#34;&#34;Implements climpyricals moving window method.
+    Args:
+        df: pandas dataframe containing the coordinates in
+            both regular and roated, as well as the station
+            data
+        n: number of nearest neighbors to northern
+            most stations
+        ds: model xarray dataset
+        min_size: minimum number of grid cells in target res
+            to include in the reconstruction. This number is
+            used to calculate an equivalent minimum area
+            that is compared to the polygon produced by
+            the perimeter of stations in a nearest neighbor set
+    Returns:
+        kriged field
+    &#34;&#34;&#34;
+
+    dataframe_keys = [&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, &#34;ratio&#34;]
+    check_df(df, dataframe_keys)
+
+    X_distances = np.stack(
+        [np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)]
+    )
+    dx = (np.amax(ds.rlon.values) - np.amin(ds.rlon.values)) / ds.rlon.size
+    dy = (np.amax(ds.rlat.values) - np.amin(ds.rlat.values)) / ds.rlat.size
+    dA = dx * dy
+
+    xyr = df[[&#34;rlon&#34;, &#34;rlat&#34;, &#34;ratio&#34;]].values
+
+    # used to calculate average at end
+    field = np.zeros((ds.rlat.size, ds.rlon.size))
+    field[:, :] = np.nan
+
+    # tracks the number of summations in each grid cell
+    nancount = np.zeros(field.shape)
+
+    with tqdm(total=len(df.ratio), position=0, leave=True) as pbar:
+        for i in range(df.ratio.size):
+            nn = n
+            pbar.update()
+            if station_dv == &#34;RL50 (kPa)&#34; and df.iloc[i].lat &gt;= 60.0:
+                nn = 40
+
+            if &#34;province&#34; in df.columns:
+                WPcond = (
+                    (station_dv == &#34;WP10&#34; or station_dv == &#34;WP50&#34;)
+                    and (
+                        (df.iloc[i].province == &#34;QC&#34;)
+                        or (df.iloc[i].province == &#34;NL&#34;)
+                        or (df.iloc[i].province == &#34;NU&#34;)
+                    )
+                    and (df.iloc[i].lat &gt;= 52.0)
+                )
+                if WPcond:
+                    nn = 10
+
+            nbrs = NearestNeighbors(n_neighbors=nn, metric=&#34;haversine&#34;).fit(
+                X_distances.T
+            )
+            dist, ind = nbrs.kneighbors(X_distances.T)
+            temp_xyr = xyr[ind[i], :]
+
+            latlon = temp_xyr[:, :2]
+
+            hull = ConvexHull(points=latlon)
+            while hull.area &lt; dA * min_size ** 2:
+                warnings.warn(&#34;Adding stations to window!&#34;)
+                nn += 1
+                nbrs = NearestNeighbors(
+                    n_neighbors=nn, metric=&#34;haversine&#34;
+                ).fit(X_distances.T)
+                dist, ind = nbrs.kneighbors(X_distances.T)
+
+                temp_xyr = xyr[ind[i], :]
+                latlon = temp_xyr[:, :2]
+                hull = ConvexHull(points=latlon)
+            try:
+                this_field = krig_at_field(ds, temp_xyr)
+                field = np.nansum([field, this_field], axis=0)
+                nancount[~np.isnan(this_field)] += 1
+
+            except rpy2.rinterface_lib.embedded.RRuntimeError:
+                continue
+
+        # taking this fraction computes the mean
+        return field / nancount</code></pre>
 </details>
 </section>
 <section>
@@ -372,7 +392,7 @@ kriged subset field</p></div>
     z, x, y = sp.fit(latlon, stats, xlim, ylim, extrap=False)
 
     final = np.ones((ds.rlat.size, ds.rlon.size), dtype=np.float16)
-    final[:] = np.nan
+    final[:, :] = np.nan
     final[lw:u, l:r] = z.T
 
     return final</code></pre>
@@ -436,7 +456,9 @@ field: kriged field for the north</p></div>
     # rather than rotated coordinates, was that this particular haversine
     # implementation gives incorrect values for rotated lon and rotated lat.
     # it does give correct distances for regular lat and lon.
-    nbrs = NearestNeighbors(n_neighbors=n, metric=&#34;haversine&#34;).fit(regular_points)
+    nbrs = NearestNeighbors(n_neighbors=n, metric=&#34;haversine&#34;).fit(
+        regular_points
+    )
     dist, ind = nbrs.kneighbors(regular_points)
     imax = np.argmax(df.rlat.values)  # idxmax(axis=0, skipna=True)
     temp_df = df.iloc[ind[imax]]
@@ -575,7 +597,11 @@ the perimeter of stations in a nearest neighbor set</dd>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def rkrig_r(
-    df: pd.DataFrame, n: int, ds: xr.Dataset, station_dv: str, min_size: int = 30
+    df: pd.DataFrame,
+    n: int,
+    ds: xr.Dataset,
+    station_dv: str,
+    min_size: int = 30,
 ):
     &#34;&#34;&#34;Implements climpyricals moving window method.
     Args:
@@ -597,7 +623,9 @@ the perimeter of stations in a nearest neighbor set</dd>
     dataframe_keys = [&#34;lat&#34;, &#34;lon&#34;, &#34;rlat&#34;, &#34;rlon&#34;, &#34;ratio&#34;]
     check_df(df, dataframe_keys)
 
-    X_distances = np.stack([np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)])
+    X_distances = np.stack(
+        [np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)]
+    )
     dx = (np.amax(ds.rlon.values) - np.amin(ds.rlon.values)) / ds.rlon.size
     dy = (np.amax(ds.rlat.values) - np.amin(ds.rlat.values)) / ds.rlat.size
     dA = dx * dy
@@ -605,15 +633,31 @@ the perimeter of stations in a nearest neighbor set</dd>
     xyr = df[[&#34;rlon&#34;, &#34;rlat&#34;, &#34;ratio&#34;]].values
 
     # used to calculate average at end
-    field = np.ones((ds.rlat.size, ds.rlon.size))
-    field[:] = np.nan
+    field = np.zeros((ds.rlat.size, ds.rlon.size))
+    field[:, :] = np.nan
+
     # tracks the number of summations in each grid cell
     nancount = np.zeros(field.shape)
 
     with tqdm(total=len(df.ratio), position=0, leave=True) as pbar:
         for i in range(df.ratio.size):
-            pbar.update()
             nn = n
+            pbar.update()
+            if station_dv == &#34;RL50 (kPa)&#34; and df.iloc[i].lat &gt;= 60.0:
+                nn = 40
+
+            if &#34;province&#34; in df.columns:
+                WPcond = (
+                    (station_dv == &#34;WP10&#34; or station_dv == &#34;WP50&#34;)
+                    and (
+                        (df.iloc[i].province == &#34;QC&#34;)
+                        or (df.iloc[i].province == &#34;NL&#34;)
+                        or (df.iloc[i].province == &#34;NU&#34;)
+                    )
+                    and (df.iloc[i].lat &gt;= 52.0)
+                )
+                if WPcond:
+                    nn = 10
 
             nbrs = NearestNeighbors(n_neighbors=nn, metric=&#34;haversine&#34;).fit(
                 X_distances.T
@@ -623,22 +667,18 @@ the perimeter of stations in a nearest neighbor set</dd>
 
             latlon = temp_xyr[:, :2]
 
-            try:
+            hull = ConvexHull(points=latlon)
+            while hull.area &lt; dA * min_size ** 2:
+                warnings.warn(&#34;Adding stations to window!&#34;)
+                nn += 1
+                nbrs = NearestNeighbors(
+                    n_neighbors=nn, metric=&#34;haversine&#34;
+                ).fit(X_distances.T)
+                dist, ind = nbrs.kneighbors(X_distances.T)
+
+                temp_xyr = xyr[ind[i], :]
+                latlon = temp_xyr[:, :2]
                 hull = ConvexHull(points=latlon)
-
-                while hull.area &lt; dA * min_size ** 2:
-                    nn += 1
-                    nbrs = NearestNeighbors(n_neighbors=nn, metric=&#34;haversine&#34;).fit(
-                        X_distances.T
-                    )
-                    dist, ind = nbrs.kneighbors(X_distances.T)
-
-                    temp_xyr = xyr[ind[i], :]
-                    latlon = temp_xyr[:, :2]
-                    hull = ConvexHull(points=latlon.T)
-            except scipy.spatial.qhull.QhullError:
-                continue
-
             try:
                 this_field = krig_at_field(ds, temp_xyr)
                 field = np.nansum([field, this_field], axis=0)
