@@ -10,7 +10,6 @@ from tqdm import tqdm
 
 from scipy.spatial import ConvexHull
 import rpy2
-import scipy
 
 import numpy as np
 import pandas as pd
@@ -20,6 +19,7 @@ import warnings
 from rpy2.rinterface import RRuntimeWarning
 
 warnings.filterwarnings("ignore", category=RRuntimeWarning)
+
 
 def check_df(df, keys=["lat", "lon", "rlat", "rlon"]):
     contains_keys = [key not in df.columns for key in keys]
@@ -62,7 +62,9 @@ def krigit_north(
     # rather than rotated coordinates, was that this particular haversine
     # implementation gives incorrect values for rotated lon and rotated lat.
     # it does give correct distances for regular lat and lon.
-    nbrs = NearestNeighbors(n_neighbors=n, metric="haversine").fit(regular_points)
+    nbrs = NearestNeighbors(n_neighbors=n, metric="haversine").fit(
+        regular_points
+    )
     dist, ind = nbrs.kneighbors(regular_points)
     imax = np.argmax(df.rlat.values)  # idxmax(axis=0, skipna=True)
     temp_df = df.iloc[ind[imax]]
@@ -189,7 +191,11 @@ def krig_at_field(
 
 
 def rkrig_r(
-    df: pd.DataFrame, n: int, ds: xr.Dataset, station_dv: str, min_size: int = 30
+    df: pd.DataFrame,
+    n: int,
+    ds: xr.Dataset,
+    station_dv: str,
+    min_size: int = 30,
 ):
     """Implements climpyricals moving window method.
     Args:
@@ -208,11 +214,12 @@ def rkrig_r(
         kriged field
     """
 
-
     dataframe_keys = ["lat", "lon", "rlat", "rlon", "ratio"]
     check_df(df, dataframe_keys)
 
-    X_distances = np.stack([np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)])
+    X_distances = np.stack(
+        [np.deg2rad(df.lat.values), np.deg2rad(df.lon.values)]
+    )
     dx = (np.amax(ds.rlon.values) - np.amin(ds.rlon.values)) / ds.rlon.size
     dy = (np.amax(ds.rlat.values) - np.amin(ds.rlat.values)) / ds.rlat.size
     dA = dx * dy
@@ -225,28 +232,26 @@ def rkrig_r(
 
     # tracks the number of summations in each grid cell
     nancount = np.zeros(field.shape)
-    violate_area = []
+
     with tqdm(total=len(df.ratio), position=0, leave=True) as pbar:
         for i in range(df.ratio.size):
             nn = n
             pbar.update()
-            if station_dv == 'RL50 (kPa)' and df.iloc[i].lat >= 60.:
+            if station_dv == "RL50 (kPa)" and df.iloc[i].lat >= 60.0:
                 nn = 40
 
             if "province" in df.columns:
                 WPcond = (
-                    (station_dv == "WP10" or
-                    station_dv == "WP50") and
-                    (
-                        (df.iloc[i].province == "QC") or
-                        (df.iloc[i].province == "NL") or
-                        (df.iloc[i].province == "NU")
-                    ) and
-                    (df.iloc[i].lat >= 52.0) 
+                    (station_dv == "WP10" or station_dv == "WP50")
+                    and (
+                        (df.iloc[i].province == "QC")
+                        or (df.iloc[i].province == "NL")
+                        or (df.iloc[i].province == "NU")
+                    )
+                    and (df.iloc[i].lat >= 52.0)
                 )
                 if WPcond:
                     nn = 10
-
 
             nbrs = NearestNeighbors(n_neighbors=nn, metric="haversine").fit(
                 X_distances.T
@@ -260,9 +265,9 @@ def rkrig_r(
             while hull.area < dA * min_size ** 2:
                 warnings.warn("Adding stations to window!")
                 nn += 1
-                nbrs = NearestNeighbors(n_neighbors=nn, metric="haversine").fit(
-                    X_distances.T
-                )
+                nbrs = NearestNeighbors(
+                    n_neighbors=nn, metric="haversine"
+                ).fit(X_distances.T)
                 dist, ind = nbrs.kneighbors(X_distances.T)
 
                 temp_xyr = xyr[ind[i], :]
@@ -278,4 +283,3 @@ def rkrig_r(
 
         # taking this fraction computes the mean
         return field / nancount
-

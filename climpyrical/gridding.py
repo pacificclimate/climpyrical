@@ -34,16 +34,17 @@ def scale_model_obs(
         raise ValueError("NaN model value encountered.")
 
     # choose starting value
-    start = np.nanmean(model_vals) / np.nanmean(station_vals)
+    # start = np.nanmean(model_vals) / np.nanmean(station_vals)
 
     # enter scaling tolerances
-    tol = np.linspace(0.1, start * 3, 10000)
-    diff = np.array([np.nanmean((station_vals - model_vals / t)) for t in tol])
+    # tol = np.linspace(0.1, start * 3, 10000)
+    # diff = np.array([np.nanmean((station_vals - model_vals / t)) for t in tol])
 
     # find where the scaling tolerance changes the sign of
     # station_vals - model_vals average. This scaling parameter
     # is different from simple ratio of the means.
-    best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
+    best_tol = np.nansum(model_vals) / np.nansum(station_vals)
+    # best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
 
     # apply correction
     model_vals_corrected = model_vals / best_tol
@@ -606,9 +607,7 @@ def find_nearest_index_value(x, y, x_i, y_i, field):
 
         # create interpolation function for every point
         # except the locations of the NaN values
-        f = NearestNDInterpolator(
-            pairs[mask.flatten()], field[mask]
-        )
+        f = NearestNDInterpolator(pairs[mask.flatten()], field[mask])
 
         # get the rlon and rlat locations of the NaN values
         x_nan = xarr[y_i, x_i][nanloc]

@@ -27,7 +27,11 @@ warnings.filterwarnings("ignore")
 
 
 def add_model_values(
-    model_path, stations_path=None, df=None, model_dv="model_values", log_level="INFO"
+    model_path,
+    stations_path=None,
+    df=None,
+    model_dv="model_values",
+    log_level="INFO",
 ):
     """Locates the model value that's spatially closest to a station
     Args:
@@ -70,29 +74,30 @@ def add_model_values(
             df = pd.read_excel(stations_path)
 
     if stations_path is None and df is None:
-        raise ValueError("Must provide either stations_path or pandas.Dataframe")
+        raise ValueError(
+            "Must provide either stations_path or pandas.Dataframe"
+        )
 
-
-    if 'longitude' in df.columns:
-        df=df.rename(columns={'longitude': 'lon'})
-    if 'Lon' in df.columns:
-        df=df.rename(columns={'Lon': 'lon'})
-    if 'Lat' in df.columns:
-        df=df.rename(columns={'Lat': 'lat'})
-    if 'long' in df.columns:
-        df=df.rename(columns={'long': 'lon'})
-    if 'latitude' in df.columns:
-        df=df.rename(columns={'latitude': 'lat'})
-    if 'name' in df.columns:
-        df=df.rename(columns={'name': 'station_name'})
-    if 'Name' in df.columns:
-        df=df.rename(columns={'Name': 'station_name'})
+    if "longitude" in df.columns:
+        df = df.rename(columns={"longitude": "lon"})
+    if "Lon" in df.columns:
+        df = df.rename(columns={"Lon": "lon"})
+    if "Lat" in df.columns:
+        df = df.rename(columns={"Lat": "lat"})
+    if "long" in df.columns:
+        df = df.rename(columns={"long": "lon"})
+    if "latitude" in df.columns:
+        df = df.rename(columns={"latitude": "lat"})
+    if "name" in df.columns:
+        df = df.rename(columns={"name": "station_name"})
+    if "Name" in df.columns:
+        df = df.rename(columns={"Name": "station_name"})
     if "prov" in df.columns:
-        df=df.rename(columns={"prov": "province"})
+        df = df.rename(columns={"prov": "province"})
     if "elev" in df.columns:
-        df=df.rename(columns={"elev": "elev (m)"})
+        df = df.rename(columns={"elev": "elev (m)"})
     if "elevation (m)" in df.columns:
-        df=df.rename(columns={"elevation (m)": "elev (m)"})
+        df = df.rename(columns={"elevation (m)": "elev (m)"})
 
     keys = ["lat", "lon"]
     contains_keys = [key not in df.columns for key in keys]
@@ -133,12 +138,17 @@ def add_model_values(
 
 @click.command()
 @click.option("-m", "--model-path", help="Input CanRCM4 file", required=True)
-@click.option("-s", "--stations-path", help="Input csv file to match", required=True)
+@click.option(
+    "-s", "--stations-path", help="Input csv file to match", required=True
+)
 @click.option(
     "-o", "--out-path", help="Output csv file with matched vals", required=True
 )
 @click.option(
-    "-dv", "--model-dv", help="Output csv file with matched vals", required=True
+    "-dv",
+    "--model-dv",
+    help="Output csv file with matched vals",
+    required=True,
 )
 @click.option(
     "-l",
