@@ -37,6 +37,23 @@ station_dvs = [
     "Gum-LM RL10 (mm)"
 ]
 
+nrc_medians = {
+    "RL50 (kPa)": (0.4, "multiply"),
+    "SL50 (kPa)": (2.4, "multiply"),
+    "moisture_index": (0.9, "multiply"),
+    "HDD (degC-day)": (4700, "multiply"),
+    "TJan2.5 (degC)": (-25, "add"),
+    "TJan1.0 (degC)": (-27, "add"),
+    "TJul2.5 (degC)":( 29, "add"),
+    "TwJul2.5 (degC)":( 21, "add"),
+    "WP10": (0.33, "multiply"),
+    "WP50": (0.42, "multiply"),
+    "DRWP-RL5 (Pa)": (160, "multiply"),
+    "annual_pr (mm)": (900, "multiply"),
+    "annual_rain (mm)": (730, "multiply"),
+    "1day rain RL50 (mm)": (96, "multiply"),
+    "Gum-LM RL10 (mm)": (20, "multiply")
+}
 
 filenames = {
     "RL50 (kPa)": "RL50",
