@@ -33,18 +33,7 @@ def scale_model_obs(
     if np.any(np.isnan(station_vals)):
         raise ValueError("NaN model value encountered.")
 
-    # choose starting value
-    # start = np.nanmean(model_vals) / np.nanmean(station_vals)
-
-    # enter scaling tolerances
-    # tol = np.linspace(0.1, start * 3, 10000)
-    # diff = np.array([np.nanmean((station_vals - model_vals / t)) for t in tol])
-
-    # find where the scaling tolerance changes the sign of
-    # station_vals - model_vals average. This scaling parameter
-    # is different from simple ratio of the means.
     best_tol = np.nansum(model_vals) / np.nansum(station_vals)
-    # best_tol = tol[np.where(np.diff(np.sign(diff)))[0][0]]
 
     # apply correction
     model_vals_corrected = model_vals / best_tol
