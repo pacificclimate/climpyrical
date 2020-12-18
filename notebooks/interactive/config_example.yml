@@ -1,0 +1,207 @@
+# See config_example.yml for example configuration
+
+# Parameterize the pipeline
+# The pipeline will iterate through each parent tree
+# in dvs and provide the associated parameters
+steps: [
+"preprocess_model.ipynb", 
+"stations.ipynb", 
+"MWOrK.ipynb", 
+"plots.ipynb", 
+"nbcc_stations.ipynb", 
+"combine_tables.ipynb"
+]
+# To be placed in climpyrical/
+paths:
+    output_notebook_path: /data/results/intermediate/notebooks/
+    preprocessed_model_path: /data/results/intermediate/preprocessed_netcdf/
+    preprocessed_stations_path: /data/results/intermediate/preprocessed_stations/
+    output_reconstruction_path: /data/results/netcdf/
+    output_tables_path: /data/results/TableC2/
+    output_figure_path: /data/results/figures/
+    mask_path: data/masks/canada_mask_rp.nc
+    north_mask_path: data/masks/canada_mask_north_rp.nc
+    nbcc_loc_path: data/station_inputs/NBCC_2020_new_coords.xlsm
+
+nbcc_median_correction: True
+dvs:
+    RL50:
+        station_dv: "RL50 (kPa)"
+        station_path: 'data/station_inputs/Interim_snow_rain_load_LR_composite_stations_tbd_v4.csv'
+        input_model_path: 'data/model_inputs/snw_rain_CanRCM4-LE_ens35_1951-2016_max_rl50_load_ensmean.nc'
+        medians: 
+            value: 0.4
+            action: "multiply"
+        fill_glaciers: True
+        
+    RHann:
+        station_dv: "mean RH (%)"
+        station_path: 'data/station_inputs/rh_annual_mean_10yr_for_maps.csv'
+        input_model_path: 'data/model_inputs/hurs_CanRCM4-LE_ens15_1951-2016_ensmean.nc'
+        medians:
+            value: None
+            action: None
+        fill_glaciers: True
+        
+    HDD:
+        station_dv: "HDD (degC-day)"
+        station_path: 'data/station_inputs/hdd_Tmax_Tmin_allstations_v3_for_maps.csv'
+        input_model_path: 'data/model_inputs/hdd_CanRCM4-LE_ens35_1951-2016_ann_ensmean.nc'
+        medians:
+            value: 4700
+            action: "multiply"
+        fill_glaciers: True
+        
+    SL50:
+        station_dv: "SL50 (kPa)"
+        station_path: data/station_inputs/Interim_snow_rain_load_LR_composite_stations_tbd_v4.csv
+        input_model_path: data/model_inputs/snw_CanRCM4-LE_ens35_1951-2016_max_rl50_load_ensmean.nc
+        medians:
+            value: 2.4
+            action: "multiply"
+        fill_glaciers: True
+        
+        
+    WP10:
+        station_dv: "WP10"
+        station_path: 'data/station_inputs/wpress_stations_rl10_rl50_for_maps.csv'
+        input_model_path: 'data/model_inputs/wpress_CanRCM4-LE_ens35_1951-2016_max_rl10_kpa_ensmean.nc'
+        medians:
+            value: 0.33
+            action: "multiply"
+        fill_glaciers: True
+        
+        
+    WP50:
+        station_dv: "WP50"
+        station_path: 'data/station_inputs/wpress_stations_rl10_rl50_for_maps.csv'
+        input_model_path: 'data/model_inputs/wpress_CanRCM4-LE_ens35_1951-2016_max_rl50_kpa_ensmean.nc'
+        medians:
+            value: 0.42
+            action: "multiply"
+        fill_glaciers: True
+
+    TJan2.5:
+        station_dv: "TJan2.5 (degC)"
+        station_path: 'data/station_inputs/janT2.5p_T1.0p_allstations_v3_min8yr_for_maps.csv'
+        input_model_path: 'data/model_inputs/tas_CanRCM4-LE_ens35_1951-2016_1hr_jan2.5p_ensmean.nc'
+        medians:
+            value: -25
+            action: "add"
+        fill_glaciers: True
+        
+    TJan1.0:
+        station_dv: "TJan1.0 (degC)"
+        station_path: 'data/station_inputs/janT2.5p_T1.0p_allstations_v3_min8yr_for_maps.csv'
+        input_model_path: 'data/model_inputs/tas_CanRCM4-LE_ens35_1951-2016_1hr_jan1.0p_ensmean.nc'
+        medians:
+            value: -27
+            action: "add"
+        fill_glaciers: True
+
+    Tmin:
+        station_dv: "Tmin (degC)"
+        station_path: 'data/station_inputs/hdd_Tmax_Tmin_allstations_v3_for_maps.csv'
+        input_model_path: 'data/model_inputs/tas_CanRCM4-LE_ens35_1951-2016_ann_min_ensmean.nc'
+        medians:
+            value: None
+            action: None
+        fill_glaciers: True
+        
+        
+    Tmax:
+        station_dv: "Tmax (degC)"
+        station_path: 'data/station_inputs/hdd_Tmax_Tmin_allstations_v3_for_maps.csv'
+        input_model_path: 'data/model_inputs/tas_CanRCM4-LE_ens35_1951-2016_ann_max_ensmean.nc'
+        medians:
+            value: None
+            action: None
+        fill_glaciers: True
+        
+        
+    TJul97.5:
+        station_dv:  "TJul2.5 (degC)"
+        station_path: 'data/station_inputs/julT97.5p_allstations_v3_min8yr_for_maps.csv'
+        input_model_path: 'data/model_inputs/tas_CanRCM4-LE_ens35_1951-2016_1hr_jul97.5p_ensmean.nc'
+        medians:
+            value: 29
+            action: "add"
+        fill_glaciers: True
+        
+        
+    TwJul97.5:
+        station_dv:  "TwJul2.5 (degC)"
+        station_path: 'data/station_inputs/julTwb97.5p_allstations_v3_for_maps.csv'
+        input_model_path: 'data/model_inputs/twb_CanRCM4-LE_ens35_1951-2016_1hr_jul97.5p_ensmean.nc'
+        medians:
+            value: 21
+            action: "add"
+        fill_glaciers: True
+        
+        
+    DRWP5:
+        station_dv: "DRWP-RL5 (Pa)"
+        station_path: 'data/station_inputs/drwp_rl5_for_maps.csv'
+        input_model_path: 'data/model_inputs/drwp_CanRCM4-LE_ens15_1951-2016_rl5_ensmean.nc'
+        medians:
+            value: 160
+            action: multiply
+        fill_glaciers: True
+        
+        
+    PAnn:
+        station_dv: "annual_pr (mm)"
+        station_path: 'data/station_inputs/pr_annual_mean_doy_MSC_25yr_for_maps.csv'
+        input_model_path: 'data/model_inputs/pr_CanRCM4-LE_ens35_1951-2016_ann_sum_ensmean.nc'
+        medians:
+            value: 900
+            action: multiply
+        fill_glaciers: True
+        
+        
+    RAnn:
+        station_dv: "annual_rain (mm)"
+        station_path: 'data/station_inputs/rain_annual_mean_doy_MSC_25yr_for_maps.csv'
+        input_model_path: 'data/model_inputs/rain_CanRCM4-LE_ens35_1951-2016_ann_sum_ensmean.nc'
+        medians:
+            value: 730
+            action: multiply
+        fill_glaciers: True
+        
+        
+    R1d50:
+        station_dv: "1day rain RL50 (mm)"
+        station_path: 'data/station_inputs/1day_rain_rl50_for_maps.csv'
+        input_model_path: 'data/model_inputs/rain_CanRCM4-LE_ens35_1951-2016_max1day_rl50_gum_lm_ensmean.nc'
+        medians:
+            value: 96
+            action: multiply
+        fill_glaciers: True
+        
+        
+    MI:
+        station_dv: "moisture_index"
+        station_path: 'data/station_inputs/moisture_index_for_maps.csv'
+        input_model_path: "data/model_inputs/moisture_index_CanRCM4-LE_ens15_1951-2016_ensmean.nc"
+        medians:
+            value: 0.9
+            action: multiply
+        fill_glaciers: True
+        
+        
+    R15m10:
+        station_dv: "Gum-LM RL10 (mm)"
+        station_path: "data/station_inputs/15min_rain_rl10_for_maps.csv"
+        input_model_path: "data/model_inputs/rain_CanRCM4-LE_ens15_1951-2016_max1hr_rl10_gum_lm_ensmean.nc"
+        medians:
+            value: 20
+            action: multiply
+        fill_glaciers: True
+
+# Parameterize individual notebooks
+preprocess_models:
+    input_path: "path_to_input_file.nc"
+    name: "output filename beginning"
+    fill_glaciers: True # whether to fill spurious glacier points
+    output_path: "path_to_output.nc"
+
