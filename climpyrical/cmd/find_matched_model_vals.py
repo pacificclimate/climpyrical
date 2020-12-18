@@ -27,7 +27,8 @@ warnings.filterwarnings("ignore")
 
 
 def add_model_values(
-    model_path,
+    model_path = None,
+    ds = None,
     stations_path=None,
     df=None,
     model_dv="model_values",
@@ -45,8 +46,20 @@ def add_model_values(
         Creates a .csv file with corresponding model values.
     """
     logging.basicConfig(level=log_level)
+    if model_path is None and ds is None:
+        raise ValueError(
+            "Please provide at least"
+            "model path or xarray.Dataset object"
+        )
+    if model_path is not None and ds is not None:
+        raise ValueError(
+            "Provided both model path"
+            "and xarray.Dataset. "
+            "Please only provide one or the other."
+        )    
+    if ds is None and model_path is not None:
+        ds = read_data(model_path)
 
-    ds = read_data(model_path)
     (dv,) = ds.data_vars
     unit = ds[dv].attrs["units"]
 
@@ -61,11 +74,11 @@ def add_model_values(
             f"{unit} not recognized from list of accepted units: {accepted_units}"
         )
 
-    if unit == "degC":
-        kelvin = 273.15  # K
-        logging.info("Temperature field detected. Converting to Kelvin.")
-        mean += kelvin
-        ds[dv].attrs["units"] = "K"
+    # if unit == "degC":
+    #     kelvin = 273.15  # K
+    #     logging.info("Temperature field detected. Converting to Kelvin.")
+    #     mean += kelvin
+    #     ds[dv].attrs["units"] = "K"
 
     if stations_path is not None:
         if stations_path.endswith(".csv"):
