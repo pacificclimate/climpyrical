@@ -38,46 +38,50 @@ Rscript install_pkgs.R r_requirements.txt
 ```
 
 # Getting started
-The first step to running the pipeline is configuring it. Various configurations also need to be added to `config.py`. These contain design value specific information, such as paths to input station and model files, plotting parameters, and output filenames. 
+The first step to running the pipeline is configuring it. Various configurations also need to be added to a configuration yaml file. These contain design value specific information, such as paths to input station and model files, plotting parameters, and output filenames. See `config_example.yml` as a full configuration for running the software on all of the design values. 
 
-```python
-# List of station file column containing design value
-# Dictionaries use this name to reference parameters
-station_dvs = [
-    "RL50 (kPa)"
+The recipe is the following, using RL50 as an example:
+
+```yaml
+# Which notebooks to use in the pipeline
+steps: [
+"preprocess_model.ipynb", 
+"stations.ipynb", 
+"MWOrK.ipynb", 
+"plots.ipynb", 
+"nbcc_stations.ipynb", 
+"combine_tables.ipynb"
 ]
 
-import matplotlib
-# custom plotting colormap
-lmap = ['#B544A6', '#884DB2', '#5856AF', '#6089AC', '#6AA8A2', '#64AE90', '#62B07A', '#75B85B', '#B1BF53', '#C78E4B'][::-1]
-custom_cmap = matplotlib.colors.ListedColormap(lmap)
+# To be placed in climpyrical/
+paths:
+    output_notebook_path: /intermediate/notebook/logs/path
+    preprocessed_model_path: /path/to/folder/
+    preprocessed_stations_path: /path/to/folder/
+    output_reconstruction_path: /path/to/folder/
+    output_tables_path: /path/to/folder/
+    output_figure_path: /path/to/folder/
+    mask_path: data/masks/canada_mask_rp.nc
+    north_mask_path: data/masks/canada_mask_north_rp.nc
+    nbcc_loc_path: data/station_inputs/NBCC_2020_new_coords.xlsm
 
-# Set up the plotting dictionary
-# station_dv: (custom colormap to use, whether to use log colorscale, number of decimals to round to) 
-plot_dict = {
-    'RL50 (kPa)': (custom_cmap, True, 2),
-}
-
-# Set up the concise output name (this is used for filenames and plot titles)
-filenames = {
-    "RL50 (kPa)": "RL50",
-}
-
-# Paths to model files
-model_paths = {
-    'RL50 (kPa)': 'data/model_inputs/snw_rain_CanRCM4-LE_ens35_1951-2016_max_rl50_load_ensmean.nc',
-}
-
-# Paths to station files
-station_paths = {
-    'RL50 (kPa)': 'data/station_inputs/Interim_snow_rain_load_LR_composite_stations_tbd_v4.csv',
-}
+# whether to apply median correction from NBCC 2015
+nbcc_median_correction: True
+dvs:
+    RL50:
+        station_dv: "RL50 (kPa)" # Column header for the design value
+        station_path: 'data/station_inputs/Interim_snow_rain_load_LR_composite_stations_tbd_v4.csv' 
+        input_model_path: 'data/model_inputs/snw_rain_CanRCM4-LE_ens35_1951-2016_max_rl50_load_ensmean.nc'
+        medians: 
+            value: 0.4
+            action: "multiply"
+        fill_glaciers: True
 ```
 
 ### Option 1: Interactive (recommended)
 [Jupyter Notebooks](https://jupyter.org/) have been paramaterized using [Papermill](https://github.com/nteract/papermill), so in addition to running them in [Jupyter Lab](https://jupyterlab.readthedocs.io/en/stable/getting_started/overview.html), they can be executed from the terminal. For a tutorial on using Jupyter Lab, you can [read their docs](https://jupyterlab.readthedocs.io/en/stable/getting_started/overview.html).
 
-To reconstruct a design value field, users need a CanRCM4 `netCDF` design value field as well as an accompanying station data file in the form of a `.csv`. The user also needs to know the column name of the design value field in the `.csv` file. 
+To reconstruct a design value field, users need a CanRCM4 `netCDF` design value field as well as an accompanying station data file in the form of a `.csv`. The user also needs to know the column name of the design value field in the `.csv` file. These will be configured in the configuration yaml.
 
 The processing notebooks can be found in the following directory:
 ```bash
@@ -85,38 +89,62 @@ The processing notebooks can be found in the following directory:
 ├── notebooks
 │   ├── README.ipynb
 │   ├── climpyrical_demo.ipynb
-│   └── interactive
-│       ├── config.py
-│       ├── mask.ipynb
-│       ├── nbcc_stations.ipynb
-│       ├── pipeline.ipynb
-│       ├── plots.ipynb
-│       ├── preprocess_model.ipynb
+...
 ```
 
 Open `README.ipynb` with Jupyter to view detailed instructions on how to reproduce. The notebooks generate a series of files (including intermediate logs) that are laid out in detail in the aforementioned `README.ipynb` and in `pipeline.ipynb`.
 
-### Option 2: From the command line (server use)
+### Option 2: CLI (Command Line Interface) Using Papermill
 
-Since the notebooks are parameterized, they can be run from the command line with Papermill. Papermill produces a log of the notebook once it has been executed. Note that no parameters, other than a configured `config.py` file are necessary for pipeline.ipynb
+Since the notebooks are parameterized, they can be run from the command line with Papermill. Papermill produces a log of the notebook once it has been executed. You can select which design values you'd like to run, or which steps you'd like to run from the pipeline in the configuration yaml. [Read more about executing notebooks using papermill here](https://papermill.readthedocs.io/en/latest/usage-execute.html).
+
+You supply the configuration yaml using the `-f` argument.
 
 ```bash
-$ papermill climpyrical/interactive/pipeline.ipynb climpyrical/data/results/interactive/notebooks/pipeline.ipynb
+$[climpyrical/notebooks/] papermill -f config.yml pipeline.ipynb pipeline_log.ipynb
 ```
-Model preprocessing:
+
+If one wants to run only a segment (or segments) of the pipeline, edit the `config.yml` file to only include the steps of interest.
+
+i.e.
+
+```yaml
+# Which notebooks to use in the pipeline
+steps: [
+"preprocess_model.ipynb", 
+"stations.ipynb"
+]
+
+# To be placed in climpyrical/
+paths:
+    output_notebook_path: /intermediate/notebook/logs/path
+    preprocessed_model_path: /path/to/folder/
+    preprocessed_stations_path: /path/to/folder/
+    output_reconstruction_path: /path/to/folder/
+    output_tables_path: /path/to/folder/
+    output_figure_path: /path/to/folder/
+    mask_path: data/masks/canada_mask_rp.nc
+    north_mask_path: data/masks/canada_mask_north_rp.nc
+    nbcc_loc_path: data/station_inputs/NBCC_2020_new_coords.xlsm
+
+# whether to apply median correction from NBCC 2015
+nbcc_median_correction: True
+dvs:
+    RL50:
+        station_dv: "RL50 (kPa)" # Column header for the design value
+        station_path: 'data/station_inputs/Interim_snow_rain_load_LR_composite_stations_tbd_v4.csv' 
+        input_model_path: 'data/model_inputs/snw_rain_CanRCM4-LE_ens35_1951-2016_max_rl50_load_ensmean.nc'
+        medians: 
+            value: 0.4
+            action: "multiply"
+        fill_glaciers: True
+```
+
+Then simply run the command as before:
+
 ```bash
-$ papermill climpyrical/interactive/preprocess_model.ipynb \
-            climpyrical/data/results/interactive/notebooks/output_preprocess_model.ipynb \
-            -p station_dv "RL50 (kPa)" \
-            -p model_input_path "data/model_inputs/snw_rain_CanRCM4-LE_ens35_1951-2016_max_rl50_load_ensmean.nc") \
-            -p name "RL50" \
-            -p fill_glaciers True \
-            -p processed_model_output_path "/data/results/intermediate/preprocessed_models/default.nc"
+$[climpyrical/notebooks/] papermill -f config.yml pipeline.ipynb pipeline_log.ipynb
 ```
-Station preprocessing:
-Ratio reconstruction:
-Plot generation:
-TableC2 generation:
 
 ### Reading Data --> Put into API documentation
 Load an ensemble of climate models using `climpyrical`'s `read_data` function. `read_data` creates an `xarray` dataset containing the fields defined by `keys` and by the design value key as found in the climate model.
