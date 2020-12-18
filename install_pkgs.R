@@ -2,6 +2,11 @@
 # Rscript install_pgks.R r_requirements.txt
 # r_requirements delimited by '==' as in python requirements.txt
 
+# set mirror
+r = getOption("repos")
+r["CRAN"] = "http://cran.us.r-project.org"
+options(repos = r)
+
 # Create user library
 dir.create(Sys.getenv('R_LIBS_USER'), recursive = TRUE);
 .libPaths(Sys.getenv('R_LIBS_USER'));
