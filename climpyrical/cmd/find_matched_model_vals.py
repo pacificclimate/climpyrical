@@ -27,8 +27,8 @@ warnings.filterwarnings("ignore")
 
 
 def add_model_values(
-    model_path = None,
-    ds = None,
+    model_path=None,
+    ds=None,
     stations_path=None,
     df=None,
     model_dv="model_values",
@@ -48,15 +48,14 @@ def add_model_values(
     logging.basicConfig(level=log_level)
     if model_path is None and ds is None:
         raise ValueError(
-            "Please provide at least"
-            "model path or xarray.Dataset object"
+            "Please provide at least" "model path or xarray.Dataset object"
         )
     if model_path is not None and ds is not None:
         raise ValueError(
             "Provided both model path"
             "and xarray.Dataset. "
             "Please only provide one or the other."
-        )    
+        )
     if ds is None and model_path is not None:
         ds = read_data(model_path)
 
@@ -64,7 +63,7 @@ def add_model_values(
     unit = ds[dv].attrs["units"]
 
     rlon, rlat = np.meshgrid(ds.rlon, ds.rlat)
-    mean = ds[dv].values
+    # mean = ds[dv].values
 
     accepted_units = ["kPa", "Pa", "degC", "mm", "unitless", "%"]
 
@@ -87,9 +86,7 @@ def add_model_values(
             df = pd.read_excel(stations_path)
 
     if stations_path is None and df is None:
-        raise ValueError(
-            "Must provide either stations_path or pandas.Dataframe"
-        )
+        raise ValueError("Must provide either stations_path or pandas.Dataframe")
 
     if "longitude" in df.columns:
         df = df.rename(columns={"longitude": "lon"})
@@ -151,9 +148,7 @@ def add_model_values(
 
 @click.command()
 @click.option("-m", "--model-path", help="Input CanRCM4 file", required=True)
-@click.option(
-    "-s", "--stations-path", help="Input csv file to match", required=True
-)
+@click.option("-s", "--stations-path", help="Input csv file to match", required=True)
 @click.option(
     "-o", "--out-path", help="Output csv file with matched vals", required=True
 )
