@@ -1,0 +1,12 @@
+# See config_example.yml for example configuration
+
+# Parameterize the pipeline
+nbcc_median_correction: True
+
+# Parameterize individual notebooks
+preprocess_models:
+    input_path: "path_to_input_file.nc"
+    name: "output filename beginning"
+    fill_glaciers: True # whether to fill spurious glacier points
+    output_path: "path_to_output.nc"
+
