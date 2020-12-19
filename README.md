@@ -57,7 +57,7 @@ Climpyrical was best designed with Jupyter in mind. The interactivity and highly
 
 6.) combine_tables.ipynb -> Combine each nbcc locations
 
-The first step to running the pipeline is configuring it. Various configurations also need to be added to a configuration yaml file. These contain design value specific information, such as paths to input station and model files, plotting parameters, and output filenames. See `config_example.yml` as a full configuration for running the software on all of the design values.
+The first step to running the pipeline is configuring it. Various configurations also need to be added to a configuration yaml file. These contain design value specific information, such as paths to input station and model files, and output filenames. See `config_example.yml` as a full configuration for running the software on all of the design values.
 
 The recipe is the following, using RL50 as an example:
 
@@ -68,7 +68,7 @@ steps: [
 "stations.ipynb", 
 "MWOrK.ipynb", 
 "plots.ipynb", 
-"nbcc_stations.ipynb", 
+"nbcc_locations.ipynb", 
 "combine_tables.ipynb"
 ]
 
@@ -85,11 +85,11 @@ paths:
     nbcc_loc_path: data/station_inputs/NBCC_2020_new_coords.xlsm
 
 # whether to apply median correction from NBCC 2015
-nbcc_median_correction: True
+nbcc_mean_correction: True
 dvs:
     RL50:
         station_dv: "RL50 (kPa)" # Column header for the design value
-        station_path: 'data/station_inputs/Interim_snow_rain_load_LR_composite_stations_tbd_v4.csv' 
+        station_path: 'data/station_inputs/sl50_rl50_for_maps.csv' 
         input_model_path: 'data/model_inputs/snw_rain_CanRCM4-LE_ens35_1951-2016_max_rl50_load_ensmean.nc'
         medians: 
             value: 0.4
@@ -147,7 +147,7 @@ paths:
     nbcc_loc_path: data/station_inputs/NBCC_2020_new_coords.xlsm
 
 # whether to apply median correction from NBCC 2015
-nbcc_median_correction: True
+nbcc_mean_correction: True
 dvs:
     RL50:
         station_dv: "RL50 (kPa)" # Column header for the design value
