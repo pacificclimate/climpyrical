@@ -28,7 +28,7 @@ paths:
     north_mask_path: data/masks/canada_mask_north_rp.nc
     nbcc_loc_path: data/station_inputs/NBCC_2020_new_coords.xlsm
 
-nbcc_median_correction: True
+nbcc_mean_correction: True
 
 dvs:
     RL50:
