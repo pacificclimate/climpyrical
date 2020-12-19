@@ -3,7 +3,6 @@
 A Python tool for spatially downscaling and reconstructing design value fields using meteorological station observations and CanRCM4 models.
 
 # Build status
----
 ![Python CI](https://github.com/pacificclimate/climpyrical/workflows/Python%20CI/badge.svg)
 ![Documentation Check](https://github.com/pacificclimate/climpyrical/workflows/Documentation%20Check/badge.svg)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -21,11 +20,10 @@ To install, run
 $ pip install climpyrical/
 ```
 
-### Requirements
+# Requirements
 To install all of the dependencies used by climpyrical, install from requirements file found in `requirements.txt`
 
 via 
-
 ```bash
 $ pip install -r climpyrical/requirements.txt
 ```
@@ -36,9 +34,30 @@ $ pip install -r climpyrical/requirements.txt
 apt install r-base 
 Rscript install_pkgs.R r_requirements.txt
 ```
+To display a progress bar within Jupyter, install the nbwidget extension with
+```bash
+jupyter nbextension enable --py widgetsnbextension
+jupyter labextension install @jupyter-widgets/jupyterlab-manager
+```
+And restart the jupyter server.
 
 # Getting started
-The first step to running the pipeline is configuring it. Various configurations also need to be added to a configuration yaml file. These contain design value specific information, such as paths to input station and model files, plotting parameters, and output filenames. See `config_example.yml` as a full configuration for running the software on all of the design values. 
+Climpyrical was best designed with Jupyter in mind. The interactivity and highly configured nature of the pipeline lends itself well to an interactive interface. Additionally, the pipeline generates a log of each step of the pipeline that can be easily re-run and edited interactively.
+
+### The pipeline
+1.) preprocess_model.ipynb -> Processes the native CanRCM4 model grid to the target resolution
+
+2.) stations.ipynb -> Processes the stations, does a coordinate transformation
+
+3.) MWOrK.ipynb -> Moving Window Ordinary ratio Kriging (MWOrK) does the 
+
+4.) plots.ipynb -> Generate figures from the results
+
+5.) nbcc_stations.ipynb -> Generate individual tables at nbcc locations
+
+6.) combine_tables.ipynb -> Combine each nbcc locations
+
+The first step to running the pipeline is configuring it. Various configurations also need to be added to a configuration yaml file. These contain design value specific information, such as paths to input station and model files, plotting parameters, and output filenames. See `config_example.yml` as a full configuration for running the software on all of the design values.
 
 The recipe is the following, using RL50 as an example:
 
