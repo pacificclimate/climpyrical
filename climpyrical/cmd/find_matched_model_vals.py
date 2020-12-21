@@ -166,12 +166,6 @@ def add_model_values(
     default="INFO",
 )
 def write_to_file(model_path, stations_path, out_path, model_dv, log_level):
-        model_path=None,
-    ds=None,
-    stations_path=None,
-    df=None,
-    model_dv="model_values",
-    log_level="INFO",
     df = add_model_values(
         model_path=model_path,
         stations_path=stations_path,
