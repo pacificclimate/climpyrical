@@ -8,8 +8,9 @@ A Python tool for spatially downscaling and reconstructing design value fields u
 ![Documentation Check](https://github.com/pacificclimate/climpyrical/workflows/Documentation%20Check/badge.svg)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-# MyBinder and NBViewer
-TODO: Add links here
+# View Notebooks
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pacificclimate/climpyrical/HEAD?filepath=notebooks%2Fdemo%2F)
+![Logs of Recent Runs](https://nbviewer.jupyter.org/github/pacificclimate/climpyrical_dv_log/tree/main/)
 
 # Setup
 ```bash
