@@ -1,12 +1,35 @@
-# See config_example.yml for example configuration
-
 # Parameterize the pipeline
-nbcc_median_correction: True
+# The pipeline will iterate through each parent tree
+# in dvs and provide the associated parameters
 
-# Parameterize individual notebooks
-preprocess_models:
-    input_path: "path_to_input_file.nc"
-    name: "output filename beginning"
-    fill_glaciers: True # whether to fill spurious glacier points
-    output_path: "path_to_output.nc"
+# Which notebooks to use in the pipeline
+steps: [
+"preprocess_model.ipynb", 
+"stations.ipynb"
+]
 
+n_jobs: 2
+
+# To be placed in climpyrical/
+paths:
+    output_notebook_path: /data/results/intermediate/notebooks/
+    preprocessed_model_path: /data/results/intermediate/preprocessed_netcdf/
+    preprocessed_stations_path: /data/results/intermediate/preprocessed_stations/
+    output_reconstruction_path: /data/results/netcdf/
+    output_tables_path: /data/results/TableC2/
+    output_figure_path: /data/results/figures/
+    mask_path: data/masks/canada_mask_rp.nc
+    north_mask_path: data/masks/canada_mask_north_rp.nc
+    nbcc_loc_path: data/station_inputs/NBCC_2020_new_coords.xlsm
+
+nbcc_correction: True
+
+dvs:
+    RL50:
+        station_dv: "RL50 (kPa)"
+        station_path: data/station_inputs/sl50_rl50_for_maps.csv
+        input_model_path: data/model_inputs/snw_rain_CanRCM4-LE_ens35_1951-2016_max_rl50_load_ensmean.nc
+        medians: 
+            value: 0.3
+            action: multiply
+        fill_glaciers: True

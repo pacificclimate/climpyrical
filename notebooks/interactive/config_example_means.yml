@@ -1,5 +1,3 @@
-# See config_example.yml for example configuration
-
 # Parameterize the pipeline
 # The pipeline will iterate through each parent tree
 # in dvs and provide the associated parameters
@@ -14,7 +12,7 @@ steps: [
 "combine_tables.ipynb"
 ]
 
-n_jobs: 6
+n_jobs: 2
 
 # To be placed in climpyrical/
 paths:
@@ -28,7 +26,7 @@ paths:
     north_mask_path: data/masks/canada_mask_north_rp.nc
     nbcc_loc_path: data/station_inputs/NBCC_2020_new_coords.xlsm
 
-nbcc_median_correction: True
+nbcc_correction: True
 dvs:
     RL50:
         station_dv: "RL50 (kPa)"
