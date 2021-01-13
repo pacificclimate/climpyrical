@@ -102,7 +102,7 @@ Since the notebooks are parameterized, they can be run from the command line wit
 You supply the configuration yaml using the `-f` argument.
 
 ```bash
-$[climpyrical/notebooks/] papermill -f config.yml pipeline.ipynb pipeline_log.ipynb
+$[climpyrical/notebooks/] papermill -p config_file "path/to/config.yml" pipeline.ipynb pipeline_log.ipynb
 ```
 
 If one wants to run only a segment (or segments) of the pipeline, edit the `config.yml` file to only include the steps of interest.
@@ -144,7 +144,7 @@ dvs:
 Then simply run the command as before:
 
 ```bash
-$[climpyrical/notebooks/] papermill -f config.yml pipeline.ipynb pipeline_log.ipynb
+$[climpyrical/notebooks/] papermill -p config_file "path/to/config.yml" pipeline.ipynb pipeline_log.ipynb
 ```
 
 ### Reading Data --> Put into API documentation
