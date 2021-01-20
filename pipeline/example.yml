@@ -1,0 +1,24 @@
+# Parameterize the pipeline
+# The pipeline will iterate through each parent tree
+# in dvs and provide the associated parameters
+
+# Which steps to use in the pipeline (see pipeline.py)
+steps: [
+"preprocess_model"
+]
+
+n_jobs: 8
+
+# To be placed in climpyrical/
+paths:
+    preprocessed_model_path: /data/results/intermediate/preprocessed_netcdf/
+    mask_path: data/masks/canada_mask_rp.nc
+    north_mask_path: data/masks/canada_mask_north_rp.nc
+    nbcc_loc_path: data/station_inputs/NBCC_2020_new_coords.xlsm
+
+nbcc_median_correction: True
+
+dvs:
+    RL50:
+        input_model_path: data/model_inputs/snw_rain_CanRCM4-LE_ens35_1951-2016_max_rl50_load_ensmean.nc
+        fill_glaciers: True
