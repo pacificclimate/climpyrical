@@ -168,7 +168,7 @@ Open `README.ipynb` with Jupyter to view detailed instructions on how to reprodu
 
 To run the pipeline, open `pipeline.ipynb` and execute the cells. You should see progress bars update which step the pipeline is currently running. 
 
-### Option 2: CLI (Command Line Interface) Using Papermill
+## Option 2: CLI (Command Line Interface) Using Papermill
 
 Since the notebooks are parameterized, they can be run from the command line with Papermill. Papermill produces a log of the notebook once it has been executed. [Read more about executing notebooks using papermill here](https://papermill.readthedocs.io/en/latest/usage-execute.html).
 
