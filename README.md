@@ -156,29 +156,26 @@ dvs:
 Once the pipeline is configured, there are two options for running the pipeline (a third option with a simple python interface is currently under development). 
 
 ## Option 1: Interactively with Jupyter (recommended)
- For a tutorial on using Jupyter Lab, you can [read their docs](https://jupyterlab.readthedocs.io/en/stable/getting_started/overview.html).
+For a tutorial on using Jupyter Lab, you can [read their docs](https://jupyterlab.readthedocs.io/en/stable/getting_started/overview.html).
 
-To reconstruct a design value field, users need a CanRCM4 `netCDF` design value field as well as an accompanying station data file in the form of a `.csv`. The user also needs to know the column name of the design value field in the `.csv` file. These will be configured in the configuration yaml.
+Start `jupyter` within the `/notebooks` directory
 
-The processing notebooks can be found in the following directory:
 ```bash
-├── climpyrical
-├── notebooks
-│   ├── README.ipynb
-│   ├── climpyrical_demo.ipynb
-...
+jupyter lab
 ```
 
-Open `README.ipynb` with Jupyter to view detailed instructions on how to reproduce. The notebooks generate a series of files (including intermediate logs) that are laid out in detail in the aforementioned `README.ipynb` and in `pipeline.ipynb`.
+Open `README.ipynb` with Jupyter to view detailed instructions on how to reproduce. The notebooks generate a series of files (including intermediate logs) that are put in detail in `README.ipynb` and in `pipeline.ipynb`.
+
+To run the pipeline, open `pipeline.ipynb` and execute the cells. You should see progress bars update which step the pipeline is currently running. 
 
 ### Option 2: CLI (Command Line Interface) Using Papermill
 
-Since the notebooks are parameterized, they can be run from the command line with Papermill. Papermill produces a log of the notebook once it has been executed. You can select which design values you'd like to run, or which steps you'd like to run from the pipeline in the configuration yaml. [Read more about executing notebooks using papermill here](https://papermill.readthedocs.io/en/latest/usage-execute.html).
+Since the notebooks are parameterized, they can be run from the command line with Papermill. Papermill produces a log of the notebook once it has been executed. [Read more about executing notebooks using papermill here](https://papermill.readthedocs.io/en/latest/usage-execute.html).
 
-You supply the configuration yaml using the `-p` argument.
+Within the `notebooks/` directory, run
 
 ```bash
-$[climpyrical/notebooks/] papermill -p config_file "path/to/config.yml" pipeline.ipynb pipeline_log.ipynb
+papermill -p config_yml "path/to/config.yml" pipeline.ipynb pipeline_log.ipynb
 ```
 
 If one wants to run only a segment (or segments) of the pipeline, edit the `config.yml` file to only include the steps of interest.
@@ -215,16 +212,16 @@ dvs:
             value: 0.4
             action: "multiply"
         fill_glaciers: True
+    ...
 ```
 
 Then simply run the command as before:
 
 ```bash
-$[climpyrical/notebooks/] papermill -p config_file "path/to/config.yml" pipeline.ipynb pipeline_log.ipynb
+$[climpyrical/notebooks/] papermill -p config_yml "path/to/config.yml" pipeline.ipynb pipeline_log.ipynb
 ```
 
-# Setting up `climpyrical` for use with rot2reg on Lynx or Leopard
-One consistent problem encountered while working on this project, was working to understand the polar stereographic projection that CanRCM4 models are in. This offers several advantages, but can be difficult to understand. A technical overview of this is beyond the scope of this README, however, a guide is included below on how to use `climpyrical` to perform a transformation from polar stereographic to regular `EPSG:4326`/`WGS84` projection.
+# Setting up `climpyrical` for use on PCIC compute nodes
 
 This guide is tailored to PCIC internal servers `lynx` or `leopard` which has some specific installation features that may or may not be encountered on other machines.
 
@@ -267,10 +264,9 @@ Then finally install `climpyrical` with:
 pip install -e climpyrical/
 ```
 
-Now you can use `climpyrical`. To unrotate a CanRCM4 file and write it to a new `netCDF4` file, simply:
-```bash
-python climpyrical/cmd/rot2reg.py "path/to/input_CanRCM4.nc" "path/to/output_CanRCM4.nc"
-```
+Refer to above directions for further instructions.
 
 ## Authors
 * **Nic Annau** - [Pacific Climate Impacts Consortium](https://www.pacificclimate.org/)
+
+Please fork and open a pull request to contribute.
