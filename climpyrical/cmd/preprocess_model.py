@@ -33,6 +33,10 @@ warnings.filterwarnings("ignore")
     type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
     default="INFO",
 )
+def cli(in_path, out_path, fill_glaciers, log_level):
+    downscale_and_fill(in_path, out_path, fill_glaciers, log_level)
+
+
 def downscale_and_fill(in_path, out_path, fill_glaciers, log_level):
     """Takes a CanRCM4 model at the native resolution and
     downscales from 50 km to  5 km and fills in missing
@@ -73,9 +77,9 @@ def downscale_and_fill(in_path, out_path, fill_glaciers, log_level):
 
     # if other units need converting in the future, use pint
 
-    path_mask = resource_filename("climpyrical", "data/mask/land_mask_CanRCM4_sftlf.nc")
+    path_mask = resource_filename("climpyrical", "data/masks/land_mask_CanRCM4_sftlf.nc")
 
-    path_glacier_mask = resource_filename("climpyrical", "data/mask/glacier_mask.nc")
+    path_glacier_mask = resource_filename("climpyrical", "data/masks/glacier_mask.nc")
 
     logging.info("Load and regrid file to target resolution")
     mask = read_data(path_mask)
@@ -171,4 +175,4 @@ def downscale_and_fill(in_path, out_path, fill_glaciers, log_level):
 
 
 if __name__ == "__main__":
-    downscale_and_fill()
+    cli()
