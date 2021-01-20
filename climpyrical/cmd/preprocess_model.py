@@ -77,9 +77,15 @@ def downscale_and_fill(in_path, out_path, fill_glaciers, log_level):
 
     # if other units need converting in the future, use pint
 
-    path_mask = resource_filename("climpyrical", "data/masks/land_mask_CanRCM4_sftlf.nc")
+    path_mask = resource_filename(
+        "climpyrical",
+        "data/masks/land_mask_CanRCM4_sftlf.nc"
+    )
 
-    path_glacier_mask = resource_filename("climpyrical", "data/masks/glacier_mask.nc")
+    path_glacier_mask = resource_filename(
+        "climpyrical",
+        "data/masks/glacier_mask.nc"
+    )
 
     logging.info("Load and regrid file to target resolution")
     mask = read_data(path_mask)
