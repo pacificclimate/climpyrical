@@ -1,45 +1,110 @@
 # climpyrical
----
-A Python tool for spatially downscaling and reconstructing design value fields using meteorological station observations and CanRCM4 models.
+A Python tool for spatially downscaling and correcting CanRCM4 derived design value fields using meteorological station observations and CanRCM4 models.
 
 # Build status
----
 ![Python CI](https://github.com/pacificclimate/climpyrical/workflows/Python%20CI/badge.svg)
 ![Documentation Check](https://github.com/pacificclimate/climpyrical/workflows/Documentation%20Check/badge.svg)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 # View Notebooks
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/pacificclimate/climpyrical/HEAD?filepath=notebooks%2Fdemo%2F)
-![Logs of Recent Runs](https://nbviewer.jupyter.org/github/pacificclimate/climpyrical_dv_log/tree/main/)
+[Logs of Recent Runs](https://nbviewer.jupyter.org/github/pacificclimate/climpyrical_dv_log/tree/main/)
 
 # Setup
+The following instructions are general for unix-type systems with Python installed.
+
+Start by cloning this repository to your local machine. 
+
 ```bash
 git clone https://github.com/pacificclimate/climpyrical/
 ```
 
-To install, run
-```bash
-$ pip install climpyrical/
-```
+## Python
+Climpyrical is designed for Python 3.
 
-### Requirements
-To install all of the dependencies used by climpyrical, install from requirements file found in `requirements.txt`
+## Dependencies
+For Python version < 3.8, [install proj v >= 7.2.0](https://proj.org/install.html). It is safe to proceed to the next steps without installing proj if using Python 3.8. Geopandas for Python < 3.8 does not require proj v 7.2.0.
 
-via 
-
-```bash
-$ pip install -r climpyrical/requirements.txt
-```
-
-`climpyrical` also requires a version of `R` be installed with the `fields` package. To do this, and install R dependencies on a local machine, use
+If you intend on using the Moving Window Ordinary ratio Kriging scripts, R must be installed as well as specific R packages. This repo contains a custom requirements script that should handle this automatically.
 
 ```bash
 apt install r-base 
 Rscript install_pkgs.R r_requirements.txt
 ```
+## Virtual Environment
+Please use a [virtual environment](https://docs.python.org/3/tutorial/venv.html) to handle python packages and your climpyrical project. A quick start on this is to use
+```bash
+python3 -m venv path/to/myvenv
+```
+
+and activate with
+```bash
+source path/to/myvenv/bin/activate
+```
+
+Don't forget to reactivate this environment with the above command between sessions.
+
+## Requirements
+To install all of the dependencies used by climpyrical, install from requirements file found in `requirements.txt`
+
+via 
+
+```bash
+pip install -r climpyrical/requirements.txt
+```
+To install climpyrical, run
+```bash
+pip install -e climpyrical/
+```
+
+Jupyter is included in the requirements. If running in jupyter mode, to properly render progress bars, install the nbwidget extension
+```bash
+jupyter nbextension enable --py widgetsnbextension
+jupyter labextension install @jupyter-widgets/jupyterlab-manager
+```
+And restart the jupyter server.
+
+# Input Data
+Climpyrical assumes input models and stations. The following tables summarize the requirements. The model data must be in [NetCDF4](https://www.unidata.ucar.edu/software/netcdf/docs/index.html) format, and the station files must be in `.csv` format.
+
+| NetCDF4 (.nc)   | 2D Data Field Variable: e.g. "Rain-RL50"                     | Coordinates: lat(rlon, rlat), lon(rlon, rlat), rlon, rlat | Put in: climpyrical/data/model_inputs/   |
+|-----------------|--------------------------------------------------------------|-----------------------------------------------------------|------------------------------------------|
+| Stations (.csv) | List of station values with column header: e.g. "RL50 (kPa)" | Coordinates: lat, lon (rlon, rlat optional)               | Put in: climpyrical/data/station_inputs/ |
+
+## Output data tree
+```bash
+climpyrical/data/results
+├── netcdf
+│   └── 
+├── figures
+│   ├── 
+├── intermediate
+│   ├── notebooks (only if running with papermill)
+│   │   ├── model_log_{design value}.ipynb
+│   │   ├── plotting_log_{design value}.ipynb
+│   │   ├── MWOrK_log_{design value}.ipynb
+│   │   ├── station_log_{design value}.ipynb
+│   ├── preprocessed_netcdf
+│   │   ├── {design value}.nc
+│   └── preprocessed_stations
+│       └── {design value}.csv
+└── TableC2
+     └── {design_vale}_TableC2.csv
+```
 
 # Getting started
-The first step to running the pipeline is configuring it. Various configurations also need to be added to a configuration yaml file. These contain design value specific information, such as paths to input station and model files, plotting parameters, and output filenames. See `config_example.yml` as a full configuration for running the software on all of the design values. 
+
+## The pipeline
+The pipeline runs in order and downstream notebooks require outputs from upstream notebooks. That is, don't remove steps from the configuration that are upstream of the step you want to run without previously ensuring its outputs are placed in the proper directories.
+
+1.) Preprocess the model. This downscales by bilinear interpolation, and masks to a finer grid scale of the Canadian coastline. It also fills in glacier points supplied in a default mask.
+2.) Preprocess the stations. This converts coordinates and matches and aggregates stations that fall into a single grid cell, as well as locating their indices in the climate model.
+3.) Moving Window Ordinary ratio Kriging uses the results of the previous steps to generate a reconstructed NetCDF4 file
+4.) Generates useful figures for each design value provided
+5.) Finds reconstructed values at NBCC locations nd generates a csv
+6.) Combines all of the NBCC table into a final version
+
+The first step to running the pipeline is configuring it. Various configurations also need to be added to a configuration yaml file. These contain design value specific information, such as paths to input station and model files, plotting parameters, and output filenames. See `/climpyrical/notebooks/interactive/config_example.yml` as a full configuration for running the software on all of the design values. 
 
 The recipe is the following, using RL50 as an example:
 
@@ -56,31 +121,42 @@ steps: [
 
 # To be placed in climpyrical/
 paths:
-    output_notebook_path: /intermediate/notebook/logs/path
-    preprocessed_model_path: /path/to/folder/
-    preprocessed_stations_path: /path/to/folder/
-    output_reconstruction_path: /path/to/folder/
-    output_tables_path: /path/to/folder/
-    output_figure_path: /path/to/folder/
-    mask_path: data/masks/canada_mask_rp.nc
-    north_mask_path: data/masks/canada_mask_north_rp.nc
-    nbcc_loc_path: data/station_inputs/NBCC_2020_new_coords.xlsm
+    output_notebook_path: /data/results/intermediate/notebooks/ # logs of notebooks
+    preprocessed_model_path: /data/results/intermediate/preprocessed_netcdf/ # preprocessed model netcdf files (not reconstructed!)
+    preprocessed_stations_path: /data/results/intermediate/preprocessed_stations/ # preprocessed station output files
+    output_reconstruction_path: /data/results/netcdf/ # reconstruction outputs
+    output_tables_path: /data/results/TableC2/ # table c2 csv file outputs
+    output_figure_path: /data/results/figures/ # all figures
+    mask_path: data/masks/canada_mask_rp.nc # rotated pole canada only mask
+    north_mask_path: data/masks/canada_mask_north_rp.nc # rotated pole upper arctic archepelago mask
+    nbcc_loc_path: data/station_inputs/NBCC_2020_new_coords.xlsm # NBCC locations
 
 # whether to apply median correction from NBCC 2015
 nbcc_median_correction: True
+
+# put all design values configured here
 dvs:
+    # name of the design value you'd like to use (no spaces)
     RL50:
+        # name of design value column header in station csv
         station_dv: "RL50 (kPa)" # Column header for the design value
+        # path to station data
         station_path: 'data/station_inputs/Interim_snow_rain_load_LR_composite_stations_tbd_v4.csv' 
+        # where to find this particular model
         input_model_path: 'data/model_inputs/snw_rain_CanRCM4-LE_ens35_1951-2016_max_rl50_load_ensmean.nc'
+        # to be used only if nbcc_median_correction is True. See MWOrK.ipynb for specific use
         medians: 
             value: 0.4
             action: "multiply"
+        # whether to interpolate over glaciers in glacier path
         fill_glaciers: True
 ```
 
-### Option 1: Interactive (recommended)
-[Jupyter Notebooks](https://jupyter.org/) have been paramaterized using [Papermill](https://github.com/nteract/papermill), so in addition to running them in [Jupyter Lab](https://jupyterlab.readthedocs.io/en/stable/getting_started/overview.html), they can be executed from the terminal. For a tutorial on using Jupyter Lab, you can [read their docs](https://jupyterlab.readthedocs.io/en/stable/getting_started/overview.html).
+## Running the pipeline
+Once the pipeline is configured, there are two options for running the pipeline (a third option with a simple python interface is currently under development). 
+
+## Option 1: Interactively with Jupyter (recommended)
+ For a tutorial on using Jupyter Lab, you can [read their docs](https://jupyterlab.readthedocs.io/en/stable/getting_started/overview.html).
 
 To reconstruct a design value field, users need a CanRCM4 `netCDF` design value field as well as an accompanying station data file in the form of a `.csv`. The user also needs to know the column name of the design value field in the `.csv` file. These will be configured in the configuration yaml.
 
@@ -99,7 +175,7 @@ Open `README.ipynb` with Jupyter to view detailed instructions on how to reprodu
 
 Since the notebooks are parameterized, they can be run from the command line with Papermill. Papermill produces a log of the notebook once it has been executed. You can select which design values you'd like to run, or which steps you'd like to run from the pipeline in the configuration yaml. [Read more about executing notebooks using papermill here](https://papermill.readthedocs.io/en/latest/usage-execute.html).
 
-You supply the configuration yaml using the `-f` argument.
+You supply the configuration yaml using the `-p` argument.
 
 ```bash
 $[climpyrical/notebooks/] papermill -p config_file "path/to/config.yml" pipeline.ipynb pipeline_log.ipynb
@@ -146,81 +222,6 @@ Then simply run the command as before:
 ```bash
 $[climpyrical/notebooks/] papermill -p config_file "path/to/config.yml" pipeline.ipynb pipeline_log.ipynb
 ```
-
-### Reading Data --> Put into API documentation
-Load an ensemble of climate models using `climpyrical`'s `read_data` function. `read_data` creates an `xarray` dataset containing the fields defined by `keys` and by the design value key as found in the climate model.
-```python
-from climpyrical.data import read_data
-
-# necessary keys to load from .nc file
-
-ds = read_data('/path/to/data.nc')
-```
-
-### Masking Models
-To reamain domain flexible in `climpyrical`, shapefiles can be provided to mask the analysis to include only modeled values within that shape.
-
-```python3
-from climpyrical.mask rotate_shapefile, import gen_raster_mask_from_vector
-
-world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-can_index = world[world.name == "Canada"].index
-can_geom = world.loc[can_index, 'geometry']
-
-rotated_canada = rotate_shapefile(can_geom)
-
-mask = gen_raster_mask_from_vector(ds.rlon, ds.rlat, rotated_canada)
-```
-
-`mask` contains a 2 dimensional grid with boolean values masked based on the `rotated_canada` `GeoSeries`.
-
-More to be found in `notebooks/dev/climpyrical_demo.ipynb`.
-
-### Type Hinting
-Climpyrical's functions have opted for type hints rather than a strict checking of each data input and output. It is also meant to help aid in the documentation and understanding of how to use its functions. In general, arrays that are supplied to functions in climpyrical are `numpy.ndarray`s. These arrays should be of a specific shape (sometimes datatype), in order to play well with the functions. Incorrect array types are *usually* not strictly enforced within `climpyrical` itself, and errors about the nature of array inputs are raised mainly in external packages. However, we have included [nptyping](https://github.com/ramonhagenaars/nptyping) - a third party type hinting package designed specifically for numpy arrays. We are currently working to have climpyrical's usage (starting with testing) be with `mypy` which reports errors when the type hinting is not met (aka enforced type hinting).
-
-Examples of understanding numpy typing:
-```python3
-def flatten_coords(
-    x: NDArray[(Any, ), float], y: NDArray[(Any, ), float]
-) -> Tuple[NDArray[(Any, ), float], NDArray[(Any, ), float]]:
-    """Takes the rlat and rlon 1D arrays from the
-    NetCDF files for each ensemble member, and creates
-    an ordered pairing of each grid cell coordinate in
-    rotated pole (rlat, rlon).
-    ...
-```
-
-In this simple example above, `x` and `y` are `numpy` `NDArray` objects of 1 dimension and any length of type `float`.
-
-An example of 2 dimensional arrays is below:
-
-```python3
-def interpolate_dataset(
-    points: NDArray[(Any, Any), np.float],
-    values: NDArray[(Any, Any), np.float],
-    target_points: NDArray[(Any, Any), np.float],
-    method: str,
-) -> NDArray[(Any,), np.float]:
-
-    ...
-```
-
-This function, for example, takes `points` a 2 dimensional `NDArray` of any size (in either dimension) and of type `float`. It returns a 1 dimensional `NDArray` of any size and type `float`.  
-
-The description of what these variables mean are still found in the docstring of the function itself, however, the intended type of `NDArray` provided can be found by reading the type hints throughout `climpyrical`. 
-
-### Ratio kriging reconstruction
-There are a series of notebooks in `notebooks` that describe how to achieve a ratio reconstruction as demanded by the ratio kriging reconstruction method.
-
-They are meant to be completed in the following order, to acheive results. Please note that this method has only been demonstrated on CanRCM4 gridded models in rotated pole projection, although this software has been adopted to be as flexible as possible to other regions with different projections. 
-
-1.) `notebooks/mask.ipynb` demonstrates constructing a raster mask based on arbitrarily polygons provided. This improves the native CanRCM4 coarse coastlines
-2.) `notebooks/process_model.ipynb` demonstrates the necessary preprocessing steps on the model and writes it to file to be used later on in the method.
-3.) `notebooks/stations.ipynb` demonstrates how to process the station data corresponding to your CanRCM4 model and writes to file
-4.) `notebooks/ratio_kriging.ipynb` performs the ratio kriging method 
-
-Additional steps have not been factored out further due to the ever-changing requirements of various design value fields. 
 
 # Setting up `climpyrical` for use with rot2reg on Lynx or Leopard
 One consistent problem encountered while working on this project, was working to understand the polar stereographic projection that CanRCM4 models are in. This offers several advantages, but can be difficult to understand. A technical overview of this is beyond the scope of this README, however, a guide is included below on how to use `climpyrical` to perform a transformation from polar stereographic to regular `EPSG:4326`/`WGS84` projection.
