@@ -48,7 +48,6 @@ Don't forget to reactivate this environment with the above command between sessi
 To install all of the dependencies used by climpyrical, install from requirements file found in `requirements.txt`
 
 via 
-
 ```bash
 pip install -r climpyrical/requirements.txt
 ```
@@ -91,6 +90,12 @@ climpyrical/data/results
 └── TableC2
      └── {design_vale}_TableC2.csv
 ```
+To display a progress bar within Jupyter, install the nbwidget extension with
+```bash
+jupyter nbextension enable --py widgetsnbextension
+jupyter labextension install @jupyter-widgets/jupyterlab-manager
+```
+And restart the jupyter server.
 
 # Getting started
 
@@ -115,7 +120,7 @@ steps: [
 "stations.ipynb", 
 "MWOrK.ipynb", 
 "plots.ipynb", 
-"nbcc_stations.ipynb", 
+"nbcc_locations.ipynb", 
 "combine_tables.ipynb"
 ]
 
@@ -202,7 +207,7 @@ paths:
     nbcc_loc_path: data/station_inputs/NBCC_2020_new_coords.xlsm
 
 # whether to apply median correction from NBCC 2015
-nbcc_median_correction: True
+nbcc_mean_correction: True
 dvs:
     RL50:
         station_dv: "RL50 (kPa)" # Column header for the design value
