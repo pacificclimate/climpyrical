@@ -97,12 +97,12 @@ climpyrical/data/results
 ## The pipeline
 The pipeline runs in order and downstream notebooks require outputs from upstream notebooks. That is, don't remove steps from the configuration that are upstream of the step you want to run without previously ensuring its outputs are placed in the proper directories.
 
-1.) Preprocess the model. This downscales by bilinear interpolation, and masks to a finer grid scale of the Canadian coastline. It also fills in glacier points supplied in a default mask.
-2.) Preprocess the stations. This converts coordinates and matches and aggregates stations that fall into a single grid cell, as well as locating their indices in the climate model.
-3.) Moving Window Ordinary ratio Kriging uses the results of the previous steps to generate a reconstructed NetCDF4 file
-4.) Generates useful figures for each design value provided
-5.) Finds reconstructed values at NBCC locations nd generates a csv
-6.) Combines all of the NBCC table into a final version
+1. Preprocess the model. This downscales by bilinear interpolation, and masks to a finer grid scale of the Canadian coastline. It also fills in glacier points supplied in a default mask.
+2. Preprocess the stations. This converts coordinates and matches and aggregates stations that fall into a single grid cell, as well as locating their indices in the climate model.
+3. Moving Window Ordinary ratio Kriging uses the results of the previous steps to generate a reconstructed NetCDF4 file
+4. Generates useful figures for each design value provided
+5. Finds reconstructed values at NBCC locations nd generates a csv
+6. Combines all of the NBCC table into a final version
 
 The first step to running the pipeline is configuring it. Various configurations also need to be added to a configuration yaml file. These contain design value specific information, such as paths to input station and model files, plotting parameters, and output filenames. See `/climpyrical/notebooks/interactive/config_example.yml` as a full configuration for running the software on all of the design values. 
 
@@ -221,7 +221,7 @@ Then simply run the command as before:
 $[climpyrical/notebooks/] papermill -p config_yml "path/to/config.yml" pipeline.ipynb pipeline_log.ipynb
 ```
 
-# Setting up `climpyrical` for use on PCIC compute nodes
+# Setting up on PCIC compute nodes
 
 This guide is tailored to PCIC internal servers `lynx` or `leopard` which has some specific installation features that may or may not be encountered on other machines.
 
