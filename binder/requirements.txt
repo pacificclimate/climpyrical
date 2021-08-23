@@ -15,4 +15,4 @@ tqdm>=4.32.2
 PyKrige==1.5.1
 descartes==1.1.0
 ipykernel==5.3.4
-jupyterlab==2.2.8
+jupyterlab==2.2.10
